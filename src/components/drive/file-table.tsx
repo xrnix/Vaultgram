@@ -19,15 +19,15 @@ export const FileTable: React.FC<FileTableProps> = ({ files, onDownload }) => {
   });
 
   return (
-    <div className="flex flex-col h-full rounded-sm border border-zinc-800/80 bg-zinc-950/60 overflow-hidden select-none">
+    <div className="flex flex-col h-full rounded-[4px] border border-white/[0.08] bg-[#0c0e14]/40 backdrop-blur-md overflow-hidden select-none">
       {/* Sticky Table Header */}
-      <div className="flex h-9 w-full items-center border-b border-zinc-800/80 bg-zinc-900/50 font-mono text-[10px] text-zinc-400 uppercase tracking-wider px-3 shrink-0 rounded-t-sm">
-        <div className="flex-1 min-w-0 pr-4">Name</div>
-        <div className="w-36 shrink-0 px-2">Channel Source</div>
-        <div className="w-24 shrink-0 px-2">Category</div>
-        <div className="w-24 shrink-0 px-2">Size</div>
-        <div className="w-28 shrink-0 px-2">Date</div>
-        <div className="w-12 shrink-0 text-right">Actions</div>
+      <div className="flex h-9 w-full items-center border-b border-white/[0.07] bg-white/[0.02] font-mono text-[10px] text-zinc-400 uppercase tracking-wider px-2 sm:px-3 shrink-0">
+        <div className="flex-1 min-w-0 pr-2 sm:pr-4">Name</div>
+        <div className="w-28 sm:w-36 shrink-0 px-2 hidden sm:block">Channel Source</div>
+        <div className="w-20 sm:w-24 shrink-0 px-2 hidden md:block">Category</div>
+        <div className="w-16 sm:w-24 shrink-0 px-1.5 sm:px-2 text-right sm:text-left">Size</div>
+        <div className="w-20 sm:w-28 shrink-0 px-2 hidden sm:block">Date</div>
+        <div className="w-9 sm:w-12 shrink-0 text-right">Actions</div>
       </div>
 
       {/* Virtualized Scrollable Body */}

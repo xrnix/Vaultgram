@@ -8,21 +8,21 @@ interface FileGridProps {
   onDownload: (file: DriveFile) => void;
 }
 
-const MIN_CARD_WIDTH = 190;
-const CARD_GAP = 12; // gap-3 = 12px
-const ROW_HEIGHT = 142 + CARD_GAP; // 142px card height + gap
-
 export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(4);
+  const [gap, setGap] = useState(12);
 
   // Compute responsive columns dynamically from container width
   useEffect(() => {
     const updateColumns = () => {
       if (!parentRef.current) return;
       const width = parentRef.current.clientWidth;
-      const computed = Math.max(1, Math.floor((width + CARD_GAP) / (MIN_CARD_WIDTH + CARD_GAP)));
+      const currentGap = width < 500 ? 8 : 12;
+      const minCardWidth = width < 500 ? 140 : 185;
+      const computed = Math.max(1, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
       setColumns(computed);
+      setGap(currentGap);
     };
 
     updateColumns();
@@ -47,15 +47,17 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     return result;
   }, [files, columns]);
 
+  const rowHeight = gap === 8 ? 138 + 8 : 142 + 12;
+
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     overscan: 5,
   });
 
   return (
-    <div ref={parentRef} className="h-full w-full overflow-y-auto select-none p-1">
+    <div ref={parentRef} className="h-full w-full overflow-y-auto select-none p-0.5 sm:p-1">
       <div
         className="w-full relative"
         style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
@@ -67,11 +69,12 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
           return (
             <div
               key={virtualRow.index}
-              className="absolute top-0 left-0 w-full grid gap-3"
+              className="absolute top-0 left-0 w-full grid"
               style={{
-                height: `${virtualRow.size - CARD_GAP}px`,
+                height: `${virtualRow.size - gap}px`,
                 transform: `translateY(${virtualRow.start}px)`,
                 gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                gap: `${gap}px`,
               }}
             >
               {rowFiles.map((file) => (

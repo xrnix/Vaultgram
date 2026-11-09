@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Upload } from "lucide-react";
 
 interface DropzoneOverlayProps {
@@ -63,28 +64,42 @@ export const DropzoneOverlay: React.FC<DropzoneOverlayProps> = ({
     };
   }, [onFilesDropped]);
 
-  if (!isDragging) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-6 select-none pointer-events-none">
-      <div className="flex h-full w-full max-w-2xl max-h-[420px] flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-zinc-600 bg-zinc-900/60 p-8 text-center shadow-2xl">
-        <div className="flex h-16 w-16 items-center justify-center rounded-md bg-zinc-950 border border-zinc-800 text-zinc-100 shadow-lg">
-          <Upload className="h-8 w-8 stroke-[1.5px] animate-bounce" />
-        </div>
+    <AnimatePresence>
+      {isDragging && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6 select-none pointer-events-none"
+        >
+          <motion.div
+            initial={{ scale: 0.95, y: 10 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 10 }}
+            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+            className="flex h-full w-full max-w-xl max-h-[380px] flex-col items-center justify-center gap-3 rounded-[6px] border-2 border-dashed border-white/25 bg-[#0c0e14]/90 p-8 text-center shadow-[0_20px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.12] text-white shadow-lg animate-pulse">
+              <Upload className="h-6 w-6 stroke-[1.75px]" />
+            </div>
 
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-zinc-100">
-            Drop files to upload directly to Telegram
-          </h2>
-          <p className="text-xs text-zinc-400 font-mono">
-            Destination: <span className="text-zinc-200">{activeChannelTitle}</span>
-          </p>
-        </div>
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-white font-sans">
+                Drop files to upload directly to Telegram
+              </h2>
+              <p className="text-xs text-zinc-400 font-mono">
+                Target: <span className="text-zinc-200">{activeChannelTitle}</span>
+              </p>
+            </div>
 
-        <div className="mt-2 rounded-sm bg-zinc-950/80 border border-zinc-800/80 px-3 py-1 text-[11px] font-mono text-zinc-500">
-          Max 2 GB per file • 100% Client-Side MTProto Stream
-        </div>
-      </div>
-    </div>
+            <div className="mt-2 rounded-[3px] bg-white/[0.03] border border-white/[0.08] px-3 py-1 text-[10px] font-mono text-zinc-500">
+              Max 2 GB per file • 100% Client-Side MTProto Stream
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

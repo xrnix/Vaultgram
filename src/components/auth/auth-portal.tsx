@@ -16,14 +16,17 @@ export const AuthPortal: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[400px] rounded-md border border-zinc-800/60 bg-zinc-900/30 p-6 shadow-2xl backdrop-blur-md"
+        className="relative z-10 w-full max-w-[400px] rounded-[6px] border border-white/[0.1] bg-[#0c0e14]/90 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl overflow-hidden"
       >
+        {/* Top Hairline Sheen */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2 pb-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100 shadow-sm">
             <HardDrive className="h-4 w-4 stroke-[1.5px]" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-100 font-sans">
+          <h1 className="text-xl font-semibold tracking-tight text-white font-sans">
             Vaultgram
           </h1>
           <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed mt-1">
@@ -62,7 +65,7 @@ export const AuthPortal: React.FC = () => {
         </Tabs>
 
         {/* Footer meta badge */}
-        <div className="border-t border-zinc-800/50 pt-4 mt-6">
+        <div className="border-t border-white/[0.08] pt-4 mt-6">
           <div className="font-mono text-[11px] text-zinc-500 tracking-wide text-center flex items-center justify-center gap-2">
             <span>Client-Side</span>
             <span className="text-zinc-700">•</span>

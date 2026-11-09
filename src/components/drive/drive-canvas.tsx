@@ -186,21 +186,21 @@ export const DriveCanvas: React.FC = () => {
         <TransfersView />
       ) : (
         /* Main Virtualized Content Area */
-        <div className="flex-1 overflow-hidden p-5">
+        <div className="flex-1 overflow-hidden p-2 sm:p-3 md:p-5">
           {files.length === 0 && syncStatus.isSyncing ? (
             viewMode === "grid" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
                   <div
                     key={i}
-                    className="flex flex-col justify-between rounded-md border border-zinc-800/40 bg-zinc-900/20 p-3 h-[142px] animate-pulse"
+                    className="flex flex-col justify-between rounded-[5px] border border-white/[0.06] bg-white/[0.02] p-3 h-[142px] animate-pulse"
                   >
-                    <div className="h-8 w-8 rounded-sm bg-zinc-800/60" />
-                    <div className="space-y-1">
-                      <div className="h-3 w-3/4 rounded-sm bg-zinc-800/60" />
-                      <div className="h-2 w-1/2 rounded-sm bg-zinc-800/40" />
+                    <div className="h-8 w-8 rounded-[4px] bg-white/[0.05]" />
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-3/4 rounded-[2px] bg-white/[0.06]" />
+                      <div className="h-2 w-1/2 rounded-[2px] bg-white/[0.04]" />
                     </div>
-                    <div className="h-2 w-full rounded-sm bg-zinc-800/30" />
+                    <div className="h-2 w-full rounded-[2px] bg-white/[0.03]" />
                   </div>
                 ))}
               </div>
@@ -209,24 +209,31 @@ export const DriveCanvas: React.FC = () => {
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div
                     key={i}
-                    className="h-10 w-full rounded-sm bg-zinc-900/20 border border-zinc-800/40 animate-pulse"
+                    className="h-10 w-full rounded-[4px] bg-white/[0.02] border border-white/[0.05] animate-pulse"
                   />
                 ))}
               </div>
             )
           ) : filteredFiles.length === 0 ? (
-            <div className="flex h-[420px] flex-col items-center justify-center gap-2.5 text-center text-zinc-500">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
-                <Inbox className="h-6 w-6 stroke-[1.25px]" />
+            <div className="flex h-[420px] flex-col items-center justify-center gap-3 text-center text-zinc-500">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[5px] bg-white/[0.03] border border-white/[0.08] text-zinc-400 shadow-sm">
+                  <Inbox className="h-5 w-5 stroke-[1.5px]" />
+                </div>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-600">
+                  [INDEX :: 00]
+                </span>
               </div>
-              <span className="text-xs font-semibold text-zinc-300">
-                {searchQuery ? "No matching files" : "No files in this category"}
-              </span>
-              <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed">
-                {searchQuery
-                  ? "Try searching for a different keyword or check spelling."
-                  : "Drag & drop files anywhere to upload directly to Telegram."}
-              </p>
+              <div className="space-y-1">
+                <span className="text-sm font-medium text-zinc-200 font-sans block">
+                  {searchQuery ? "No matching records found" : "Directory Index Empty"}
+                </span>
+                <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-sans">
+                  {searchQuery
+                    ? "No files matched your query. Try searching for a different keyword or checking typos."
+                    : "Drag and drop any files into this canvas to store them directly onto Telegram."}
+                </p>
+              </div>
             </div>
           ) : viewMode === "grid" ? (
             <FileGrid files={filteredFiles} onDownload={handleDownload} />

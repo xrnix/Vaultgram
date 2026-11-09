@@ -66,19 +66,22 @@ export const ChannelWizard: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[460px] rounded-md border border-zinc-800/80 bg-zinc-900/40 p-6 shadow-2xl backdrop-blur-md"
+        className="relative z-10 w-full max-w-[460px] rounded-[6px] border border-white/[0.1] bg-[#0c0e14]/90 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl overflow-hidden"
       >
+        {/* Top Hairline Sheen */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
         {/* Header */}
         <div className="flex flex-col space-y-1.5 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-200">
+            <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100">
               <Layers className="h-3.5 w-3.5 stroke-[1.5px]" />
             </div>
-            <h1 className="text-lg font-semibold tracking-tight text-zinc-100 font-sans">
+            <h1 className="text-lg font-semibold tracking-tight text-white font-sans">
               Select Channels to Index
             </h1>
           </div>
-          <p className="text-xs text-zinc-400 leading-relaxed">
+          <p className="text-xs text-zinc-400 leading-relaxed font-sans">
             Choose the Telegram chats and channels Vaultgram should monitor for media and files.
           </p>
         </div>
@@ -224,13 +227,13 @@ export const ChannelWizard: React.FC = () => {
                   {/* Right Section: Custom Industrial Checkbox */}
                   <div className="flex items-center justify-center shrink-0">
                     <div
-                      className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all ${
+                      className={`w-4 h-4 rounded-[3px] flex items-center justify-center transition-all ${
                         isSelected
-                          ? "bg-zinc-100 border border-zinc-100 text-zinc-950 shadow-sm"
-                          : "border border-zinc-700/80 bg-zinc-900/60 hover:border-zinc-500"
+                          ? "bg-white/[0.15] border border-white/40 text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+                          : "border border-white/[0.1] bg-white/[0.03] hover:border-white/20"
                       }`}
                     >
-                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
                     </div>
                   </div>
                 </div>
@@ -240,7 +243,7 @@ export const ChannelWizard: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-4 pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between">
           <button
             type="button"
             onClick={() => fetchChannels()}
@@ -254,7 +257,7 @@ export const ChannelWizard: React.FC = () => {
           <Button
             onClick={handleContinue}
             disabled={isContinueDisabled}
-            className="gap-2 rounded-md h-9 px-4 font-medium text-xs shadow-sm"
+            className="gap-2 rounded-[4px] h-9 px-4 font-medium text-xs bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all disabled:opacity-40"
           >
             <span>{isSaving ? "Saving..." : "Continue to Drive"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />

@@ -54,29 +54,37 @@ export const App: React.FC = () => {
   }, [isConnected, isWizardCompleted, initDrive]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-zinc-800">
+    <div className="min-h-screen bg-[#07090e] text-zinc-100 selection:bg-white/10 selection:text-white relative overflow-hidden font-sans">
+      {/* Ethereal Top-Ambient Radial Glow from Research Press */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-12%,rgba(120,140,185,0.08),transparent_70%)]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_60%_40%_at_100%_100%,rgba(90,110,150,0.03),transparent_60%)]" />
+
       <Toaster position="bottom-right" richColors theme="dark" />
 
       {bootStatus === "BOOTING" ? (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#07090e] relative z-10">
           <div className="relative flex flex-col items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-sm animate-pulse">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100 shadow-sm animate-pulse">
               <HardDrive className="h-5 w-5 stroke-[1.5px]" />
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-zinc-400 animate-ping" />
+              <div className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
               <span className="text-xs font-mono tracking-tight text-zinc-400">
-                Restoring session...
+                Restoring MTProto session...
               </span>
             </div>
           </div>
         </div>
       ) : !isConnected ? (
-        <AuthPortal />
+        <div className="relative z-10">
+          <AuthPortal />
+        </div>
       ) : !isWizardCompleted ? (
-        <ChannelWizard />
+        <div className="relative z-10">
+          <ChannelWizard />
+        </div>
       ) : (
-        <div className="relative flex h-screen w-screen overflow-hidden">
+        <div className="relative z-10 flex h-screen w-screen overflow-hidden">
           <Sidebar />
           <DriveCanvas />
           {/* Floating Transfer Queue Dock */}

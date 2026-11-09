@@ -66,6 +66,10 @@ interface DriveStoreState {
   // Preview State
   previewFile: DriveFile | null;
 
+  // Mobile Layout State
+  isMobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
+
   // Actions
   initDrive: () => Promise<void>;
   setActiveChannel: (channelId: string) => Promise<void>;
@@ -145,6 +149,9 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
   pinnedFileIds: loadLocalSet(STORAGE_PINNED),
   favoriteFileIds: loadLocalSet(STORAGE_FAVORITES),
   previewFile: null,
+
+  isMobileSidebarOpen: false,
+  setMobileSidebarOpen: (open: boolean) => set({ isMobileSidebarOpen: open }),
 
   initDrive: async () => {
     const channels = await getSavedSelectedChannels();
@@ -340,7 +347,7 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
   },
 
   setActiveChannel: async (channelId: string) => {
-    set({ activeChannelId: channelId, renderPage: 1 });
+    set({ activeChannelId: channelId, renderPage: 1, isMobileSidebarOpen: false });
     const { channels, channelFilesCache } = get();
 
     if (channelId === "UNIFIED") {
@@ -433,7 +440,7 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
     });
   },
 
-  setActiveFilter: (filter: NavFilter) => set({ activeFilter: filter, renderPage: 1 }),
+  setActiveFilter: (filter: NavFilter) => set({ activeFilter: filter, renderPage: 1, isMobileSidebarOpen: false }),
   setSearchQuery: (query: string) => {
     set({
       searchQuery: query,

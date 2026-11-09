@@ -71,25 +71,25 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-      <div className="flex flex-col w-full max-w-4xl max-h-[90vh] bg-zinc-950 border border-zinc-800/80 rounded-md shadow-2xl overflow-hidden select-none animate-in fade-in-0 zoom-in-95 duration-150 ease-out">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-150">
+      <div className="flex flex-col w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-zinc-950 border border-zinc-800/80 rounded-md shadow-2xl overflow-hidden select-none animate-in fade-in-0 zoom-in-95 duration-150 ease-out">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800/80 bg-zinc-900/60">
-          <div className="flex flex-col min-w-0 pr-4">
-            <h2 className="text-sm font-semibold text-zinc-100 truncate" title={file.name}>
+        <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-zinc-800/80 bg-zinc-900/60">
+          <div className="flex flex-col min-w-0 pr-2 sm:pr-4">
+            <h2 className="text-xs sm:text-sm font-semibold text-zinc-100 truncate" title={file.name}>
               {file.name}
             </h2>
-            <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 mt-0.5">
-              <span>{file.channelTitle}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-400 mt-0.5 truncate">
+              <span className="truncate max-w-[100px] sm:max-w-none">{file.channelTitle}</span>
               <span>•</span>
               <span>{formatBytes(file.size)}</span>
-              <span>•</span>
-              <span>{formatDate(file.date)}</span>
+              <span className="hidden xs:inline">•</span>
+              <span className="hidden xs:inline">{formatDate(file.date)}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Image Zoom Toolbar */}
             {isImage && imageUrl && (
               <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-sm p-0.5 mr-2">
@@ -197,26 +197,26 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
         </div>
 
         {/* Footer Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-800/80 bg-zinc-900/60">
-          <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-2">
-            <span>
+        <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3 border-t border-zinc-800/80 bg-zinc-900/60">
+          <div className="text-[10px] sm:text-[11px] font-mono text-zinc-500 flex items-center gap-1.5 sm:gap-2 truncate mr-2">
+            <span className="truncate">
               {dimensions ? `${dimensions.width} × ${dimensions.height} px` : file.mimeType}
             </span>
             <button
               onClick={copyReference}
-              className="text-zinc-600 hover:text-zinc-400 p-0.5 rounded transition-colors"
+              className="text-zinc-600 hover:text-zinc-400 p-0.5 rounded transition-colors shrink-0"
               title="Copy Telegram message reference"
             >
               <Copy className="h-3 w-3" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="h-8 px-3 text-xs border-zinc-800 hover:bg-zinc-900 text-zinc-300 rounded-sm"
+              className="h-8 px-2.5 sm:px-3 text-xs border-white/[0.08] hover:bg-white/[0.06] text-zinc-300 hover:text-white rounded-[4px]"
             >
               Close
             </Button>
@@ -226,10 +226,10 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 onDownload(file);
                 onClose();
               }}
-              className="h-8 px-3 text-xs gap-1.5 bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded-sm"
+              className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all"
             >
               <Download className="w-3.5 h-3.5 stroke-[1.75px]" />
-              Download File
+              <span>Download<span className="hidden sm:inline"> File</span></span>
             </Button>
           </div>
         </div>

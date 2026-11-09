@@ -122,19 +122,19 @@ export const TransfersView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col h-full bg-zinc-950 text-zinc-100 overflow-hidden select-none">
+    <div className="flex flex-1 flex-col h-full bg-[#07090e] text-zinc-100 overflow-hidden select-none font-sans">
       {/* Streamlined Header Section */}
-      <div className="flex flex-col gap-3.5 border-b border-zinc-800/80 px-6 py-4 bg-zinc-950/95 backdrop-blur-sm">
+      <div className="flex flex-col gap-3.5 border-b border-white/[0.07] px-4 sm:px-6 py-3 sm:py-4 bg-[#0a0c10]/80 backdrop-blur-xl">
         {/* Top Row: Title + Concurrency Segmented Control + Batch Actions */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Clean Title & Count */}
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-200">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100">
               <ArrowUpDown className="h-4 w-4 stroke-[1.75px]" />
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold text-zinc-100">Transfer Manager</h1>
-              <span className="font-mono text-xs px-2 py-0.5 rounded-sm bg-zinc-900 border border-zinc-800/80 text-zinc-400">
+              <h1 className="text-base font-semibold text-white">Transfer Manager</h1>
+              <span className="font-mono text-xs px-2 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] text-zinc-400 tabular-nums">
                 {tasks.length} Total
               </span>
             </div>
@@ -143,7 +143,7 @@ export const TransfersView: React.FC = () => {
           {/* Controls & Batch Actions */}
           <div className="flex items-center gap-2.5">
             {/* Minimalist Concurrency Segmented Control */}
-            <div className="flex items-center gap-1 bg-zinc-900/80 p-1 rounded-md border border-zinc-800">
+            <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-[4px] border border-white/[0.08]">
               <span className="text-xs font-mono text-zinc-400 pl-1.5 pr-0.5 flex items-center gap-1">
                 <Sliders className="h-3 w-3" />
                 <span>Concurrency:</span>
@@ -151,20 +151,20 @@ export const TransfersView: React.FC = () => {
               <button
                 onClick={() => setMaxConcurrentDownloads(1)}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded transition-colors",
+                  "px-2.5 py-1 text-xs font-medium rounded-[3px] transition-colors",
                   maxConcurrentDownloads === 1
-                    ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-mono"
+                    ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.16] font-mono"
                     : "text-zinc-400 hover:text-zinc-200"
                 )}
               >
-                1 Active <span className="text-[10px] text-zinc-500 font-normal">(Recommended)</span>
+                1 Active <span className="text-[10px] text-zinc-500 font-normal">(Optimal)</span>
               </button>
               <button
                 onClick={() => setMaxConcurrentDownloads(2)}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded transition-colors",
+                  "px-2.5 py-1 text-xs font-medium rounded-[3px] transition-colors",
                   maxConcurrentDownloads === 2
-                    ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-mono"
+                    ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.16] font-mono"
                     : "text-zinc-400 hover:text-zinc-200"
                 )}
               >
@@ -379,8 +379,8 @@ export const TransfersView: React.FC = () => {
                           : task.status === "FAILED"
                           ? "bg-rose-500"
                           : isUpload
-                          ? "bg-indigo-400"
-                          : "bg-zinc-100"
+                          ? "bg-cyan-400"
+                          : "bg-gradient-to-r from-zinc-300 to-white"
                       )}
                       style={{ width: `${Math.max(1, task.progress)}%` }}
                     />

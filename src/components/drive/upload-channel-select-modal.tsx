@@ -43,17 +43,17 @@ export const UploadChannelSelectModal: React.FC<UploadChannelSelectModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-md border-zinc-800 bg-zinc-950 p-5 rounded-md">
+      <DialogContent className="sm:max-w-md border-white/[0.1] bg-[#0c0e14] p-5 rounded-[6px] shadow-[0_20px_70px_rgba(0,0,0,0.8)] text-zinc-200">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-200">
+            <div className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/[0.05] border border-white/[0.1] text-zinc-200">
               <Layers className="h-3.5 w-3.5" />
             </div>
-            <DialogTitle className="text-sm font-semibold text-zinc-100">
+            <DialogTitle className="text-sm font-semibold text-white font-sans">
               Select Destination Channel
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-zinc-400">
+          <DialogDescription className="text-xs text-zinc-400 font-sans">
             You are in Unified View. Choose where to upload your {filesCount} file(s).
           </DialogDescription>
         </DialogHeader>
@@ -65,14 +65,14 @@ export const UploadChannelSelectModal: React.FC<UploadChannelSelectModalProps> =
               <div
                 key={ch.id}
                 onClick={() => setSelectedId(ch.id)}
-                className={`flex cursor-pointer items-center justify-between px-3 py-2 rounded-sm border text-xs transition-all select-none ${
+                className={`flex cursor-pointer items-center justify-between px-3 py-2 rounded-[4px] border text-xs transition-all select-none ${
                   isSelected
-                    ? "bg-zinc-900 border-zinc-700 text-zinc-100 font-medium"
-                    : "border-zinc-800/60 bg-zinc-950/60 text-zinc-400 hover:bg-zinc-900/40 hover:text-zinc-200"
+                    ? "bg-white/[0.08] border-white/[0.18] text-white font-medium"
+                    : "border-white/[0.06] bg-white/[0.02] text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200"
                 }`}
               >
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-zinc-800 text-[10px] font-mono text-zinc-300">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-white/[0.06] text-[10px] font-mono text-zinc-300">
                     {ch.isSelf ? <Bookmark className="h-3 w-3" /> : getInitials(ch.title)}
                   </div>
                   <span className="truncate">{ch.title}</span>
@@ -80,7 +80,7 @@ export const UploadChannelSelectModal: React.FC<UploadChannelSelectModalProps> =
 
                 <div
                   className={`h-3 w-3 rounded-full border ${
-                    isSelected ? "bg-zinc-100 border-zinc-100" : "border-zinc-700"
+                    isSelected ? "bg-white border-white shadow-[0_0_8px_rgba(255,255,255,0.4)]" : "border-zinc-700"
                   }`}
                 />
               </div>
@@ -88,14 +88,14 @@ export const UploadChannelSelectModal: React.FC<UploadChannelSelectModalProps> =
           })}
         </div>
 
-        <div className="flex justify-end gap-2 pt-1 border-t border-zinc-900">
-          <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs rounded-sm">
+        <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+          <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs rounded-[4px] hover:bg-white/[0.06]">
             Cancel
           </Button>
           <Button
             size="sm"
             onClick={handleConfirm}
-            className="text-xs rounded-sm bg-zinc-100 text-zinc-950 font-medium hover:bg-white"
+            className="text-xs rounded-[4px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] font-medium shadow-[0_0_12px_rgba(255,255,255,0.03)]"
           >
             Start Upload
           </Button>
