@@ -103,17 +103,17 @@ export const SessionExportModal: React.FC<SessionExportModalProps> = ({ isOpen, 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px] border-white/[0.1] bg-[#0c0e14] text-zinc-200 p-5 shadow-[0_25px_80px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+      <DialogContent className="sm:max-w-[480px] border-white/[0.1] bg-[#121215] text-zinc-200 p-5 shadow-[0_25px_80px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
         <DialogHeader className="space-y-1.5 pb-2">
           <div className="flex items-center gap-2 text-white font-sans text-base font-semibold">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-cyan-400">
-              <KeyRound className="h-4 w-4 stroke-[1.75px]" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.04] border border-white/[0.08] text-zinc-200">
+              <KeyRound className="h-4 w-4 stroke-[1.5px]" />
             </div>
             <DialogTitle className="text-sm font-sans tracking-tight text-white">
               Export Session &amp; Dev Tools
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
+          <DialogDescription className="text-xs text-zinc-400 leading-relaxed font-sans">
             Copy your encrypted GramJS <code className="text-zinc-200 font-mono">StringSession</code> to bypass QR/SMS authentication across test environments and other devices.
           </DialogDescription>
         </DialogHeader>
@@ -129,7 +129,7 @@ export const SessionExportModal: React.FC<SessionExportModalProps> = ({ isOpen, 
             {userProfile && (
               <div className="flex items-center justify-between px-3 py-2 rounded-[4px] border border-white/[0.08] bg-white/[0.02]">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-mono font-medium">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.15] text-white text-xs font-mono font-medium">
                     {userProfile.firstName ? userProfile.firstName[0].toUpperCase() : <User className="h-3.5 w-3.5" />}
                   </div>
                   <div>
@@ -184,7 +184,7 @@ export const SessionExportModal: React.FC<SessionExportModalProps> = ({ isOpen, 
                 </button>
               </div>
 
-              <div className="relative rounded-[4px] border border-white/[0.08] bg-[#07090e] p-2.5 font-mono text-[11px] text-zinc-300 break-all select-all leading-relaxed max-h-28 overflow-y-auto no-scrollbar">
+              <div className="relative rounded-[4px] border border-white/[0.08] bg-[#09090b] p-2.5 font-mono text-[11px] text-zinc-300 break-all select-all leading-relaxed max-h-28 overflow-y-auto no-scrollbar">
                 {showPlainSession ? sessionString : maskedSession}
               </div>
             </div>
@@ -195,16 +195,16 @@ export const SessionExportModal: React.FC<SessionExportModalProps> = ({ isOpen, 
                 type="button"
                 onClick={handleCopy}
                 disabled={!sessionString}
-                className="h-8.5 text-xs font-medium bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/[0.15] rounded-[4px] transition-all flex items-center justify-center gap-1.5"
+                className="h-8.5 text-xs font-medium bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.16] rounded-[4px] transition-all flex items-center justify-center gap-1.5"
               >
                 {isCopied ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check className="h-3.5 w-3.5 text-white" />
                     <span>Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3.5 w-3.5 stroke-[1.75px]" />
+                    <Copy className="h-3.5 w-3.5 stroke-[1.5px]" />
                     <span>Copy Session</span>
                   </>
                 )}
@@ -217,16 +217,16 @@ export const SessionExportModal: React.FC<SessionExportModalProps> = ({ isOpen, 
                 variant="outline"
                 className="h-8.5 text-xs font-medium bg-transparent hover:bg-white/[0.05] text-zinc-300 hover:text-white border-white/[0.1] rounded-[4px] transition-all flex items-center justify-center gap-1.5"
               >
-                <Download className="h-3.5 w-3.5 stroke-[1.75px]" />
+                <Download className="h-3.5 w-3.5 stroke-[1.5px]" />
                 <span>Download .JSON</span>
               </Button>
             </div>
 
             {/* Dev Advice Note */}
-            <div className="rounded-[4px] border border-cyan-500/15 bg-cyan-500/5 p-2 text-[10px] text-cyan-300/90 leading-relaxed flex items-start gap-2">
-              <Shield className="h-3.5 w-3.5 text-cyan-400 shrink-0 mt-0.5" />
+            <div className="rounded-[4px] border border-white/[0.08] bg-white/[0.02] p-2.5 text-[10px] text-zinc-400 leading-relaxed flex items-start gap-2">
+              <Shield className="h-3.5 w-3.5 text-zinc-400 shrink-0 mt-0.5" />
               <span>
-                <strong>Dev &amp; Testing Tip:</strong> Keep this session string secure. You can paste it directly into the <em>Session</em> tab on any Vaultgram instance to log in without needing phone SMS or QR approval.
+                <strong className="text-zinc-200">Dev &amp; Testing Tip:</strong> Keep this session string secure. You can paste it directly into the <em>Session</em> tab on any Vaultgram instance to log in without needing phone SMS or QR approval.
               </span>
             </div>
           </div>

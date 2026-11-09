@@ -30,7 +30,7 @@ export const AuthPortal: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-4 bg-[#07090e] selection:bg-white/10">
+    <div className="flex min-h-screen w-full items-center justify-center p-4 bg-[#09090b] selection:bg-white/10">
       {/* Subtle radial vignette */}
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
 
@@ -38,7 +38,7 @@ export const AuthPortal: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[430px] rounded-[6px] border border-white/[0.1] bg-[#0c0e14]/90 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden"
+        className="relative z-10 w-full max-w-[430px] rounded-[6px] border border-white/[0.1] bg-[#121215]/95 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden"
       >
         {/* Top Hairline Sheen */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
@@ -84,12 +84,12 @@ export const AuthPortal: React.FC = () => {
               className="space-y-4"
             >
               {/* Active API Status Deck */}
-              <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] border border-white/[0.07] bg-white/[0.02]">
+              <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] border border-white/[0.08] bg-white/[0.02]">
                 <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-300">
-                  <Shield className="h-3 w-3 text-emerald-400" />
+                  <Shield className="h-3 w-3 text-zinc-300" />
                   <span>
                     App ID:{" "}
-                    <strong className="text-zinc-100 font-semibold">
+                    <strong className="text-white font-semibold">
                       #{activeConfig?.apiId || DEFAULT_TELEGRAM_API_ID}
                     </strong>
                   </span>

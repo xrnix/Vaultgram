@@ -144,10 +144,10 @@ export const Sidebar: React.FC = () => {
   ];
 
   const renderContent = (isMobile: boolean) => (
-    <div className="flex h-full flex-col bg-[#0a0c10] select-none text-zinc-300">
+    <div className="flex h-full flex-col bg-[#121215] select-none text-zinc-300">
       {/* Mobile Drawer Header */}
       {isMobile && (
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#0c0e14]/90 backdrop-blur-md">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#121215]/95 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-[3px] bg-white/[0.06] border border-white/[0.1] text-zinc-100 shadow-sm">
               <HardDrive className="h-3.5 w-3.5 stroke-[1.5px]" />
@@ -170,7 +170,7 @@ export const Sidebar: React.FC = () => {
       )}
 
       {/* ZONE A: TOP CHANNEL CAROUSEL */}
-      <div className="border-b border-white/[0.07] p-3 pb-2.5 bg-[#0a0c10]/60">
+      <div className="border-b border-white/[0.07] p-3 pb-2.5 bg-[#121215]/60">
         <div className="flex items-center justify-between mb-2 px-1">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-[10px] uppercase text-zinc-400 tracking-wider font-medium">
@@ -336,7 +336,7 @@ export const Sidebar: React.FC = () => {
                       className={cn(
                         "relative z-10 font-mono text-[10px] tabular-nums",
                         item.isBadge
-                          ? "px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 animate-pulse"
+                          ? "px-1.5 py-0.2 rounded-full bg-white/[0.08] text-white border border-white/[0.16]"
                           : "text-zinc-500"
                       )}
                     >
@@ -410,7 +410,7 @@ export const Sidebar: React.FC = () => {
       </ScrollArea>
 
       {/* ZONE C: HARDWARE TELEMETRY FOOTER */}
-      <div className="border-t border-white/[0.07] p-3 bg-[#0a0c10]/95 space-y-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="border-t border-white/[0.07] p-3 bg-[#121215]/95 space-y-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Active Account Deck */}
         <div
           onClick={() => setIsAccountSwitcherOpen(true)}
@@ -418,7 +418,7 @@ export const Sidebar: React.FC = () => {
           title="Switch Account / Manage Profiles"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-mono font-medium">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.15] text-white text-[10px] font-mono font-medium">
               {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
             </div>
             <div className="min-w-0">
@@ -464,10 +464,10 @@ export const Sidebar: React.FC = () => {
 
         {/* Connection Status & Control Deck */}
         <div className="flex items-center justify-between pt-0.5">
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-medium">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white/90"></span>
             </span>
             <span className="text-[11px] font-mono text-zinc-400">MTProto Online</span>
           </div>
@@ -478,7 +478,7 @@ export const Sidebar: React.FC = () => {
               size="icon"
               onClick={() => setIsSessionExportOpen(true)}
               title="Export Session / Backup"
-              className="h-7 w-7 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-[3px]"
+              className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[3px]"
             >
               <KeyRound className="h-3.5 w-3.5 stroke-[1.5px]" />
             </Button>
@@ -509,7 +509,7 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex h-screen w-72 flex-col border-r border-white/[0.07] bg-[#0a0c10] select-none shrink-0 z-30">
+      <aside className="hidden md:flex h-screen w-72 flex-col border-r border-white/[0.07] bg-[#121215] select-none shrink-0 z-30">
         {renderContent(false)}
       </aside>
 
@@ -533,7 +533,7 @@ export const Sidebar: React.FC = () => {
               animate={{ x: "0%" }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 350 }}
-              className="relative z-10 flex h-full w-[84vw] max-w-[310px] flex-col border-r border-white/[0.08] bg-[#0a0c10] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden"
+              className="relative z-10 flex h-full w-[84vw] max-w-[310px] flex-col border-r border-white/[0.08] bg-[#121215] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden"
             >
               {renderContent(true)}
             </motion.aside>
@@ -543,7 +543,7 @@ export const Sidebar: React.FC = () => {
 
       {/* New Folder Modal */}
       <Dialog open={isNewFolderOpen} onOpenChange={setIsNewFolderOpen}>
-        <DialogContent className="sm:max-w-[340px] border-white/[0.1] bg-[#0c0e14] text-zinc-200">
+        <DialogContent className="sm:max-w-[340px] border-white/[0.1] bg-[#121215] text-zinc-200">
           <DialogHeader>
             <DialogTitle className="text-sm font-sans text-white">Create Virtual Folder</DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">

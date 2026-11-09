@@ -87,7 +87,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
               >
                 {file.name}
               </span>
-              {isPinned && <Pin className="h-2.5 w-2.5 text-cyan-400 fill-cyan-400 shrink-0" />}
+              {isPinned && <Pin className="h-2.5 w-2.5 text-white fill-white shrink-0" />}
               {isFavorite && <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400 shrink-0" />}
             </div>
 
@@ -136,7 +136,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
                     <MoreVertical className="h-3.5 w-3.5 stroke-[1.5px]" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-[#0c0e14] border-white/[0.1] text-zinc-300">
+                <DropdownMenuContent align="end" className="w-48 bg-[#121215] border-white/[0.1] text-zinc-300">
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
@@ -195,7 +195,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
           </div>
         </ContextMenuTrigger>
 
-        <ContextMenuContent className="w-48 bg-[#0c0e14] border-white/[0.1] text-zinc-300">
+        <ContextMenuContent className="w-48 bg-[#121215] border-white/[0.1] text-zinc-300">
           <ContextMenuItem onClick={() => setPreviewFile(file)} className="gap-2 text-xs hover:bg-white/[0.06] hover:text-white">
             <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
             <span>Quick Preview</span>

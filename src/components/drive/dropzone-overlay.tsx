@@ -79,7 +79,7 @@ export const DropzoneOverlay: React.FC<DropzoneOverlayProps> = ({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 450, damping: 30 }}
-            className="flex h-full w-full max-w-xl max-h-[380px] flex-col items-center justify-center gap-3 rounded-[6px] border-2 border-dashed border-white/25 bg-[#0c0e14]/90 p-8 text-center shadow-[0_20px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+            className="flex h-full w-full max-w-xl max-h-[380px] flex-col items-center justify-center gap-3 rounded-[6px] border-2 border-dashed border-white/25 bg-[#121215]/95 p-8 text-center shadow-[0_20px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.12] text-white shadow-lg animate-pulse">
               <Upload className="h-6 w-6 stroke-[1.75px]" />

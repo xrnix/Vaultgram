@@ -156,7 +156,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -10 }}
             transition={{ type: "spring", stiffness: 450, damping: 32 }}
-            className="relative z-10 w-full max-w-xl rounded-lg border border-white/[0.12] bg-[#0c0e14]/95 shadow-[0_16px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl overflow-hidden flex flex-col"
+            className="relative z-10 w-full max-w-xl rounded-[6px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
           >
             {/* Top Hairline Sheen */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -239,7 +239,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <KeyRound className="h-3.5 w-3.5 text-cyan-400" />
+                        <KeyRound className="h-3.5 w-3.5 text-zinc-300" />
                         <span>Export Session String (GramJS)</span>
                       </div>
                       <span className="font-mono text-[10px] text-zinc-500">Session</span>

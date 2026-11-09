@@ -353,10 +353,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           </div>
 
           {/* Header Action Buttons Pod */}
-          <div className="pointer-events-auto bg-zinc-950/90 backdrop-blur-md border border-zinc-800/90 rounded-sm px-2 py-1 flex items-center gap-1.5 shadow-2xl">
+          <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[4px] px-2 py-1 flex items-center gap-1.5 shadow-2xl">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-200 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-sm transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white bg-white/[0.08] hover:bg-white/[0.15] border border-white/[0.18] rounded-[3px] transition-all active:scale-[0.98]"
               title="Download original file"
             >
               <Download className="w-3.5 h-3.5" />
@@ -364,7 +364,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             </button>
             <button
               onClick={isFullscreen ? toggleFullscreen : onClose}
-              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 rounded-sm transition-colors"
+              className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors"
               title="Close player (Esc)"
             >
               <X className="w-4 h-4" />
@@ -490,12 +490,12 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           <div className="flex items-center justify-between select-none">
             
             {/* Left Pod: [Play/Pause] -> [10s Rewind] -> [Timeline Timestamp] -> [10s Forward] */}
-            <div className="pointer-events-auto bg-zinc-950/90 backdrop-blur-md border border-zinc-800/90 rounded-sm px-2.5 py-1.5 flex items-center gap-2 shadow-2xl">
+            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[4px] px-2.5 py-1.5 flex items-center gap-2 shadow-2xl">
               {/* 1. Play / Pause Button */}
               <button
                 type="button"
                 onClick={togglePlay}
-                className="p-1 hover:bg-zinc-800 text-zinc-100 rounded-sm transition-colors"
+                className="p-1 hover:bg-white/[0.08] text-white rounded-[3px] transition-colors"
                 title={isPlaying ? "Pause (k/space)" : "Play (k/space)"}
               >
                 {isPlaying ? (
@@ -509,14 +509,14 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <button
                 type="button"
                 onClick={() => seekRelative(-10)}
-                className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-sm transition-colors flex items-center"
+                className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors flex items-center"
                 title="Rewind 10s (j)"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
 
               {/* 3. Timeline Monospace Timestamp */}
-              <div className="flex items-center gap-1.5 px-2 text-xs font-mono text-zinc-400 border-x border-zinc-800/80">
+              <div className="flex items-center gap-1.5 px-2 text-xs font-mono text-zinc-400 border-x border-white/[0.08]">
                 <span className="text-zinc-100 font-medium">{formatTime(currentTime)}</span>
                 <span className="text-zinc-600">/</span>
                 <span>{formatTime(duration)}</span>
@@ -526,7 +526,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <button
                 type="button"
                 onClick={() => seekRelative(10)}
-                className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-sm transition-colors flex items-center"
+                className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors flex items-center"
                 title="Forward 10s (l)"
               >
                 <RotateCw className="w-3.5 h-3.5" />
@@ -534,14 +534,14 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             </div>
 
             {/* Right Pod: [Sound Panel] -> [Speed Selector] -> [PiP] -> [Fullscreen] */}
-            <div className="pointer-events-auto bg-zinc-950/90 backdrop-blur-md border border-zinc-800/90 rounded-sm px-2.5 py-1.5 flex items-center gap-2.5 shadow-2xl">
+            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[4px] px-2.5 py-1.5 flex items-center gap-2.5 shadow-2xl">
               
               {/* Sound Panel (Mute Button + Volume Slider) */}
-              <div className="group/vol flex items-center gap-1.5 pr-1 border-r border-zinc-800/80">
+              <div className="group/vol flex items-center gap-1.5 pr-1 border-r border-white/[0.08]">
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-sm transition-colors"
+                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors"
                   title="Mute (m)"
                 >
                   {isMuted || volume === 0 ? (
@@ -559,9 +559,9 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                   onClick={handleVolumeTrackClick}
                   className="w-14 h-3 flex items-center cursor-pointer select-none"
                 >
-                  <div className="w-full h-1 bg-zinc-800 rounded-sm relative overflow-hidden">
+                  <div className="w-full h-1 bg-white/[0.1] rounded-sm relative overflow-hidden">
                     <div
-                      className="absolute inset-y-0 left-0 bg-zinc-200 rounded-sm"
+                      className="absolute inset-y-0 left-0 bg-white rounded-sm"
                       style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
                     />
                   </div>
@@ -573,7 +573,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSpeedMenuOpen(!isSpeedMenuOpen)}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-sm text-zinc-300 transition-colors"
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono bg-white/[0.04] border border-white/[0.1] hover:border-white/20 rounded-[3px] text-zinc-300 transition-colors"
                 >
                   <span>{playbackRate.toFixed(playbackRate % 1 === 0 ? 0 : 2)}x</span>
                   <ChevronUp
@@ -584,8 +584,8 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 </button>
 
                 {isSpeedMenuOpen && (
-                  <div className="absolute bottom-full mb-2 right-0 w-28 bg-zinc-950 border border-zinc-800/90 rounded-sm shadow-2xl p-1 backdrop-blur-md z-40 space-y-0.5">
-                    <div className="px-2 py-1 text-[10px] font-mono text-zinc-500 border-b border-zinc-800/60 mb-1">
+                  <div className="absolute bottom-full mb-2 right-0 w-28 bg-[#121215] border border-white/[0.12] rounded-[4px] shadow-2xl p-1 backdrop-blur-2xl z-40 space-y-0.5">
+                    <div className="px-2 py-1 text-[10px] font-mono text-zinc-500 border-b border-white/[0.08] mb-1">
                       SPEED
                     </div>
                     {SPEED_OPTIONS.map((rate) => (
@@ -593,14 +593,14 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                         key={rate}
                         type="button"
                         onClick={() => setSpeed(rate)}
-                        className={`w-full flex items-center justify-between px-2 py-1 text-xs font-mono rounded-sm cursor-pointer transition-colors ${
+                        className={`w-full flex items-center justify-between px-2 py-1 text-xs font-mono rounded-[3px] cursor-pointer transition-colors ${
                           playbackRate === rate
-                            ? "bg-zinc-900 text-zinc-100 font-semibold"
-                            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60"
+                            ? "bg-white/[0.1] text-white font-semibold"
+                            : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
                         }`}
                       >
                         <span>{rate.toFixed(rate % 1 === 0 ? 0 : 2)}x</span>
-                        {playbackRate === rate && <Check className="w-3 h-3 text-emerald-400" />}
+                        {playbackRate === rate && <Check className="w-3 h-3 text-white" />}
                       </button>
                     ))}
                   </div>

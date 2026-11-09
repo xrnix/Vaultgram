@@ -100,7 +100,7 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#0a0c10]/80 px-2.5 sm:px-4 backdrop-blur-xl select-none gap-1 sm:gap-2 z-20">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/80 px-2.5 sm:px-4 backdrop-blur-xl select-none gap-1 sm:gap-2 z-20">
         {/* Left: Spring Morph Hamburger + Archival Breadcrumb */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0 min-w-0">
           {/* Animated Spring Morph Hamburger Icon on Mobile */}
@@ -195,7 +195,7 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 bg-[#0c0e14] border-white/[0.1] text-zinc-300">
+            <DropdownMenuContent align="end" className="w-40 bg-[#121215] border-white/[0.1] text-zinc-300">
               <DropdownMenuItem onClick={() => setSorting("date")} className="hover:bg-white/[0.06] hover:text-white text-xs">
                 <span>Date {sortField === "date" ? `(${sortOrder.toUpperCase()})` : ""}</span>
               </DropdownMenuItem>

@@ -48,7 +48,7 @@ export const TransferDock: React.FC = () => {
     (tasks.length || 1);
 
   return (
-    <div className="fixed bottom-3 left-2.5 right-2.5 sm:left-auto sm:right-4 sm:bottom-4 z-50 sm:w-96 rounded-[5px] border border-white/[0.1] bg-[#0c0e14]/95 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.8)] overflow-hidden select-none transition-all">
+    <div className="fixed bottom-3 left-2.5 right-2.5 sm:left-auto sm:right-4 sm:bottom-4 z-50 sm:w-96 rounded-[5px] border border-white/[0.1] bg-[#121215]/98 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.8)] overflow-hidden select-none transition-all">
       {/* Top Hairline Sheen */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
@@ -61,8 +61,8 @@ export const TransferDock: React.FC = () => {
           {totalActive > 0 ? (
             <div className="flex items-center gap-1.5 text-xs font-medium text-white">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
               </span>
               <span className="truncate font-sans">
                 {activeUploads > 0 && `↑ ${activeUploads} Upload${activeUploads > 1 ? "s" : ""} `}
@@ -78,7 +78,7 @@ export const TransferDock: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-zinc-300">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 stroke-[1.5px]" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-white stroke-[1.5px]" />
               <span>All transfers complete ({completedCount})</span>
             </div>
           )}
@@ -136,7 +136,7 @@ export const TransferDock: React.FC = () => {
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="overflow-hidden"
           >
-            <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04] bg-[#0c0e14] p-2 space-y-2">
+            <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04] bg-[#121215] p-2 space-y-2">
               {tasks.map((task) => (
                 <TransferTaskRow
                   key={task.id}
@@ -185,8 +185,8 @@ const TransferTaskRow: React.FC<TransferTaskRowProps> = ({
             className={cn(
               "flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono shrink-0",
               isUpload
-                ? "bg-cyan-500/10 border border-cyan-500/20 text-cyan-300"
-                : "bg-white/[0.05] border border-white/[0.1] text-zinc-300"
+                ? "bg-white/[0.08] border border-white/[0.15] text-white"
+                : "bg-white/[0.04] border border-white/[0.08] text-zinc-300"
             )}
           >
             {isUpload ? (
@@ -216,7 +216,7 @@ const TransferTaskRow: React.FC<TransferTaskRowProps> = ({
                 : task.status === "PAUSED"
                 ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                 : task.status === "COMPLETED"
-                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                ? "border border-white/[0.14] bg-white/[0.06] text-zinc-200"
                 : task.status === "FAILED"
                 ? "border border-rose-500/30 bg-rose-500/10 text-rose-400"
                 : "border border-white/[0.08] bg-white/[0.03] text-zinc-500"

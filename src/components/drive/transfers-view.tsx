@@ -122,9 +122,9 @@ export const TransfersView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col h-full bg-[#07090e] text-zinc-100 overflow-hidden select-none font-sans">
+    <div className="flex flex-1 flex-col h-full bg-[#09090b] text-zinc-100 overflow-hidden select-none font-sans">
       {/* Streamlined Header Section */}
-      <div className="flex flex-col gap-3.5 border-b border-white/[0.07] px-4 sm:px-6 py-3 sm:py-4 bg-[#0a0c10]/80 backdrop-blur-xl">
+      <div className="flex flex-col gap-3.5 border-b border-white/[0.07] px-4 sm:px-6 py-3 sm:py-4 bg-[#121215]/80 backdrop-blur-xl">
         {/* Top Row: Title + Concurrency Segmented Control + Batch Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Clean Title & Count */}
@@ -375,11 +375,9 @@ export const TransfersView: React.FC = () => {
                         task.status === "PAUSED"
                           ? "bg-amber-500"
                           : task.status === "COMPLETED"
-                          ? "bg-emerald-500"
+                          ? "bg-white"
                           : task.status === "FAILED"
                           ? "bg-rose-500"
-                          : isUpload
-                          ? "bg-cyan-400"
                           : "bg-gradient-to-r from-zinc-300 to-white"
                       )}
                       style={{ width: `${Math.max(1, task.progress)}%` }}
@@ -397,7 +395,7 @@ export const TransfersView: React.FC = () => {
                         : task.status === "PAUSED"
                         ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                         : task.status === "COMPLETED"
-                        ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        ? "border border-white/[0.14] bg-white/[0.06] text-zinc-200"
                         : task.status === "FAILED"
                         ? "border border-rose-500/30 bg-rose-500/10 text-rose-400"
                         : "border border-zinc-800 bg-zinc-900 text-zinc-500"

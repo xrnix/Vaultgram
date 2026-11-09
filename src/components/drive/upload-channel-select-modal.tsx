@@ -43,7 +43,7 @@ export const UploadChannelSelectModal: React.FC<UploadChannelSelectModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-md border-white/[0.1] bg-[#0c0e14] p-5 rounded-[6px] shadow-[0_20px_70px_rgba(0,0,0,0.8)] text-zinc-200">
+      <DialogContent className="sm:max-w-md border-white/[0.1] bg-[#121215] p-5 rounded-[6px] shadow-[0_20px_70px_rgba(0,0,0,0.8)] text-zinc-200">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/[0.05] border border-white/[0.1] text-zinc-200">

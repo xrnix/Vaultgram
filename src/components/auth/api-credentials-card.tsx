@@ -91,7 +91,7 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-white uppercase tracking-wider font-mono">
-            <KeyRound className="h-3.5 w-3.5 text-cyan-400 stroke-[1.75px]" />
+            <KeyRound className="h-3.5 w-3.5 text-zinc-200 stroke-[1.5px]" />
             <span>Telegram API Setup</span>
           </div>
           {canCancel && onCancel && (
@@ -104,31 +104,31 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
             </button>
           )}
         </div>
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
           Vaultgram is 100% serverless. To protect your account from flood limits, bans, and rate caps, connect using your own personal Telegram App keys.
         </p>
       </div>
 
       {/* Security Guarantee Box */}
       <div className="rounded-[4px] border border-white/[0.08] bg-white/[0.02] p-2.5 space-y-1.5">
-        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+        <div className="flex items-center gap-1.5 text-[11px] text-zinc-200 font-medium">
+          <ShieldCheck className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
           <span>Local Storage Guarantee</span>
         </div>
-        <p className="text-[10px] text-zinc-400 leading-normal">
+        <p className="text-[10px] text-zinc-400 leading-normal font-sans">
           Your keys and MTProto traffic stay strictly inside your browser's IndexedDB. They never pass through any intermediate server.
         </p>
       </div>
 
       {/* Step by Step Helper */}
-      <div className="rounded-[4px] border border-white/[0.06] bg-[#07090e]/80 p-2.5 text-[11px] space-y-2">
+      <div className="rounded-[4px] border border-white/[0.06] bg-[#09090b]/80 p-2.5 text-[11px] space-y-2">
         <div className="flex items-center justify-between text-zinc-300 font-medium">
           <span>How to get credentials:</span>
           <a
             href="https://my.telegram.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 font-mono transition-colors"
+            className="flex items-center gap-1 text-[10px] text-zinc-300 hover:text-white font-mono transition-colors underline-offset-4 hover:underline"
           >
             <span>my.telegram.org</span>
             <ExternalLink className="h-3 w-3" />

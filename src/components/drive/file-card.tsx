@@ -86,9 +86,9 @@ export const FileCard = React.memo<FileCardProps>(
             whileTap={{ scale: 0.98 }}
             onClick={() => setPreviewFile(file)}
             className={cn(
-              "group relative flex flex-col justify-between rounded-[5px] border border-white/[0.07] bg-[#0c0e14]/60 p-2.5 sm:p-3 transition-colors hover:bg-[#0f121a]/85 hover:border-white/[0.18] cursor-pointer select-none h-[138px] sm:h-[142px] overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.7),0_0_15px_rgba(255,255,255,0.02)]",
+              "group relative flex flex-col justify-between rounded-[5px] border border-white/[0.07] bg-[#121215]/80 p-2.5 sm:p-3 transition-colors hover:bg-[#18181b] hover:border-white/[0.18] cursor-pointer select-none h-[138px] sm:h-[142px] overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.7),0_0_15px_rgba(255,255,255,0.02)]",
               "before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/[0.14] before:to-transparent",
-              isPinned && "border-white/[0.18] bg-[#0f121a]/90"
+              isPinned && "border-white/[0.18] bg-[#18181b]"
             )}
           >
             {/* Top: Icon + Extension Badge + Indicators + Options */}
@@ -103,7 +103,7 @@ export const FileCard = React.memo<FileCardProps>(
                   {getFileExtension()}
                 </span>
 
-                {isPinned && <Pin className="h-3 w-3 text-cyan-400 fill-cyan-400 shrink-0" />}
+                {isPinned && <Pin className="h-3 w-3 text-white fill-white shrink-0" />}
                 {isFavorite && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
 
                 {/* Touch / Quick Actions Dropdown Menu */}
@@ -117,7 +117,7 @@ export const FileCard = React.memo<FileCardProps>(
                       <MoreVertical className="h-3.5 w-3.5 stroke-[1.5px]" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-[#0c0e14] border-white/[0.1] text-zinc-300">
+                  <DropdownMenuContent align="end" className="w-48 bg-[#121215] border-white/[0.1] text-zinc-300">
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
@@ -194,7 +194,7 @@ export const FileCard = React.memo<FileCardProps>(
         </ContextMenuTrigger>
 
         {/* Right Click Context Menu */}
-        <ContextMenuContent className="w-48 bg-[#0c0e14] border-white/[0.1] text-zinc-300">
+        <ContextMenuContent className="w-48 bg-[#121215] border-white/[0.1] text-zinc-300">
           <ContextMenuItem onClick={() => setPreviewFile(file)} className="gap-2 text-xs hover:bg-white/[0.06] hover:text-white">
             <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
             <span>Quick Preview</span>

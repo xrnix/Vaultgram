@@ -40,7 +40,6 @@ export const PhoneLoginTab: React.FC = () => {
     const cleanCode = code.trim();
     if (!cleanCode) {
       toast.error("Please enter the verification code.");
-      return;
     }
 
     setIsSubmitting(true);
@@ -86,7 +85,7 @@ export const PhoneLoginTab: React.FC = () => {
       {phoneStep === "phone" && (
         <form onSubmit={handleSendCode} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-zinc-400">
+            <label className="text-[11px] font-mono text-zinc-400">
               Phone Number (International Format)
             </label>
             <div className="relative">
@@ -98,13 +97,17 @@ export const PhoneLoginTab: React.FC = () => {
                 onChange={(e) => setPhone(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="pl-8 bg-zinc-950/70 border-zinc-800/80 rounded-md text-xs"
+                className="h-8.5 pl-8 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full gap-2 rounded-md" disabled={isSubmitting}>
-            {isSubmitting ? "Sending Code..." : "Send Verification Code"}
+          <Button
+            type="submit"
+            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            disabled={isSubmitting}
+          >
+            <span>{isSubmitting ? "Sending Code..." : "Send Verification Code"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />
           </Button>
         </form>
@@ -113,7 +116,7 @@ export const PhoneLoginTab: React.FC = () => {
       {phoneStep === "otp" && (
         <form onSubmit={handleVerifyOtp} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-zinc-400">
+            <label className="text-[11px] font-mono text-zinc-400">
               Verification Code (Sent to {useAuthStore.getState().phoneNumber})
             </label>
             <div className="relative">
@@ -126,13 +129,17 @@ export const PhoneLoginTab: React.FC = () => {
                 onChange={(e) => setCode(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="pl-8 tracking-widest font-mono text-center bg-zinc-950/70 border-zinc-800/80 rounded-md text-xs"
+                className="h-8.5 pl-8 tracking-widest font-mono text-center bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full gap-2 rounded-md" disabled={isSubmitting}>
-            {isSubmitting ? "Verifying..." : "Verify & Sign In"}
+          <Button
+            type="submit"
+            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            disabled={isSubmitting}
+          >
+            <span>{isSubmitting ? "Verifying..." : "Verify & Sign In"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />
           </Button>
 
@@ -142,7 +149,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("phone")}
             disabled={isSubmitting}
-            className="w-full gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 rounded-sm"
+            className="w-full h-7 gap-1 text-[11px] text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Change Phone Number
@@ -153,7 +160,7 @@ export const PhoneLoginTab: React.FC = () => {
       {phoneStep === "2fa" && (
         <form onSubmit={handleVerify2FA} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-zinc-400">
+            <label className="text-[11px] font-mono text-zinc-400">
               Two-Step Cloud Password
             </label>
             <Input
@@ -163,12 +170,16 @@ export const PhoneLoginTab: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
               disabled={isSubmitting}
-              className="bg-zinc-950/70 border-zinc-800/80 rounded-md text-xs"
+              className="h-8.5 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
             />
           </div>
 
-          <Button type="submit" className="w-full gap-2 rounded-md" disabled={isSubmitting}>
-            {isSubmitting ? "Authenticating..." : "Confirm & Connect"}
+          <Button
+            type="submit"
+            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            disabled={isSubmitting}
+          >
+            <span>{isSubmitting ? "Authenticating..." : "Confirm & Connect"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />
           </Button>
 
@@ -178,7 +189,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("otp")}
             disabled={isSubmitting}
-            className="w-full gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 rounded-sm"
+            className="w-full h-7 gap-1 text-[11px] text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Back to OTP Code

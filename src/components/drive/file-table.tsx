@@ -19,7 +19,7 @@ export const FileTable: React.FC<FileTableProps> = ({ files, onDownload }) => {
   });
 
   return (
-    <div className="flex flex-col h-full rounded-[4px] border border-white/[0.08] bg-[#0c0e14]/40 backdrop-blur-md overflow-hidden select-none">
+    <div className="flex flex-col h-full rounded-[4px] border border-white/[0.08] bg-[#121215]/60 backdrop-blur-md overflow-hidden select-none">
       {/* Sticky Table Header */}
       <div className="flex h-9 w-full items-center border-b border-white/[0.07] bg-white/[0.02] font-mono text-[10px] text-zinc-400 uppercase tracking-wider px-2 sm:px-3 shrink-0">
         <div className="flex-1 min-w-0 pr-2 sm:pr-4">Name</div>
