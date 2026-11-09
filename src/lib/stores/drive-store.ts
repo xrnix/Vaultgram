@@ -98,6 +98,9 @@ interface DriveStoreState {
 
   // Preview
   setPreviewFile: (file: DriveFile | null) => void;
+
+  // Reset
+  resetDrive: () => void;
 }
 
 const STORAGE_CUSTOM_FOLDERS = "vaultgram_custom_folders";
@@ -583,4 +586,23 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
   },
 
   setPreviewFile: (file: DriveFile | null) => set({ previewFile: file }),
+
+  resetDrive: () =>
+    set({
+      channels: [],
+      activeChannelId: "UNIFIED",
+      activeFilter: "ALL",
+      searchQuery: "",
+      remoteSearchStatus: "IDLE",
+      files: [],
+      channelFilesCache: new Map(),
+      syncStatus: {
+        isSyncing: false,
+        statusText: "Ready",
+        totalIndexed: 0,
+        currentChannelTitle: "",
+      },
+      previewFile: null,
+      renderPage: 1,
+    }),
 }));

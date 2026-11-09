@@ -14,6 +14,7 @@ import {
   getTgConfigSync,
   setSavedSession,
   setSavedUserProfile,
+  saveAccount,
   TelegramUserProfile,
   ChannelMeta,
 } from "./session";
@@ -164,6 +165,17 @@ export class TgStreamClient {
           if (currentSession) {
             await setSavedSession(currentSession);
             await setSavedUserProfile(this.user);
+            await saveAccount({
+              id: this.user.id,
+              firstName: this.user.firstName,
+              lastName: this.user.lastName,
+              username: this.user.username,
+              phone: this.user.phone,
+              sessionString: currentSession,
+              apiId: Number(config.apiId),
+              apiHash: String(config.apiHash),
+              lastUsed: Date.now(),
+            });
           }
 
           this.notifyStatus();
@@ -334,6 +346,17 @@ export class TgStreamClient {
       await setSavedSession(saved);
       this.user = cleanUser;
       await setSavedUserProfile(cleanUser);
+      await saveAccount({
+        id: cleanUser.id,
+        firstName: cleanUser.firstName,
+        lastName: cleanUser.lastName,
+        username: cleanUser.username,
+        phone: cleanUser.phone,
+        sessionString: saved,
+        apiId: Number(config.apiId),
+        apiHash: String(config.apiHash),
+        lastUsed: Date.now(),
+      });
       this.isConnected = true;
       this.notifyStatus();
 
@@ -370,6 +393,7 @@ export class TgStreamClient {
     }
 
     try {
+      const config = await getTgConfig();
       await this.client.invoke(
         new Api.auth.SignIn({
           phoneNumber: this.phoneNumber,
@@ -391,6 +415,17 @@ export class TgStreamClient {
       await setSavedSession(saved);
       this.user = cleanUser;
       await setSavedUserProfile(cleanUser);
+      await saveAccount({
+        id: cleanUser.id,
+        firstName: cleanUser.firstName,
+        lastName: cleanUser.lastName,
+        username: cleanUser.username,
+        phone: cleanUser.phone,
+        sessionString: saved,
+        apiId: Number(config.apiId),
+        apiHash: String(config.apiHash),
+        lastUsed: Date.now(),
+      });
       this.isConnected = true;
       this.notifyStatus();
       return cleanUser;
@@ -414,6 +449,7 @@ export class TgStreamClient {
     }
 
     try {
+      const config = await getTgConfig();
       const passwordSrpResult = await this.client.invoke(new Api.account.GetPassword());
       const passwordSrpCheck: any = await computeCheck(passwordSrpResult, passStr);
 
@@ -449,6 +485,17 @@ export class TgStreamClient {
       await setSavedSession(saved);
       this.user = cleanUser;
       await setSavedUserProfile(cleanUser);
+      await saveAccount({
+        id: cleanUser.id,
+        firstName: cleanUser.firstName,
+        lastName: cleanUser.lastName,
+        username: cleanUser.username,
+        phone: cleanUser.phone,
+        sessionString: saved,
+        apiId: Number(config.apiId),
+        apiHash: String(config.apiHash),
+        lastUsed: Date.now(),
+      });
       this.isConnected = true;
       this.notifyStatus();
       return cleanUser;

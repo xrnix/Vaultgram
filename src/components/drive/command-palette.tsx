@@ -19,6 +19,8 @@ import {
   List,
   Layers,
   X,
+  KeyRound,
+  Users,
 } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
@@ -26,12 +28,16 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onTriggerUpload: () => void;
+  onOpenAccountSwitcher?: () => void;
+  onOpenExport?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onTriggerUpload,
+  onOpenAccountSwitcher,
+  onOpenExport,
 }) => {
   const {
     channels,
@@ -223,6 +229,38 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </div>
                     <span className="font-mono text-[10px] text-zinc-500">Sync</span>
                   </button>
+
+                  {onOpenExport && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenExport();
+                      }}
+                      className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>Export Session String (GramJS)</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-500">Session</span>
+                    </button>
+                  )}
+
+                  {onOpenAccountSwitcher && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenAccountSwitcher();
+                      }}
+                      className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Switch Telegram Account</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-500">Profile</span>
+                    </button>
+                  )}
                 </div>
               )}
 

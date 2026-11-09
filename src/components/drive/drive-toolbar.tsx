@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { SpringHamburger } from "@/components/ui/spring-hamburger";
 import { CommandPalette } from "./command-palette";
+import { AccountSwitcherDialog } from "./account-switcher-dialog";
+import { SessionExportModal } from "./session-export-modal";
 import { cn } from "@/lib/utils";
 
 interface DriveToolbarProps {
@@ -46,6 +48,8 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
   } = useDriveStore();
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
+  const [isSessionExportOpen, setIsSessionExportOpen] = useState(false);
 
   // Global ⌘K / Ctrl+K listener
   useEffect(() => {
@@ -263,6 +267,21 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onTriggerUpload={onTriggerUpload}
+        onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
+        onOpenExport={() => setIsSessionExportOpen(true)}
+      />
+
+      {/* Account Switcher Dialog */}
+      <AccountSwitcherDialog
+        isOpen={isAccountSwitcherOpen}
+        onClose={() => setIsAccountSwitcherOpen(false)}
+        onOpenExport={() => setIsSessionExportOpen(true)}
+      />
+
+      {/* Session Export Modal */}
+      <SessionExportModal
+        isOpen={isSessionExportOpen}
+        onClose={() => setIsSessionExportOpen(false)}
       />
     </>
   );

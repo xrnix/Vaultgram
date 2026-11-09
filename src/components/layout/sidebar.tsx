@@ -33,7 +33,11 @@ import {
   Bookmark,
   ArrowUpDown,
   X,
+  Users,
+  KeyRound,
 } from "lucide-react";
+import { AccountSwitcherDialog } from "@/components/drive/account-switcher-dialog";
+import { SessionExportModal } from "@/components/drive/session-export-modal";
 import { cn, formatBytes } from "@/lib/utils";
 
 export const Sidebar: React.FC = () => {
@@ -53,12 +57,14 @@ export const Sidebar: React.FC = () => {
     deleteCustomFolder,
   } = useDriveStore();
 
-  const { logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { resetWizard } = useChannelWizardStore();
   const { tasks } = useTransferStore();
 
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
+  const [isSessionExportOpen, setIsSessionExportOpen] = useState(false);
 
   // Dismiss mobile drawer on Escape key
   useEffect(() => {
@@ -405,6 +411,32 @@ export const Sidebar: React.FC = () => {
 
       {/* ZONE C: HARDWARE TELEMETRY FOOTER */}
       <div className="border-t border-white/[0.07] p-3 bg-[#0a0c10]/95 space-y-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Active Account Deck */}
+        <div
+          onClick={() => setIsAccountSwitcherOpen(true)}
+          className="group flex items-center justify-between p-2 rounded-[4px] border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.14] transition-all cursor-pointer"
+          title="Switch Account / Manage Profiles"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-mono font-medium">
+              {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-white truncate flex items-center gap-1">
+                <span>{user?.firstName || "Telegram User"}</span>
+                {user?.lastName && <span className="text-zinc-400">{user.lastName}</span>}
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono truncate">
+                {user?.username ? `@${user.username}` : `ID: ${user?.id || "MTProto"}`}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0 text-zinc-500 group-hover:text-zinc-300 transition-colors">
+            <Users className="h-3.5 w-3.5 stroke-[1.5px]" />
+          </div>
+        </div>
+
         {/* Storage Inspector */}
         <div className="space-y-1.5 rounded-[4px] border border-white/[0.07] bg-white/[0.02] p-2.5">
           <div className="flex items-center justify-between text-[11px] font-mono">
@@ -441,6 +473,15 @@ export const Sidebar: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSessionExportOpen(true)}
+              title="Export Session / Backup"
+              className="h-7 w-7 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-[3px]"
+            >
+              <KeyRound className="h-3.5 w-3.5 stroke-[1.5px]" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -539,6 +580,19 @@ export const Sidebar: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Account Switcher Dialog */}
+      <AccountSwitcherDialog
+        isOpen={isAccountSwitcherOpen}
+        onClose={() => setIsAccountSwitcherOpen(false)}
+        onOpenExport={() => setIsSessionExportOpen(true)}
+      />
+
+      {/* Session Export Modal */}
+      <SessionExportModal
+        isOpen={isSessionExportOpen}
+        onClose={() => setIsSessionExportOpen(false)}
+      />
     </>
   );
 };

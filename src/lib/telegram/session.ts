@@ -10,6 +10,7 @@ const KEY_CONFIG = "vaultgram_tg_config";
 const KEY_SELECTED_CHANNELS = "vaultgram_selected_channels";
 const KEY_TRANSFER_TASKS = "vaultgram_transfer_tasks";
 const KEY_TRANSFER_CONCURRENCY = "vaultgram_transfer_concurrency";
+const KEY_SAVED_ACCOUNTS = "vaultgram_saved_accounts";
 const PREFIX_CHANNEL_FILES = "vaultgram_files_ch_";
 
 export const DEFAULT_TELEGRAM_API_ID = 2040;
@@ -18,6 +19,18 @@ export const DEFAULT_TELEGRAM_API_HASH = "b18441a1ff607e10a989891a5462e627";
 export interface TelegramConfig {
   apiId: number;
   apiHash: string;
+}
+
+export interface SavedAccount {
+  id: string; // telegram user id
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  phone?: string;
+  sessionString: string;
+  apiId: number;
+  apiHash: string;
+  lastUsed: number;
 }
 
 export interface TelegramUserProfile {
@@ -83,6 +96,87 @@ export async function saveTgConfig(configOrApiId: TelegramConfig | number | stri
   inMemoryConfig = config;
   localStorage.setItem("tg_stream_config", JSON.stringify(config));
   await set(KEY_CONFIG, config);
+}
+
+export async function hasCustomTgConfig(): Promise<boolean> {
+  try {
+    const cfg = await get<TelegramConfig>(KEY_CONFIG);
+    if (
+      cfg &&
+      cfg.apiId &&
+      cfg.apiHash &&
+      Number(cfg.apiId) > 0 &&
+      String(cfg.apiHash).trim().length > 5
+    ) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+export async function getActiveTgConfig(): Promise<TelegramConfig | null> {
+  try {
+    const cfg = await get<TelegramConfig>(KEY_CONFIG);
+    if (cfg && cfg.apiId && cfg.apiHash) {
+      return cfg;
+    }
+  } catch {}
+  return null;
+}
+
+export async function getSavedAccounts(): Promise<SavedAccount[]> {
+  try {
+    const list = await get<SavedAccount[]>(KEY_SAVED_ACCOUNTS);
+    if (Array.isArray(list)) return list;
+  } catch (e) {
+    console.error("Error reading saved accounts from IndexedDB:", e);
+  }
+  return [];
+}
+
+export async function saveAccount(account: SavedAccount): Promise<void> {
+  try {
+    const list = await getSavedAccounts();
+    const idx = list.findIndex((a) => a.id === account.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...account, lastUsed: Date.now() };
+    } else {
+      list.push({ ...account, lastUsed: Date.now() });
+    }
+    await set(KEY_SAVED_ACCOUNTS, list);
+  } catch (e) {
+    console.error("Error saving account to IndexedDB:", e);
+  }
+}
+
+export async function removeAccount(accountId: string): Promise<void> {
+  try {
+    const list = await getSavedAccounts();
+    const filtered = list.filter((a) => a.id !== accountId);
+    await set(KEY_SAVED_ACCOUNTS, filtered);
+  } catch (e) {
+    console.error("Error removing account from IndexedDB:", e);
+  }
+}
+
+export async function switchToAccount(accountId: string): Promise<SavedAccount | null> {
+  const accounts = await getSavedAccounts();
+  const acc = accounts.find((a) => a.id === accountId);
+  if (!acc) return null;
+
+  await setSavedSession(acc.sessionString);
+  await setSavedUserProfile({
+    id: acc.id,
+    firstName: acc.firstName,
+    lastName: acc.lastName,
+    username: acc.username,
+    phone: acc.phone,
+  });
+  if (acc.apiId && acc.apiHash) {
+    await saveTgConfig(acc.apiId, acc.apiHash);
+  }
+  await saveAccount(acc);
+  return acc;
 }
 
 // -------------------------------------------------------------
