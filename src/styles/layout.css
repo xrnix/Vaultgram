@@ -150,8 +150,8 @@
 }
 
 .status-dot.connected {
-  background-color: hsl(var(--brand-emerald));
-  box-shadow: 0 0 6px hsl(var(--brand-emerald) / 0.5);
+  background-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
 }
 
 .status-dot.connecting {

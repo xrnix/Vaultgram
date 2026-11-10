@@ -11,7 +11,7 @@ import {
   TelegramConfig,
   DEFAULT_TELEGRAM_API_ID,
 } from "@/lib/telegram/session";
-import { HardDrive, QrCode, Phone, KeyRound, Shield, Settings2 } from "lucide-react";
+import { HardDrive, QrCode, Phone, KeyRound, Settings2 } from "lucide-react";
 
 export const AuthPortal: React.FC = () => {
   const [hasConfiguredKeys, setHasConfiguredKeys] = useState<boolean | null>(null);
@@ -38,20 +38,22 @@ export const AuthPortal: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[430px] rounded-[6px] border border-white/[0.1] bg-[#121215]/95 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden"
+        className="specimen-card hairline-sheen relative z-10 w-full max-w-[430px] rounded-[6px] p-5 sm:p-7 overflow-hidden"
       >
-        {/* Top Hairline Sheen */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center space-y-2 pb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100 shadow-sm">
-            <HardDrive className="h-4 w-4 stroke-[1.5px]" />
+        <div className="flex flex-col items-center text-center space-y-2.5 pb-4">
+          <div className="specimen-inset flex h-10 w-10 items-center justify-center rounded-[5px] text-zinc-100">
+            <HardDrive className="h-4.5 w-4.5 stroke-[1.4px]" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-white font-sans">
-            Vaultgram
-          </h1>
-          <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+          <div>
+            <span className="text-[9px] font-mono tracking-[0.25em] uppercase text-zinc-500 font-semibold block pb-0.5 select-none">
+              DECENTRALIZED STORAGE // MTPROTO
+            </span>
+            <h1 className="text-xl font-medium tracking-tight text-white font-sans">
+              Vaultgram
+            </h1>
+          </div>
+          <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed font-sans">
             Browser-native personal cloud storage powered directly by Telegram's MTProto API over WebSockets.
           </p>
         </div>
@@ -85,11 +87,14 @@ export const AuthPortal: React.FC = () => {
             >
               {/* Active API Status Deck */}
               <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] border border-white/[0.08] bg-white/[0.02]">
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-300">
-                  <Shield className="h-3 w-3 text-zinc-300" />
+                <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-300">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/40 opacity-40"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white/80"></span>
+                  </span>
                   <span>
                     App ID:{" "}
-                    <strong className="text-white font-semibold">
+                    <strong className="text-white font-medium">
                       #{activeConfig?.apiId || DEFAULT_TELEGRAM_API_ID}
                     </strong>
                   </span>
@@ -97,10 +102,10 @@ export const AuthPortal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowKeyEditor(true)}
-                  className="flex items-center gap-1 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.06]"
+                  className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400 hover:text-white transition-all px-2 py-0.5 rounded-[3px] border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.98]"
                   title="Configure Telegram API credentials"
                 >
-                  <Settings2 className="h-3 w-3 text-zinc-500" />
+                  <Settings2 className="h-3 w-3 text-zinc-400" />
                   <span>Change Keys</span>
                 </button>
               </div>
@@ -138,14 +143,14 @@ export const AuthPortal: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Footer meta badge */}
-        <div className="border-t border-white/[0.08] pt-4 mt-5">
-          <div className="font-mono text-[11px] text-zinc-500 tracking-wide text-center flex items-center justify-center gap-2">
-            <span>Client-Side</span>
-            <span className="text-zinc-700">•</span>
-            <span>MTProto WSS</span>
-            <span className="text-zinc-700">•</span>
-            <span>Zero Backend</span>
+        {/* Footer meta telemetry */}
+        <div className="border-t border-white/[0.08] pt-3.5 mt-5">
+          <div className="font-mono text-[10px] text-zinc-500 tracking-wider uppercase text-center flex items-center justify-center gap-2 select-none">
+            <span>Zero-Knowledge</span>
+            <span className="text-zinc-700">·</span>
+            <span>Browser MTProto</span>
+            <span className="text-zinc-700">·</span>
+            <span>Direct Telegram WSS</span>
           </div>
         </div>
       </motion.div>

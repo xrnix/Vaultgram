@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDriveStore, NavFilter } from "@/lib/stores/drive-store";
+import { useAudioPlayerStore } from "@/lib/stores/audio-player-store";
 import { DriveFile } from "@/lib/telegram/indexer";
 import {
   Search,
@@ -21,6 +22,11 @@ import {
   X,
   KeyRound,
   Users,
+  PieChart,
+  Disc3,
+  FolderPlus,
+  Activity,
+  Keyboard,
 } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
@@ -48,6 +54,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     setViewMode,
     refreshIndex,
     setPreviewFile,
+    setAnalyticsOpen,
+    setCreateVaultOpen,
+    setNetworkMonitorOpen,
+    setShortcutsOpen,
   } = useDriveStore();
 
   const [query, setQuery] = useState("");
@@ -139,7 +149,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-3 select-none">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-20 p-2.5 sm:p-3 select-none">
           {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -156,49 +166,94 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -10 }}
             transition={{ type: "spring", stiffness: 450, damping: 32 }}
-            className="relative z-10 w-full max-w-xl rounded-[6px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
+            className="relative z-10 w-full max-w-2xl rounded-[8px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
           >
             {/* Top Hairline Sheen */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
             {/* Input Bar */}
-            <div className="flex items-center px-3.5 py-3 border-b border-white/[0.08] gap-2.5">
-              <Search className="h-4 w-4 text-zinc-400 stroke-[1.75px] shrink-0" />
+            <div className="flex items-center px-4 sm:px-5 py-3.5 border-b border-white/[0.08] gap-3">
+              <Search className="h-4.5 w-4.5 text-zinc-400 stroke-[1.75px] shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
                 placeholder="Search files, channels, categories, or actions..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-sans"
+                className="w-full bg-transparent text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-sans"
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
                   className="p-1 text-zinc-500 hover:text-zinc-300 rounded"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-[3px] border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] text-zinc-400">
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-[4px] border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-zinc-400">
                 ESC
               </kbd>
             </div>
 
             {/* Scrollable Results List */}
-            <div className="max-h-[60vh] overflow-y-auto p-2 space-y-3 divide-y divide-white/[0.04]">
+            <div className="max-h-[60vh] overflow-y-auto p-2.5 sm:p-3 space-y-3 divide-y divide-white/[0.04]">
               {/* Quick Actions */}
               {!query && (
                 <div className="space-y-1">
                   <div className="px-2 pt-1 pb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     Quick Actions
                   </div>
+                  {/* Create Storage Vault */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setCreateVaultOpen(true);
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FolderPlus className="h-4 w-4 text-[#e6cfa3]" />
+                      <span>Create New Storage Vault</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Vault</span>
+                  </button>
+
+                  {/* Network Diagnostics */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setNetworkMonitorOpen(true);
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="h-4 w-4 text-zinc-400" />
+                      <span>Network &amp; DC Diagnostics</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Telemetry</span>
+                  </button>
+
+                  {/* Keyboard Shortcuts */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setShortcutsOpen(true);
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Keyboard className="h-4 w-4 text-zinc-400" />
+                      <span>Keyboard Shortcuts</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">?</span>
+                  </button>
+
                   <button
                     onClick={handleUploadClick}
-                    className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <Upload className="h-3.5 w-3.5 text-zinc-400" />
+                    <div className="flex items-center gap-2.5">
+                      <Upload className="h-4 w-4 text-zinc-400" />
                       <span>Upload File to Telegram</span>
                     </div>
                     <span className="font-mono text-[10px] text-zinc-500">Action</span>
@@ -206,13 +261,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <button
                     onClick={handleToggleView}
-                    className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       {viewMode === "grid" ? (
-                        <List className="h-3.5 w-3.5 text-zinc-400" />
+                        <List className="h-4 w-4 text-zinc-400" />
                       ) : (
-                        <LayoutGrid className="h-3.5 w-3.5 text-zinc-400" />
+                        <LayoutGrid className="h-4 w-4 text-zinc-400" />
                       )}
                       <span>Switch to {viewMode === "grid" ? "List" : "Grid"} View</span>
                     </div>
@@ -221,13 +276,43 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <button
                     onClick={handleRefreshClick}
-                    className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="h-3.5 w-3.5 text-zinc-400" />
+                    <div className="flex items-center gap-2.5">
+                      <RefreshCw className="h-4 w-4 text-zinc-400" />
                       <span>Sync & Refresh Channel Index</span>
                     </div>
                     <span className="font-mono text-[10px] text-zinc-500">Sync</span>
+                  </button>
+
+                  {/* Storage Analytics */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setAnalyticsOpen(true);
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <PieChart className="h-4 w-4 text-[#e6cfa3]" />
+                      <span>Storage &amp; Drive Intelligence</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Analytics</span>
+                  </button>
+
+                  {/* Audio Player Studio */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      useAudioPlayerStore.getState().openModal();
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Disc3 className="h-3.5 w-3.5 text-zinc-400" />
+                      <span>Audio Player Studio</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Player</span>
                   </button>
 
                   {onOpenExport && (

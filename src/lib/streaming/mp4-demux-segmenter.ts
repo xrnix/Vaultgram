@@ -159,41 +159,59 @@ export class Mp4DemuxSegmenter {
   public async probeAndInit(signal?: AbortSignal): Promise<DemuxerInitResult> {
     const PROBE_CHUNK_SIZE = 512 * 1024; // 512 KB chunk
 
-    // 1. Fetch initial head chunk (0 to 512KB)
-    let currentOffset = 0;
-    const firstChunk = await this.rangeReader.readRange(0, Math.min(this.fileSize, PROBE_CHUNK_SIZE), signal);
-    this.appendData(0, firstChunk);
-    currentOffset = firstChunk.length;
+    const timeoutTimer = setTimeout(() => {
+      if (!this.isReady) {
+        this.readyReject(new Error("MP4 metadata probe timed out (likely non-FastStart or non-MP4 container)"));
+      }
+    }, 15000);
 
-    // 2. Iteratively follow MP4Box box boundaries to locate moov atom
-    let iterations = 0;
-    while (!this.isReady && iterations < 30 && currentOffset < this.fileSize) {
-      iterations++;
-
-      let targetOffset = currentOffset;
-      if (this.mp4boxfile.nextParsePosition && this.mp4boxfile.nextParsePosition > currentOffset) {
-        targetOffset = this.mp4boxfile.nextParsePosition;
-        console.log(`[Mp4DemuxSegmenter] Jumping directly to next box offset: ${targetOffset}`);
-      } else if (currentOffset < PROBE_CHUNK_SIZE * 4) {
-        targetOffset = currentOffset;
-      } else {
-        targetOffset = Math.max(currentOffset, this.fileSize - (2 * 1024 * 1024));
+    try {
+      // 1. Fetch initial head chunk (0 to 512KB)
+      let currentOffset = 0;
+      const firstChunk = await this.rangeReader.readRange(0, Math.min(this.fileSize, PROBE_CHUNK_SIZE), signal);
+      if (!firstChunk || firstChunk.length === 0) {
+        throw new Error("Empty initial chunk received from Telegram MTProto");
       }
 
-      if (targetOffset >= this.fileSize) break;
+      this.appendData(0, firstChunk);
+      currentOffset = firstChunk.length;
 
-      const chunkLength = Math.min(PROBE_CHUNK_SIZE, this.fileSize - targetOffset);
-      const chunk = await this.rangeReader.readRange(targetOffset, chunkLength, signal);
-      if (!chunk || chunk.length === 0) break;
+      // 2. Iteratively follow MP4Box box boundaries to locate moov atom
+      let iterations = 0;
+      while (!this.isReady && iterations < 20 && currentOffset < this.fileSize) {
+        iterations++;
 
-      this.appendData(targetOffset, chunk);
-      currentOffset = targetOffset + chunk.length;
+        let targetOffset = currentOffset;
+        if (this.mp4boxfile.nextParsePosition && this.mp4boxfile.nextParsePosition > currentOffset) {
+          targetOffset = this.mp4boxfile.nextParsePosition;
+          console.log(`[Mp4DemuxSegmenter] Jumping directly to next box offset: ${targetOffset}`);
+        } else if (currentOffset < PROBE_CHUNK_SIZE * 4) {
+          targetOffset = currentOffset;
+        } else {
+          targetOffset = Math.max(currentOffset, this.fileSize - (2 * 1024 * 1024));
+        }
 
-      // Allow microtask tick for onReady callback
-      await new Promise((r) => setTimeout(r, 15));
+        if (targetOffset >= this.fileSize) break;
+
+        const chunkLength = Math.min(PROBE_CHUNK_SIZE, this.fileSize - targetOffset);
+        const chunk = await this.rangeReader.readRange(targetOffset, chunkLength, signal);
+        if (!chunk || chunk.length === 0) break;
+
+        this.appendData(targetOffset, chunk);
+        currentOffset = targetOffset + chunk.length;
+
+        // Allow microtask tick for onReady callback
+        await new Promise((r) => setTimeout(r, 20));
+      }
+
+      if (!this.isReady) {
+        throw new Error("Unable to parse MP4 moov atom within initial probe window");
+      }
+
+      return await this.readyPromise;
+    } finally {
+      clearTimeout(timeoutTimer);
     }
-
-    return await this.readyPromise;
   }
 
   /**

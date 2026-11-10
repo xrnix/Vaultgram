@@ -366,7 +366,7 @@ export class MseStreamController {
     if (this.isDestroyed || !this.telemetryCallback) return;
 
     const currentTime = this.videoElement.currentTime || 0;
-    const duration = this.duration || this.videoElement.duration || this.file.size;
+    const duration = this.duration || this.videoElement.duration || (this.file as any).duration || 0;
     const bufferedAhead = this.getBufferedAheadSeconds(currentTime);
     const bufferedRanges = this.getBufferedRanges();
 

@@ -11,7 +11,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "grid grid-cols-3 gap-1 bg-zinc-900/60 p-1 border border-zinc-800/80 rounded-md text-muted-foreground",
+      "grid grid-cols-3 gap-1 bg-white/[0.03] p-1 border border-white/[0.08] rounded-[5px] text-zinc-400 select-none",
       className
     )}
     {...props}
@@ -26,7 +26,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm py-1.5 px-2.5 text-xs font-medium text-zinc-400 transition-all hover:text-zinc-200 hover:bg-zinc-800/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-600 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-zinc-700/60",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-[4px] py-1.5 px-2.5 text-xs font-mono font-medium text-zinc-400 transition-all hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white/[0.1] data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-white/[0.18] data-[state=active]:shadow-[0_2px_10px_rgba(0,0,0,0.5)] active:scale-[0.98]",
       className
     )}
     {...props}
@@ -41,7 +41,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-600",
+      "mt-3.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20",
       className
     )}
     {...props}

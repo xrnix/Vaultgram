@@ -14,6 +14,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { formatBytes, cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const TransferDock: React.FC = () => {
   const {
@@ -27,10 +28,10 @@ export const TransferDock: React.FC = () => {
     removeTask,
     clearCompleted,
   } = useTransferStore();
-  const { activeFilter } = useDriveStore();
+  const { activeFilter, showTransferDock, setShowTransferDock } = useDriveStore();
 
-  // If user is currently on dedicated Transfers View, hide the floating dock
-  if (activeFilter === "TRANSFERS" || tasks.length === 0) {
+  // If user is currently on dedicated Transfers View, or transfers dock is toggled off, or no tasks: hide
+  if (!showTransferDock || activeFilter === "TRANSFERS" || tasks.length === 0) {
     return null;
   }
 
@@ -48,7 +49,13 @@ export const TransferDock: React.FC = () => {
     (tasks.length || 1);
 
   return (
-    <div className="fixed bottom-3 left-2.5 right-2.5 sm:left-auto sm:right-4 sm:bottom-4 z-50 sm:w-96 rounded-[5px] border border-white/[0.1] bg-[#121215]/98 backdrop-blur-2xl shadow-[0_16px_50px_rgba(0,0,0,0.8)] overflow-hidden select-none transition-all">
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 24, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+      className="specimen-card hairline-sheen fixed bottom-3 left-2.5 right-2.5 sm:left-auto sm:right-4 sm:bottom-4 z-50 sm:w-96 rounded-[6px] overflow-hidden select-none transition-all"
+    >
       {/* Top Hairline Sheen */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
@@ -102,9 +109,28 @@ export const TransferDock: React.FC = () => {
               e.stopPropagation();
               toggleOpen();
             }}
-            className="p-1 text-zinc-400 hover:text-white rounded"
+            className="p-1 text-zinc-400 hover:text-white rounded-[3px] hover:bg-white/[0.06] transition-colors"
+            title={isOpen ? "Collapse dock" : "Expand queue"}
           >
             {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTransferDock(false);
+              toast.info("Transfer dock hidden", {
+                description: "You can re-enable it anytime from Settings.",
+                action: {
+                  label: "Undo",
+                  onClick: () => setShowTransferDock(true),
+                },
+              });
+            }}
+            className="p-1 text-zinc-500 hover:text-white rounded-[3px] hover:bg-white/[0.08] transition-colors"
+            title="Dismiss Dock (toggle in Settings)"
+          >
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -152,7 +178,7 @@ export const TransferDock: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

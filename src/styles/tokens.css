@@ -31,8 +31,7 @@
   --radius: 0.5rem; /* 8px shadcn standard */
 
   /* Brand Accents */
-  --brand-blue: 217.2 91.2% 59.8%;
-  --brand-emerald: 142.1 76.2% 36.3%;
+  --brand-ochre: 38 48% 55%;
 
   /* Fonts: Geist Sans + Geist Mono */
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

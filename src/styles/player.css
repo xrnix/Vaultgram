@@ -185,10 +185,10 @@ media-player {
 .badge-done {
   font-size: 0.65rem;
   font-weight: 600;
-  color: hsl(var(--brand-emerald));
+  color: #e6cfa3;
   padding: 2px 7px;
   background-color: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
+  border: 1px solid rgba(196, 155, 86, 0.3);
   border-radius: var(--radius);
 }
 
@@ -237,8 +237,8 @@ media-player {
 .lec-download-btn:disabled {
   opacity: 0.75;
   cursor: not-allowed;
-  color: hsl(var(--brand-emerald));
-  border-color: hsl(var(--brand-emerald));
+  color: #e6cfa3;
+  border-color: rgba(196, 155, 86, 0.4);
 }
 
 .download-spinner {

@@ -18,11 +18,13 @@ import {
   RefreshCw,
   ChevronRight,
   Command,
+  Settings,
 } from "lucide-react";
 import { SpringHamburger } from "@/components/ui/spring-hamburger";
 import { CommandPalette } from "./command-palette";
 import { AccountSwitcherDialog } from "./account-switcher-dialog";
 import { SessionExportModal } from "./session-export-modal";
+import { SettingsModal } from "./settings-modal";
 import { cn } from "@/lib/utils";
 
 interface DriveToolbarProps {
@@ -41,10 +43,12 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
     sortOrder,
     syncStatus,
     isMobileSidebarOpen,
+    isSettingsOpen,
     setViewMode,
     setSorting,
     refreshIndex,
     setMobileSidebarOpen,
+    setSettingsOpen,
   } = useDriveStore();
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -100,8 +104,8 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/80 px-2.5 sm:px-4 backdrop-blur-xl select-none gap-1 sm:gap-2 z-20">
-        {/* Left: Spring Morph Hamburger + Archival Breadcrumb */}
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/80 px-2 sm:px-4 backdrop-blur-xl select-none gap-1 sm:gap-2 z-20">
+        {/* Left: Spring Morph Hamburger + Channel Breadcrumb */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0 min-w-0">
           {/* Animated Spring Morph Hamburger Icon on Mobile */}
           <div className="md:hidden shrink-0">
@@ -114,14 +118,14 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
           {/* Archival Breadcrumb */}
           <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 text-xs">
             <span
-              className="font-mono text-[10px] sm:text-xs text-zinc-400 max-w-[70px] xs:max-w-[100px] sm:max-w-[140px] truncate"
+              className="font-medium text-xs sm:text-xs text-white max-w-[110px] xs:max-w-[140px] sm:max-w-[160px] truncate"
               title={getChannelTitle()}
             >
               {getChannelTitle()}
             </span>
-            <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0" />
+            <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0 hidden sm:inline-block" />
             <span
-              className="font-sans font-medium text-white max-w-[65px] xs:max-w-[90px] sm:max-w-none truncate"
+              className="font-sans font-normal text-zinc-400 max-w-[100px] truncate hidden sm:inline-block"
               title={getCategoryLabel()}
             >
               {getCategoryLabel()}
@@ -130,18 +134,18 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
 
           {/* Live Background Sync Status Pill */}
           {syncStatus.isSyncing && (
-            <div className="ml-1 sm:ml-2 flex items-center gap-1.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] px-1.5 sm:px-2 py-0.5 text-[10px] font-mono text-zinc-400 animate-pulse shrink-0">
+            <div className="ml-1 flex items-center gap-1.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 shrink-0">
               <RefreshCw className="h-2.5 w-2.5 animate-spin text-zinc-300" />
-              <span className="hidden sm:inline truncate max-w-[160px]">{syncStatus.statusText}</span>
+              <span className="hidden md:inline truncate max-w-[140px]">{syncStatus.statusText}</span>
             </div>
           )}
         </div>
 
-        {/* Center: Search Capsule with ⌘K Command Trigger */}
-        <div className="flex-1 min-w-[100px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2">
+        {/* Center: Search Capsule (hidden on small mobile screens, opens via search button) */}
+        <div className="hidden sm:flex flex-1 min-w-[120px] max-w-xs md:max-w-md mx-2">
           <div
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="group relative flex items-center cursor-pointer"
+            className="group relative flex items-center cursor-pointer w-full"
           >
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.5px] pointer-events-none transition-colors" />
             <Input
@@ -149,28 +153,35 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
               readOnly
               placeholder="Search or press ⌘K..."
               value={searchQuery}
-              className="h-8 pl-8 pr-12 sm:pr-20 text-xs bg-white/[0.03] group-hover:bg-white/[0.06] border-white/[0.08] group-hover:border-white/[0.18] rounded-[5px] placeholder:text-zinc-500 text-zinc-200 cursor-pointer transition-all w-full"
+              className="h-8 pl-8 pr-12 text-xs bg-[#0c0c0e] group-hover:bg-[#141418] border-white/[0.08] group-hover:border-white/[0.18] rounded-[5px] placeholder:text-zinc-500 text-zinc-200 cursor-pointer transition-all w-full"
             />
-
-            {/* Keyboard shortcut badge */}
             <div className="absolute right-2 flex items-center gap-1 pointer-events-none">
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-[3px] border border-white/[0.1] bg-white/[0.05] px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-400">
+              <kbd className="hidden md:inline-flex items-center gap-0.5 rounded-[3px] tactile-keycap px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-400">
                 <Command className="h-2.5 w-2.5" /> K
               </kbd>
             </div>
           </div>
         </div>
 
-        {/* Right: Controls & Translucent Upload CTA */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Refresh Index Button */}
+        {/* Right: Controls & CTAs */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Mobile Search Button (Visible only on < sm) */}
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            title="Search (⌘K)"
+            className="sm:hidden flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
+          >
+            <Search className="h-4 w-4 stroke-[1.5px]" />
+          </button>
+
+          {/* Desktop Refresh Index Button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => refreshIndex()}
             disabled={syncStatus.isSyncing}
             title="Refresh MTProto Index"
-            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px]"
+            className="hidden sm:flex h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px]"
           >
             <RefreshCw
               className={cn(
@@ -189,7 +200,7 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
                 title={`Sort by ${sortField} (${sortOrder.toUpperCase()})`}
                 className="h-8 px-2 sm:px-2.5 gap-1.5 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.16] text-xs text-zinc-300 hover:text-white rounded-[4px] transition-colors"
               >
-                <ArrowUpDown className="h-3 w-3 stroke-[1.5px] text-zinc-400" />
+                <ArrowUpDown className="h-3.5 w-3.5 stroke-[1.5px] text-zinc-400" />
                 <span className="hidden md:inline capitalize">
                   {sortField} ({sortOrder.toUpperCase()})
                 </span>
@@ -208,8 +219,22 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* View Toggle (Grid / List) */}
-          <div className="flex items-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] p-0.5">
+          {/* View Toggle (Grid <-> List) */}
+          {/* On Mobile: 1-Tap Toggle Icon Button (32px) */}
+          <button
+            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+            title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
+            className="sm:hidden flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            {viewMode === "grid" ? (
+              <List className="h-4 w-4 stroke-[1.5px]" />
+            ) : (
+              <LayoutGrid className="h-4 w-4 stroke-[1.5px]" />
+            )}
+          </button>
+
+          {/* On Desktop: Segmented Pill (Grid / List) */}
+          <div className="hidden sm:flex items-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] p-0.5">
             <button
               onClick={() => setViewMode("grid")}
               title="Grid View"
@@ -250,15 +275,25 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
             </button>
           </div>
 
-          {/* Upload File CTA (Translucent Glass Button from Research Press) */}
+          {/* Upload Button */}
           <Button
             onClick={onTriggerUpload}
             size="sm"
-            className="h-8 px-2.5 sm:px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+            className="h-8 px-2 sm:px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+            title="Upload File to Telegram"
           >
             <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
-            <span className="hidden xs:inline">Upload</span>
+            <span className="hidden sm:inline">Upload</span>
           </Button>
+
+          {/* Unified Settings Menu Button */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors"
+            title="Settings & Preferences"
+          >
+            <Settings className="h-4 w-4 stroke-[1.5px]" />
+          </button>
         </div>
       </header>
 
@@ -282,6 +317,14 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
       <SessionExportModal
         isOpen={isSessionExportOpen}
         onClose={() => setIsSessionExportOpen(false)}
+      />
+
+      {/* Unified Settings & Preferences Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
+        onOpenExport={() => setIsSessionExportOpen(true)}
       />
     </>
   );

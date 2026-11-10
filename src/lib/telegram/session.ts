@@ -322,6 +322,17 @@ export async function saveChannelFilesToDb(channelId: string, files: DriveFile[]
   }
 }
 
+export async function clearAllChannelFilesFromDb(): Promise<void> {
+  try {
+    const channels = await getSavedSelectedChannels();
+    for (const ch of channels) {
+      await del(`${PREFIX_CHANNEL_FILES}${ch.id}`);
+    }
+  } catch (e) {
+    console.error("Error clearing channel files from DB:", e);
+  }
+}
+
 export async function updateFileInDb(file: DriveFile): Promise<void> {
   try {
     if (!file.channelId) return;

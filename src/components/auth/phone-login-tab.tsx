@@ -3,7 +3,7 @@ import { tgStreamClient } from "@/lib/telegram/client";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Phone, KeyRound, ArrowRight, ArrowLeft } from "lucide-react";
+import { Phone, KeyRound, ArrowRight, ArrowLeft, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const PhoneLoginTab: React.FC = () => {
@@ -12,6 +12,7 @@ export const PhoneLoginTab: React.FC = () => {
   const [phone, setPhone] = useState(phoneNumber || "");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
@@ -81,11 +82,26 @@ export const PhoneLoginTab: React.FC = () => {
   };
 
   return (
-    <div className="py-1">
+    <div className="py-1 space-y-3">
+      {/* Step Pipeline Indicator */}
+      <div className="flex items-center justify-between px-1 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+        <span className={phoneStep === "phone" ? "text-white font-medium" : "text-zinc-600"}>
+          01 Phone
+        </span>
+        <span className="text-zinc-700">──</span>
+        <span className={phoneStep === "otp" ? "text-white font-medium" : "text-zinc-600"}>
+          02 Code
+        </span>
+        <span className="text-zinc-700">──</span>
+        <span className={phoneStep === "2fa" ? "text-white font-medium" : "text-zinc-600"}>
+          03 2FA
+        </span>
+      </div>
+
       {phoneStep === "phone" && (
         <form onSubmit={handleSendCode} className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-mono text-zinc-400">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-mono text-zinc-400 block">
               Phone Number (International Format)
             </label>
             <div className="relative">
@@ -100,6 +116,9 @@ export const PhoneLoginTab: React.FC = () => {
                 className="h-8.5 pl-8 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
+            <p className="text-[10px] text-zinc-500 font-sans">
+              Telegram will send a confirmation code to your active Telegram mobile/desktop app.
+            </p>
           </div>
 
           <Button
@@ -115,8 +134,8 @@ export const PhoneLoginTab: React.FC = () => {
 
       {phoneStep === "otp" && (
         <form onSubmit={handleVerifyOtp} className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-mono text-zinc-400">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-mono text-zinc-400 block">
               Verification Code (Sent to {useAuthStore.getState().phoneNumber})
             </label>
             <div className="relative">
@@ -129,7 +148,7 @@ export const PhoneLoginTab: React.FC = () => {
                 onChange={(e) => setCode(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="h-8.5 pl-8 tracking-widest font-mono text-center bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+                className="h-8.5 pl-8 tracking-[0.25em] font-mono text-center bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
           </div>
@@ -149,7 +168,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("phone")}
             disabled={isSubmitting}
-            className="w-full h-7 gap-1 text-[11px] text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
+            className="w-full h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Change Phone Number
@@ -159,19 +178,34 @@ export const PhoneLoginTab: React.FC = () => {
 
       {phoneStep === "2fa" && (
         <form onSubmit={handleVerify2FA} className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-mono text-zinc-400">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-mono text-zinc-400 block">
               Two-Step Cloud Password
             </label>
-            <Input
-              type="password"
-              placeholder="Enter your 2FA password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoFocus
-              disabled={isSubmitting}
-              className="h-8.5 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
-            />
+            <div className="relative">
+              <ShieldCheck className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your 2FA password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoFocus
+                disabled={isSubmitting}
+                className="h-8.5 pl-8 pr-8 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-3.5 w-3.5 stroke-[1.5px]" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button
@@ -189,7 +223,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("otp")}
             disabled={isSubmitting}
-            className="w-full h-7 gap-1 text-[11px] text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
+            className="w-full h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Back to OTP Code

@@ -20,10 +20,67 @@
   }
 }
 
-/* shadcn-style Minimal Scrollbars */
+/* Soundwave Equalizer Oscillations */
+@keyframes equalize1 {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+@keyframes equalize2 {
+  0%, 100% { height: 14px; }
+  50% { height: 6px; }
+}
+
+@keyframes equalize3 {
+  0%, 100% { height: 8px; }
+  50% { height: 18px; }
+}
+
+@keyframes equalize4 {
+  0%, 100% { height: 16px; }
+  50% { height: 8px; }
+}
+
+.animate-equalize-1 {
+  animation: equalize1 0.8s ease-in-out infinite;
+}
+
+.animate-equalize-2 {
+  animation: equalize2 0.7s ease-in-out infinite 0.15s;
+}
+
+.animate-equalize-3 {
+  animation: equalize3 0.9s ease-in-out infinite 0.3s;
+}
+
+.animate-equalize-4 {
+  animation: equalize4 0.65s ease-in-out infinite 0.1s;
+}
+
+/* Subtle Shimmer for progress & active badges */
+@keyframes sheenSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-sheen {
+  animation: sheenSlide 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Marching Ants / Rotating Border Glow */
+@keyframes borderRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-border-rotate {
+  animation: borderRotate 8s linear infinite;
+}
+
+/* Minimal Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -31,10 +88,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: rgba(255, 255, 255, 0.2);
 }

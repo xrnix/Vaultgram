@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDriveStore, NavFilter } from "@/lib/stores/drive-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useChannelWizardStore } from "@/lib/stores/channel-wizard-store";
 import { useTransferStore } from "@/lib/stores/transfer-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -28,13 +27,12 @@ import {
   Folder,
   Trash2,
   HardDrive,
-  SlidersHorizontal,
-  LogOut,
   Bookmark,
   ArrowUpDown,
   X,
   Users,
-  KeyRound,
+  Activity,
+  Settings,
 } from "lucide-react";
 import { AccountSwitcherDialog } from "@/components/drive/account-switcher-dialog";
 import { SessionExportModal } from "@/components/drive/session-export-modal";
@@ -55,10 +53,12 @@ export const Sidebar: React.FC = () => {
     setMobileSidebarOpen,
     createCustomFolder,
     deleteCustomFolder,
+    setCreateVaultOpen,
+    setNetworkMonitorOpen,
+    setSettingsOpen,
   } = useDriveStore();
 
-  const { user, logout } = useAuthStore();
-  const { resetWizard } = useChannelWizardStore();
+  const { user } = useAuthStore();
   const { tasks } = useTransferStore();
 
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
@@ -121,18 +121,18 @@ export const Sidebar: React.FC = () => {
     return title.slice(0, 2).toUpperCase();
   };
 
-  const navItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count: number }[] = [
-    { id: "ALL", indexStr: "01", label: "All Files", icon: Files, count: counts.ALL },
-    { id: "IMAGE", indexStr: "02", label: "Images", icon: Image, count: counts.IMAGE },
-    { id: "VIDEO", indexStr: "03", label: "Videos", icon: Video, count: counts.VIDEO },
-    { id: "DOC", indexStr: "04", label: "Documents", icon: FileText, count: counts.DOC },
-    { id: "ARCHIVE", indexStr: "05", label: "Archives", icon: Archive, count: counts.ARCHIVE },
-    { id: "AUDIO", indexStr: "06", label: "Audio", icon: Music, count: counts.AUDIO },
+  const navItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count: number; colorClass: string }[] = [
+    { id: "ALL", indexStr: "01", label: "All Files", icon: Files, count: counts.ALL, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "IMAGE", indexStr: "02", label: "Images", icon: Image, count: counts.IMAGE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "VIDEO", indexStr: "03", label: "Videos", icon: Video, count: counts.VIDEO, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "DOC", indexStr: "04", label: "Documents", icon: FileText, count: counts.DOC, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "ARCHIVE", indexStr: "05", label: "Archives", icon: Archive, count: counts.ARCHIVE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "AUDIO", indexStr: "06", label: "Audio", icon: Music, count: counts.AUDIO, colorClass: "text-[#e6cfa3] group-hover:text-white" },
   ];
 
-  const quickAccessItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count?: number; isBadge?: boolean }[] = [
-    { id: "PINNED", indexStr: "07", label: "Pinned Items", icon: Pin, count: counts.PINNED },
-    { id: "FAVORITES", indexStr: "08", label: "Favorites", icon: Star, count: counts.FAVORITES },
+  const quickAccessItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count?: number; isBadge?: boolean; colorClass?: string }[] = [
+    { id: "PINNED", indexStr: "07", label: "Pinned Items", icon: Pin, count: counts.PINNED, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "FAVORITES", indexStr: "08", label: "Favorites", icon: Star, count: counts.FAVORITES, colorClass: "text-[#c49b56]" },
     {
       id: "TRANSFERS",
       indexStr: "09",
@@ -140,6 +140,7 @@ export const Sidebar: React.FC = () => {
       icon: ArrowUpDown,
       count: activeTransfersCount > 0 ? activeTransfersCount : undefined,
       isBadge: activeTransfersCount > 0,
+      colorClass: "text-zinc-400 group-hover:text-zinc-100",
     },
   ];
 
@@ -177,14 +178,35 @@ export const Sidebar: React.FC = () => {
               Telegram Channels
             </span>
           </div>
-          <span className="font-mono text-[10px] text-zinc-500">
-            {channels.length} synced
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] text-zinc-500">
+              {channels.length} synced
+            </span>
+            <button
+              type="button"
+              onClick={() => setCreateVaultOpen(true)}
+              className="p-1 rounded-[3px] bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors"
+              title="Create new private storage vault"
+            >
+              <Plus className="h-3 w-3 text-[#c49b56]" />
+            </button>
+          </div>
         </div>
 
         {/* Gradient edge-fade carousel */}
         <div className="relative [mask-image:linear-gradient(to_right,transparent,black_8px,black_calc(100%-8px),transparent)]">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1 touch-pan-x">
+            {/* Create New Storage Vault Tile */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setCreateVaultOpen(true)}
+              title="Create new private storage vault"
+              className="relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2 py-1.5 text-xs bg-white/[0.02] text-zinc-400 border border-dashed border-white/[0.12] hover:text-white hover:border-white/[0.25] hover:bg-white/[0.05] transition-all"
+            >
+              <Plus className="h-3 w-3 stroke-[2px] text-[#c49b56]" />
+              <span className="font-sans text-[11px]">New</span>
+            </motion.button>
+
             {/* Unified View Tile */}
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -283,7 +305,7 @@ export const Sidebar: React.FC = () => {
                   )}
                   <div className="relative z-10 flex items-center gap-2">
                     <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
-                    <Icon className="h-3.5 w-3.5 stroke-[1.5px] text-zinc-400" />
+                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
                     <span className="font-sans">{item.label}</span>
                   </div>
                   <span className="relative z-10 font-mono text-[10px] text-zinc-500 tabular-nums">
@@ -328,7 +350,7 @@ export const Sidebar: React.FC = () => {
                   )}
                   <div className="relative z-10 flex items-center gap-2">
                     <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
-                    <Icon className="h-3.5 w-3.5 stroke-[1.5px] text-zinc-400" />
+                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
                     <span className="font-sans">{item.label}</span>
                   </div>
                   {item.count !== undefined && (
@@ -437,70 +459,62 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
 
-        {/* Storage Inspector */}
-        <div className="space-y-1.5 rounded-[4px] border border-white/[0.07] bg-white/[0.02] p-2.5">
+        {/* Milled Hardware Telemetry Deck */}
+        <div className="specimen-card hairline-sheen space-y-2 rounded-[5px] p-2.5">
           <div className="flex items-center justify-between text-[11px] font-mono">
-            <span className="text-zinc-400 flex items-center gap-1.5">
-              <HardDrive className="h-3 w-3 text-zinc-500" />
-              Indexed Storage
+            <span className="text-zinc-400 flex items-center gap-1.5 font-medium tracking-tight">
+              <HardDrive className="h-3 w-3 text-zinc-500 stroke-[1.5px]" />
+              Archival Volume
             </span>
-            <span className="text-zinc-200 font-medium tabular-nums">
+            <span className="text-zinc-200 font-semibold tabular-nums tracking-tight">
               {formatBytes(totalIndexedBytes)}
             </span>
           </div>
-          <div className="h-1 w-full bg-white/[0.05] rounded-none overflow-hidden relative">
+
+          {/* Precision Machined Gauge */}
+          <div className="h-1.5 w-full bg-[#0c0c0e] border border-white/[0.05] rounded-none overflow-hidden relative">
             <div
-              className="h-full bg-gradient-to-r from-zinc-400 via-zinc-200 to-white transition-all duration-300 shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+              className="h-full bg-gradient-to-r from-zinc-500 via-[#c49b56] to-[#e6cfa3] transition-all duration-300"
               style={{
-                width: `${Math.min(100, Math.max(5, (files.length / 200) * 100))}%`,
+                width: `${Math.min(100, Math.max(3, (files.length / 150) * 100))}%`,
               }}
             />
           </div>
-          <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-            <span className="tabular-nums">{files.length} items cataloged</span>
-            <span>Local Cache</span>
+
+          <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono tracking-tight">
+            <span className="tabular-nums">{files.length} indexed records</span>
+            <span className="text-zinc-600 uppercase tracking-wider text-[9px]">MTProto Buffer</span>
           </div>
         </div>
 
         {/* Connection Status & Control Deck */}
         <div className="flex items-center justify-between pt-0.5">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-medium">
+          <button
+            type="button"
+            onClick={() => setNetworkMonitorOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-zinc-300 font-medium hover:text-white transition-colors group cursor-pointer"
+            title="View MTProto Network & DC Latency Telemetry"
+          >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-white/90"></span>
             </span>
-            <span className="text-[11px] font-mono text-zinc-400">MTProto Online</span>
-          </div>
+            <span className="text-[11px] font-mono tracking-tight text-zinc-400 group-hover:text-white">Vaultgram</span>
+            <Activity className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
+          </button>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSessionExportOpen(true)}
-              title="Export Session / Backup"
-              className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[3px]"
-            >
-              <KeyRound className="h-3.5 w-3.5 stroke-[1.5px]" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => resetWizard()}
-              title="Reconfigure Channels"
-              className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px]"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5 stroke-[1.5px]" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => logout()}
-              title="Logout"
-              className="h-7 w-7 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-[3px]"
-            >
-              <LogOut className="h-3.5 w-3.5 stroke-[1.5px]" />
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) setMobileSidebarOpen(false);
+              setSettingsOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors text-xs font-mono"
+            title="Settings & Preferences"
+          >
+            <Settings className="h-3.5 w-3.5 stroke-[1.5px]" />
+            <span>Settings</span>
+          </button>
         </div>
       </div>
     </div>

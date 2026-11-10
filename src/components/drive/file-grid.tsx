@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { FileCard } from "./file-card";
@@ -67,8 +68,11 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
           if (!rowFiles) return null;
 
           return (
-            <div
+            <motion.div
               key={virtualRow.index}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="absolute top-0 left-0 w-full grid"
               style={{
                 height: `${virtualRow.size - gap}px`,
@@ -80,7 +84,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
               {rowFiles.map((file) => (
                 <FileCard key={file.id} file={file} onDownload={onDownload} />
               ))}
-            </div>
+            </motion.div>
           );
         })}
       </div>

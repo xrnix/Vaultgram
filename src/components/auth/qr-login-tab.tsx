@@ -24,10 +24,10 @@ export const QrLoginTab: React.FC = () => {
         (url) => {
           if (canvasRef.current) {
             QRCode.toCanvas(canvasRef.current, url, {
-              width: 176,
+              width: 180,
               margin: 1,
               color: {
-                dark: "#f4f4f5",
+                dark: "#ffffff",
                 light: "#09090b",
               },
             });
@@ -73,38 +73,58 @@ export const QrLoginTab: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3.5 py-1">
-      <div className="relative flex h-[196px] w-[196px] items-center justify-center rounded-md border border-zinc-800/80 bg-zinc-950 p-2 shadow-inner">
+    <div className="flex flex-col items-center gap-4 py-1">
+      {/* Precision Viewport Stage */}
+      <div className="relative flex h-[208px] w-[208px] items-center justify-center rounded-[6px] border border-white/[0.1] bg-[#09090b] p-3 shadow-[inset_0_1px_4px_rgba(0,0,0,0.8),0_4px_24px_rgba(0,0,0,0.6)]">
+        {/* Architectural Reticle Corner Brackets */}
+        <div className="absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t border-l border-white/40 pointer-events-none" />
+        <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 border-t border-r border-white/40 pointer-events-none" />
+        <div className="absolute bottom-1.5 left-1.5 w-2.5 h-2.5 border-b border-l border-white/40 pointer-events-none" />
+        <div className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b border-r border-white/40 pointer-events-none" />
+
         <canvas
           ref={canvasRef}
-          className={`rounded-sm transition-opacity duration-200 ${
+          className={`rounded-[3px] transition-opacity duration-200 ${
             isLoading ? "opacity-0" : "opacity-100"
           }`}
         />
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-500">
-            <div className="h-5 w-5 animate-spin rounded-sm border border-zinc-500 border-t-zinc-200" />
-            <span className="text-[11px] font-mono tracking-tight text-zinc-400">Connecting MTProto...</span>
+            <div className="h-5 w-5 animate-spin rounded-full border border-white/20 border-t-white" />
+            <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-400">
+              Connecting MTProto...
+            </span>
           </div>
         )}
       </div>
 
-      <div className="space-y-1 text-center">
-        <p className="text-xs font-medium text-zinc-200 flex items-center justify-center gap-1.5">
-          <Smartphone className="h-3.5 w-3.5 text-zinc-400 stroke-[1.5px]" />
-          Scan with Telegram Mobile
-        </p>
-        <p className="text-[11px] text-zinc-500">
-          Settings → <span className="text-zinc-400">Devices</span> →{" "}
-          <span className="text-zinc-400">Link Desktop Device</span>
-        </p>
+      {/* Archival Step Telemetry */}
+      <div className="w-full rounded-[4px] border border-white/[0.07] bg-white/[0.02] p-2.5 space-y-2 text-left">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-white pb-0.5">
+          <Smartphone className="h-3.5 w-3.5 text-zinc-300 stroke-[1.5px]" />
+          <span>Scan with Telegram Mobile</span>
+        </div>
+        <div className="space-y-1.5 font-sans text-[11px] text-zinc-400">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[9px] text-zinc-300 bg-white/[0.05] border border-white/[0.08] px-1 rounded-[2px]">01</span>
+            <span>Open <strong className="text-zinc-200 font-medium">Telegram</strong> on your phone</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[9px] text-zinc-300 bg-white/[0.05] border border-white/[0.08] px-1 rounded-[2px]">02</span>
+            <span>Go to <strong className="text-zinc-200 font-medium">Settings → Devices</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[9px] text-zinc-300 bg-white/[0.05] border border-white/[0.08] px-1 rounded-[2px]">03</span>
+            <span>Tap <strong className="text-zinc-200 font-medium">Link Desktop Device</strong></span>
+          </div>
+        </div>
       </div>
 
       <Button
         variant="ghost"
         size="sm"
         onClick={handleStartQr}
-        className="h-7 gap-1.5 text-xs text-zinc-400 hover:text-zinc-200 rounded-sm"
+        className="h-7 gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white rounded-[3px] border border-transparent hover:border-white/[0.08] hover:bg-white/[0.04] active:scale-[0.98] transition-all"
       >
         <RefreshCw className="h-3 w-3 stroke-[1.5px]" />
         Regenerate QR

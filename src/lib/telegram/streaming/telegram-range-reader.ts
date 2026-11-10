@@ -23,7 +23,7 @@ export type RangeReaderTelemetryListener = (stats: RangeReaderTelemetry) => void
 // Telegram MTProto Limits & Alignment Constants
 export const ONE_MIB = 1024 * 1024; // 1,048,576 Bytes (1 MiB block boundary)
 export const DEFAULT_CHUNK_SIZE = 512 * 1024; // 524,288 Bytes (512 KiB target chunk)
-export const ALIGNMENT_1KIB = 1024; // 1,024 Bytes (1 KiB minimum alignment for precise mode)
+export const ALIGNMENT_4KIB = 4096; // 4,096 Bytes (4 KiB standard MTProto chunk alignment)
 
 export interface TelegramSubRequest {
   alignedOffset: number;
@@ -39,8 +39,8 @@ export interface TelegramSubRequest {
  *
  * Guarantees:
  * 1. offset >= 0 && offset < fileSize
- * 2. offset is 1024-byte (1 KiB) aligned for precise=true
- * 3. limit is 1024-byte (1 KiB) aligned for precise=true
+ * 2. offset is 4096-byte (4 KiB) aligned for standard MTProto upload.getFile
+ * 3. limit is 4096-byte (4 KiB) aligned
  * 4. limit > 0 && limit <= 1048576 (1 MiB)
  * 5. Math.floor(alignedOffset / 1048576) === Math.floor((alignedOffset + limit - 1) / 1048576)
  *    (The entire request stays strictly within a single 1 MiB block boundary)
@@ -58,8 +58,8 @@ export function splitTelegramRange(
   let currentLogicalOffset = offset;
 
   while (currentLogicalOffset <= effectiveEnd) {
-    // 1. Calculate 1 KiB aligned start for MTProto upload.getFile (precise: true)
-    const alignedOffset = Math.floor(currentLogicalOffset / ALIGNMENT_1KIB) * ALIGNMENT_1KIB;
+    // 1. Calculate 4 KiB aligned start for MTProto upload.getFile
+    const alignedOffset = Math.floor(currentLogicalOffset / ALIGNMENT_4KIB) * ALIGNMENT_4KIB;
     const leadingSkip = currentLogicalOffset - alignedOffset;
 
     // 2. Determine boundary of current 1 MiB block
@@ -74,8 +74,8 @@ export function splitTelegramRange(
     // 4. Calculate limit: must not exceed DEFAULT_CHUNK_SIZE (512 KiB), remainingInBlock, or ONE_MIB
     const rawLimit = Math.min(DEFAULT_CHUNK_SIZE, remainingInBlock, neededFromBlock);
 
-    // Limit must be 1 KiB aligned (ceiling to cover requested bytes, capped at remainingInBlock)
-    let limit = Math.ceil(rawLimit / ALIGNMENT_1KIB) * ALIGNMENT_1KIB;
+    // Limit must be 4 KiB aligned (ceiling to cover requested bytes, capped at remainingInBlock)
+    let limit = Math.ceil(rawLimit / ALIGNMENT_4KIB) * ALIGNMENT_4KIB;
     limit = Math.min(limit, remainingInBlock, ONE_MIB);
 
     if (limit <= 0) break;
@@ -135,9 +135,13 @@ export class TelegramRangeReader {
     try {
       this.location = initialLocation || rehydrateFileLocation(file);
     } catch {
+      const fallbackId = (file.location as any)?.id || (file as any).docId || file.messageId;
+      const safeId = typeof fallbackId === "number" || /^\d+$/.test(String(fallbackId))
+        ? bigInt(String(fallbackId))
+        : bigInt(file.messageId);
       this.location = new Api.InputDocumentFileLocation({
-        id: bigInt(file.id),
-        accessHash: bigInt(file.accessHash || "0"),
+        id: safeId,
+        accessHash: bigInt(String(file.accessHash || "0").replace(/\D/g, "") || "0"),
         fileReference: Buffer.alloc(0),
         thumbSize: "",
       });
@@ -185,15 +189,13 @@ export class TelegramRangeReader {
    * Retrieves or re-establishes a live pooled MTProto sender for the target media DC.
    */
   private async getSender(): Promise<any> {
-    if (this.activeSenders.has(this.dcId)) {
-      const cached = this.activeSenders.get(this.dcId);
-      if (cached && (!cached.isConnected || cached.isConnected())) {
-        return cached;
-      }
+    let sender = this.activeSenders.get(this.dcId);
+    if (sender && typeof sender.isConnected === "function" && sender.isConnected()) {
+      return sender;
     }
 
     this.activeSenders.delete(this.dcId);
-    const sender = await this.client.getSender(this.dcId);
+    sender = await this.client.getSender(this.dcId);
     this.activeSenders.set(this.dcId, sender);
     return sender;
   }
@@ -318,10 +320,16 @@ export class TelegramRangeReader {
         location: this.location,
         offset: bigInt(alignedOffset),
         limit: limit,
-        precise: true,
       });
 
-      const response: any = await this.client.invokeWithSender(request, sender);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 15000)
+      );
+
+      const response: any = await Promise.race([
+        this.client.invokeWithSender(request, sender),
+        timeoutPromise,
+      ]);
       const latency = Date.now() - startTime;
 
       let bytes: Uint8Array;
@@ -340,13 +348,38 @@ export class TelegramRangeReader {
         throw new Error("ABORTED");
       }
 
-      // Handle Telegram Token Expiration
+      // Handle Chunk Timeout
+      if (errMsg.includes("MTPROTO_CHUNK_TIMEOUT") && retryCount < 3) {
+        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset}. Retrying DC ${this.dcId}...`);
+        this.activeSenders.delete(this.dcId);
+        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
+      }
+
+      // Handle Telegram File Migration (e.g. FILE_MIGRATE_1, FILE_MIGRATE_5)
+      const migrateMatch = errMsg.match(/FILE_MIGRATE_(\d+)/i);
+      const newDc = (err as any)?.newDc || (migrateMatch ? parseInt(migrateMatch[1], 10) : null);
+      if (newDc && retryCount < 3) {
+        console.info(`[TelegramRangeReader] File lives in DC ${newDc}. Switching sender from DC ${this.dcId}...`);
+        this.dcId = newDc;
+        this.activeSenders.delete(newDc);
+        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
+      }
+
+      // Handle Telegram Token Expiration / Upgrade Needed
       if (
-        (errMsg.includes("FILE_REFERENCE_EXPIRED") || errMsg.includes("FILE_REFERENCE_EMPTY")) &&
-        retryCount < 2
+        (errMsg.includes("FILE_REFERENCE_EXPIRED") ||
+          errMsg.includes("FILE_REFERENCE_EMPTY") ||
+          errMsg.includes("FILEREF_UPGRADE_NEEDED")) &&
+        retryCount < 3
       ) {
         await this.refreshLocation();
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
+      }
+
+      // Handle Offset Invalid (at or beyond EOF)
+      if (errMsg.includes("OFFSET_INVALID")) {
+        console.warn(`[TelegramRangeReader] OFFSET_INVALID at offset ${alignedOffset} - reached file boundary.`);
+        return new Uint8Array(0);
       }
 
       // Handle Flood Wait

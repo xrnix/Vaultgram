@@ -599,6 +599,82 @@ export class TgStreamClient {
 
     return [];
   }
+
+  // Create a new private storage vault (Telegram broadcast channel)
+  async createStorageVault(title: string, description?: string): Promise<ChannelMeta> {
+    if (!this.client || !this.isConnected) {
+      const ok = await this.init();
+      if (!ok) throw new Error("Client is not connected to Telegram.");
+    }
+
+    const updates: any = await this.client.invoke(
+      new Api.channels.CreateChannel({
+        title,
+        about: description || "Vaultgram Private Storage Vault",
+        broadcast: true,
+      })
+    );
+
+    const chat = updates?.chats?.[0];
+    if (!chat) {
+      throw new Error("Channel creation did not return a valid channel entity.");
+    }
+
+    const idStr = String(chat.id);
+    this.channelEntityCache.set(idStr, chat);
+
+    return {
+      id: idStr,
+      title: chat.title || title,
+      username: chat.username || null,
+      unreadCount: 0,
+      accessHash: chat.accessHash ? String(chat.accessHash) : undefined,
+      isSelf: false,
+    };
+  }
+
+  // Instant server-side zero-bandwidth copy/forward of messages to destination channel
+  async forwardFiles(
+    fromChannelId: string,
+    toChannelId: string,
+    messageIds: number[]
+  ): Promise<void> {
+    if (!this.client || !this.isConnected) {
+      const ok = await this.init();
+      if (!ok) throw new Error("Client is not connected to Telegram.");
+    }
+
+    let fromEntity = this.channelEntityCache.get(fromChannelId);
+    if (!fromEntity) {
+      try {
+        fromEntity = await this.client.getEntity(parseInt(fromChannelId, 10));
+      } catch {
+        fromEntity = await this.client.getEntity(parseInt(`-100${fromChannelId}`, 10));
+      }
+    }
+
+    let toEntity = this.channelEntityCache.get(toChannelId);
+    if (!toEntity) {
+      try {
+        toEntity = await this.client.getEntity(parseInt(toChannelId, 10));
+      } catch {
+        toEntity = await this.client.getEntity(parseInt(`-100${toChannelId}`, 10));
+      }
+    }
+
+    const randomIds = messageIds.map(() =>
+      BigInt(Math.floor(Math.random() * 1e15) + 1)
+    ) as any;
+
+    await this.client.invoke(
+      new Api.messages.ForwardMessages({
+        fromPeer: fromEntity,
+        toPeer: toEntity,
+        id: messageIds,
+        randomId: randomIds,
+      })
+    );
+  }
 }
 
 export const tgStreamClient = new TgStreamClient();

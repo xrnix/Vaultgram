@@ -35,14 +35,18 @@ export interface SyncStatus {
 }
 
 export type RemoteSearchStatus = "IDLE" | "LOCAL" | "REMOTE" | "DONE";
+export type SizeFilter = "ALL" | "SMALL" | "MEDIUM" | "LARGE";
 
 interface DriveStoreState {
   // Channels
   channels: ChannelMeta[];
+  setChannels: (channels: ChannelMeta[]) => void;
   activeChannelId: string; // 'UNIFIED' or specific channel ID
 
   // Navigation & Filtering
   activeFilter: NavFilter;
+  sizeFilter: SizeFilter;
+  setSizeFilter: (filter: SizeFilter) => void;
   searchQuery: string;
   remoteSearchStatus: RemoteSearchStatus;
   viewMode: ViewMode;
@@ -65,6 +69,44 @@ interface DriveStoreState {
 
   // Preview State
   previewFile: DriveFile | null;
+
+  // Batch Multi-Select
+  selectedFileIds: Set<string>;
+  toggleSelectFile: (fileId: string) => void;
+  selectRange: (fileIds: string[]) => void;
+  selectAll: (fileIds: string[]) => void;
+  clearSelection: () => void;
+
+  // New Modals (Telegram-Drive Inspired)
+  detailsFile: DriveFile | null;
+  setDetailsFile: (file: DriveFile | null) => void;
+
+  shareFile: DriveFile | null;
+  setShareFile: (file: DriveFile | null) => void;
+
+  textViewerFile: DriveFile | null;
+  setTextViewerFile: (file: DriveFile | null) => void;
+
+  isAnalyticsOpen: boolean;
+  setAnalyticsOpen: (open: boolean) => void;
+
+  isCreateVaultOpen: boolean;
+  setCreateVaultOpen: (open: boolean) => void;
+
+  isShortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
+
+  isNetworkMonitorOpen: boolean;
+  setNetworkMonitorOpen: (open: boolean) => void;
+
+  isSettingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+
+  showTransferDock: boolean;
+  setShowTransferDock: (show: boolean) => void;
+
+  copyToVaultFiles: DriveFile[] | null;
+  setCopyToVaultFiles: (files: DriveFile[] | null) => void;
 
   // Mobile Layout State
   isMobileSidebarOpen: boolean;
@@ -107,6 +149,7 @@ const STORAGE_CUSTOM_FOLDERS = "vaultgram_custom_folders";
 const STORAGE_PINNED = "vaultgram_pinned_ids";
 const STORAGE_FAVORITES = "vaultgram_favorite_ids";
 const STORAGE_VIEW_MODE = "vaultgram_view_mode";
+const STORAGE_SHOW_TRANSFER_DOCK = "vaultgram_show_transfer_dock";
 
 function loadLocalSet(key: string): Set<string> {
   try {
@@ -128,8 +171,11 @@ let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useDriveStore = create<DriveStoreState>((set, get) => ({
   channels: [],
+  setChannels: (channels: ChannelMeta[]) => set({ channels }),
   activeChannelId: "UNIFIED",
   activeFilter: "ALL",
+  sizeFilter: "ALL",
+  setSizeFilter: (filter: SizeFilter) => set({ sizeFilter: filter, renderPage: 1 }),
   searchQuery: "",
   remoteSearchStatus: "IDLE",
   viewMode: (localStorage.getItem(STORAGE_VIEW_MODE) as ViewMode) || "grid",
@@ -152,6 +198,27 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
   pinnedFileIds: loadLocalSet(STORAGE_PINNED),
   favoriteFileIds: loadLocalSet(STORAGE_FAVORITES),
   previewFile: null,
+
+  selectedFileIds: new Set<string>(),
+  detailsFile: null,
+  shareFile: null,
+  textViewerFile: null,
+  isAnalyticsOpen: false,
+  isCreateVaultOpen: false,
+  isShortcutsOpen: false,
+  isNetworkMonitorOpen: false,
+  isSettingsOpen: false,
+  setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+
+  showTransferDock: typeof window !== "undefined" ? localStorage.getItem(STORAGE_SHOW_TRANSFER_DOCK) !== "false" : true,
+  setShowTransferDock: (show: boolean) => {
+    try {
+      localStorage.setItem(STORAGE_SHOW_TRANSFER_DOCK, String(show));
+    } catch {}
+    set({ showTransferDock: show });
+  },
+
+  copyToVaultFiles: null,
 
   isMobileSidebarOpen: false,
   setMobileSidebarOpen: (open: boolean) => set({ isMobileSidebarOpen: open }),
@@ -587,11 +654,41 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
 
   setPreviewFile: (file: DriveFile | null) => set({ previewFile: file }),
 
+  toggleSelectFile: (fileId: string) => {
+    const next = new Set(get().selectedFileIds);
+    if (next.has(fileId)) next.delete(fileId);
+    else next.add(fileId);
+    set({ selectedFileIds: next });
+  },
+
+  selectRange: (fileIds: string[]) => {
+    const next = new Set(get().selectedFileIds);
+    for (const id of fileIds) next.add(id);
+    set({ selectedFileIds: next });
+  },
+
+  selectAll: (fileIds: string[]) => {
+    set({ selectedFileIds: new Set(fileIds) });
+  },
+
+  clearSelection: () => set({ selectedFileIds: new Set() }),
+
+  setDetailsFile: (file: DriveFile | null) => set({ detailsFile: file }),
+  setShareFile: (file: DriveFile | null) => set({ shareFile: file }),
+  setTextViewerFile: (file: DriveFile | null) => set({ textViewerFile: file }),
+  setAnalyticsOpen: (open: boolean) => set({ isAnalyticsOpen: open }),
+  setCreateVaultOpen: (open: boolean) => set({ isCreateVaultOpen: open }),
+  setShortcutsOpen: (open: boolean) => set({ isShortcutsOpen: open }),
+  setNetworkMonitorOpen: (open: boolean) => set({ isNetworkMonitorOpen: open }),
+  setCopyToVaultFiles: (files: DriveFile[] | null) => set({ copyToVaultFiles: files }),
+
   resetDrive: () =>
     set({
       channels: [],
+  setChannels: (channels: ChannelMeta[]) => set({ channels }),
       activeChannelId: "UNIFIED",
       activeFilter: "ALL",
+      sizeFilter: "ALL",
       searchQuery: "",
       remoteSearchStatus: "IDLE",
       files: [],

@@ -9,8 +9,7 @@
   z-index: 9999;
   background-color: hsl(var(--background));
   background-image: 
-    radial-gradient(at 0% 0%, hsla(var(--brand-blue), 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(var(--brand-emerald), 0.05) 0px, transparent 50%);
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -450,9 +449,9 @@
 }
 
 .shadcn-alert.success {
-  background: hsla(var(--brand-emerald), 0.12);
-  color: hsl(var(--brand-emerald));
-  border-color: hsla(var(--brand-emerald), 0.3);
+  background: rgba(196, 155, 86, 0.12);
+  color: #e6cfa3;
+  border-color: rgba(196, 155, 86, 0.3);
 }
 
 .shadcn-alert.error {

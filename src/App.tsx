@@ -53,10 +53,34 @@ export const App: React.FC = () => {
     }
   }, [isConnected, isWizardCompleted, initDrive]);
 
+  const [mousePos, setMousePos] = React.useState({ x: 50, y: 50 });
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      // Normalize to percentage
+      const x = Math.round((e.clientX / window.innerWidth) * 100);
+      const y = Math.round((e.clientY / window.innerHeight) * 100);
+      setMousePos({ x, y });
+    };
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-white/10 selection:text-white relative overflow-hidden font-sans">
       {/* Restrained Top-Ambient Radial Glow */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,rgba(255,255,255,0.04),transparent_70%)]" />
+
+      {/* Architectural Dot-Matrix Atmosphere */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-dot-matrix [mask-image:radial-gradient(ellipse_75%_65%_at_50%_40%,#000_20%,transparent_100%)] opacity-30" />
+
+      {/* Interactive Cursor Spotlight Glow */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 opacity-60"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, rgba(255, 255, 255, 0.025), transparent 80%)`,
+        }}
+      />
 
       <Toaster position="bottom-right" richColors theme="dark" />
 

@@ -300,7 +300,7 @@ export const TransfersView: React.FC = () => {
                     className={cn(
                       "flex items-center gap-0.5 px-1.5 py-1 rounded-[2px] text-[10px] font-mono shrink-0",
                       isUpload
-                        ? "bg-indigo-950/70 border border-indigo-900/60 text-indigo-300"
+                        ? "bg-[#c49b56]/15 border border-[#c49b56]/30 text-[#e6cfa3]"
                         : "bg-zinc-900 border border-zinc-800 text-zinc-300"
                     )}
                   >

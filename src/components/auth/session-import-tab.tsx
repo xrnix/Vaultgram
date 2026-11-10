@@ -47,8 +47,8 @@ export const SessionImportTab: React.FC = () => {
 
   return (
     <form onSubmit={handleImport} className="space-y-3 py-1">
-      <div className="space-y-1">
-        <label className="text-[11px] font-mono text-zinc-400">
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-mono text-zinc-400 block">
           GramJS StringSession
         </label>
         <textarea
@@ -59,6 +59,9 @@ export const SessionImportTab: React.FC = () => {
           disabled={isSubmitting}
           className="w-full bg-white/[0.03] border border-white/[0.1] rounded-[4px] p-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus-visible:outline-none transition-all resize-none"
         />
+        <p className="text-[10px] text-zinc-500 font-sans leading-normal">
+          Paste an existing GramJS string session exported from another Vaultgram instance or Telegram development tool.
+        </p>
       </div>
 
       <div className="border border-white/[0.08] bg-white/[0.02] rounded-[4px] overflow-hidden">

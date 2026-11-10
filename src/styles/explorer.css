@@ -264,8 +264,8 @@
 
 .drive-download-pill:disabled {
   opacity: 0.75;
-  color: hsl(var(--brand-emerald));
-  border-color: hsl(var(--brand-emerald));
+  color: #e6cfa3;
+  border-color: rgba(196, 155, 86, 0.4);
   cursor: not-allowed;
 }
 
