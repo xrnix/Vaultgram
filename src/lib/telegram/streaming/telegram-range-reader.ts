@@ -20,10 +20,8 @@ export interface RangeReaderTelemetry {
 
 export type RangeReaderTelemetryListener = (stats: RangeReaderTelemetry) => void;
 
-// Telegram MTProto Limits & Alignment Constants
-export const ONE_MIB = 1024 * 1024; // 1,048,576 Bytes (1 MiB block boundary)
-export const DEFAULT_CHUNK_SIZE = 512 * 1024; // 524,288 Bytes (512 KiB target chunk)
-export const ALIGNMENT_4KIB = 4096; // 4,096 Bytes (4 KiB standard MTProto chunk alignment)
+// Telegram MTProto Standard Fixed Chunk Size (512 KiB)
+export const TELEGRAM_CHUNK_SIZE = 512 * 1024; // 524,288 Bytes
 
 export interface TelegramSubRequest {
   alignedOffset: number;
@@ -35,15 +33,8 @@ export interface TelegramSubRequest {
 
 /**
  * Splits an arbitrary logical byte range [offset, offset + length - 1] into
- * one or more strictly legal Telegram upload.getFile requests.
- *
- * Guarantees:
- * 1. offset >= 0 && offset < fileSize
- * 2. offset is 4096-byte (4 KiB) aligned for standard MTProto upload.getFile
- * 3. limit is 4096-byte (4 KiB) aligned
- * 4. limit > 0 && limit <= 1048576 (1 MiB)
- * 5. Math.floor(alignedOffset / 1048576) === Math.floor((alignedOffset + limit - 1) / 1048576)
- *    (The entire request stays strictly within a single 1 MiB block boundary)
+ * fixed-size, power-of-two 512 KiB chunks where offset is strictly a multiple of limit (offset % limit === 0).
+ * This completely satisfies Telegram MTProto upload.getFile validation rules and avoids 400 LIMIT_INVALID.
  */
 export function splitTelegramRange(
   offset: number,
@@ -54,50 +45,26 @@ export function splitTelegramRange(
   const totalLengthToFetch = effectiveEnd - offset + 1;
   if (totalLengthToFetch <= 0) return [];
 
+  const firstChunkIdx = Math.floor(offset / TELEGRAM_CHUNK_SIZE);
+  const lastChunkIdx = Math.floor(effectiveEnd / TELEGRAM_CHUNK_SIZE);
   const requests: TelegramSubRequest[] = [];
-  let currentLogicalOffset = offset;
 
-  while (currentLogicalOffset <= effectiveEnd) {
-    // 1. Calculate 4 KiB aligned start for MTProto upload.getFile
-    const alignedOffset = Math.floor(currentLogicalOffset / ALIGNMENT_4KIB) * ALIGNMENT_4KIB;
-    const leadingSkip = currentLogicalOffset - alignedOffset;
+  for (let chunkIdx = firstChunkIdx; chunkIdx <= lastChunkIdx; chunkIdx++) {
+    const chunkStart = chunkIdx * TELEGRAM_CHUNK_SIZE;
+    const chunkEnd = chunkStart + TELEGRAM_CHUNK_SIZE - 1;
 
-    // 2. Determine boundary of current 1 MiB block
-    const blockIndex = Math.floor(alignedOffset / ONE_MIB);
-    const blockEnd = (blockIndex + 1) * ONE_MIB;
-    const remainingInBlock = blockEnd - alignedOffset;
-
-    // 3. Determine how many bytes we want from this block
-    const remainingLogical = effectiveEnd - currentLogicalOffset + 1;
-    const neededFromBlock = leadingSkip + remainingLogical;
-
-    // 4. Calculate limit: must not exceed DEFAULT_CHUNK_SIZE (512 KiB), remainingInBlock, or ONE_MIB
-    const rawLimit = Math.min(DEFAULT_CHUNK_SIZE, remainingInBlock, neededFromBlock);
-
-    // Limit must be 4 KiB aligned (ceiling to cover requested bytes, capped at remainingInBlock)
-    let limit = Math.ceil(rawLimit / ALIGNMENT_4KIB) * ALIGNMENT_4KIB;
-    limit = Math.min(limit, remainingInBlock, ONE_MIB);
-
-    if (limit <= 0) break;
-
-    // Invariant check: never cross 1 MiB block boundary
-    const startBlock = Math.floor(alignedOffset / ONE_MIB);
-    const endBlock = Math.floor((alignedOffset + limit - 1) / ONE_MIB);
-    if (startBlock !== endBlock) {
-      limit = remainingInBlock;
-    }
-
-    const availableLogicalBytes = Math.min(remainingLogical, limit - leadingSkip);
+    const logicalStart = Math.max(offset, chunkStart);
+    const logicalEnd = Math.min(effectiveEnd, chunkEnd);
+    const logicalLength = logicalEnd - logicalStart + 1;
+    const leadingSkip = logicalStart - chunkStart;
 
     requests.push({
-      alignedOffset,
-      limit,
-      logicalStartOffset: currentLogicalOffset,
-      logicalLength: availableLogicalBytes,
+      alignedOffset: chunkStart,
+      limit: TELEGRAM_CHUNK_SIZE,
+      logicalStartOffset: logicalStart,
+      logicalLength,
       leadingSkip,
     });
-
-    currentLogicalOffset += availableLogicalBytes;
   }
 
   return requests;
@@ -119,6 +86,7 @@ export class TelegramRangeReader {
   private isDestroyed = false;
   private abortControllers = new Set<AbortController>();
   private activeSenders = new Map<number, any>();
+  private chunkCache = new Map<number, Uint8Array>();
 
   constructor(
     client: TelegramClient,
@@ -211,6 +179,7 @@ export class TelegramRangeReader {
       this.dcId = refreshed.dcId;
     }
     this.activeSenders.clear();
+    this.chunkCache.clear();
   }
 
   /**
@@ -312,6 +281,12 @@ export class TelegramRangeReader {
       throw new Error("ABORTED");
     }
 
+    // Fast-path: Check in-memory chunk cache
+    const cached = this.chunkCache.get(alignedOffset);
+    if (cached) {
+      return cached;
+    }
+
     const startTime = Date.now();
 
     try {
@@ -320,6 +295,8 @@ export class TelegramRangeReader {
         location: this.location,
         offset: bigInt(alignedOffset),
         limit: limit,
+        precise: true,
+        cdnSupported: false,
       });
 
       const timeoutPromise = new Promise((_, reject) =>
@@ -337,6 +314,17 @@ export class TelegramRangeReader {
         bytes = response.bytes instanceof Uint8Array ? response.bytes : new Uint8Array(response.bytes);
       } else {
         bytes = new Uint8Array(0);
+      }
+
+      // Populate LRU cache (limit to 32 chunks = 16 MiB)
+      if (bytes.length > 0) {
+        if (this.chunkCache.size >= 32) {
+          const oldestKey = this.chunkCache.keys().next().value;
+          if (oldestKey !== undefined) {
+            this.chunkCache.delete(oldestKey);
+          }
+        }
+        this.chunkCache.set(alignedOffset, bytes);
       }
 
       this.notifyTelemetry(latency, bytes.length);
@@ -441,6 +429,7 @@ export class TelegramRangeReader {
   public destroy() {
     this.isDestroyed = true;
     this.abortAll();
+    this.chunkCache.clear();
     this.activeSenders.clear();
   }
 }
