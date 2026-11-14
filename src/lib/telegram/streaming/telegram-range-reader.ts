@@ -154,16 +154,52 @@ export class TelegramRangeReader {
   }
 
   /**
+   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
+   */
+  private async purgeDcSender(dcId: number): Promise<void> {
+    this.activeSenders.delete(dcId);
+    try {
+      if (typeof (this.client as any)._cleanupExportedSender === "function") {
+        await (this.client as any)._cleanupExportedSender(dcId);
+      }
+    } catch (_) {}
+    if ((this.client as any)._exportedSenderPromises) {
+      (this.client as any)._exportedSenderPromises.delete(dcId);
+    }
+  }
+
+  /**
    * Retrieves or re-establishes a live pooled MTProto sender for the target media DC.
    */
-  private async getSender(): Promise<any> {
+  private async getSender(forceFresh = false): Promise<any> {
     let sender = this.activeSenders.get(this.dcId);
-    if (sender && typeof sender.isConnected === "function" && sender.isConnected()) {
+    if (
+      !forceFresh &&
+      sender &&
+      typeof sender.isConnected === "function" &&
+      sender.isConnected() &&
+      !sender.userDisconnected
+    ) {
       return sender;
     }
 
-    this.activeSenders.delete(this.dcId);
-    sender = await this.client.getSender(this.dcId);
+    if (forceFresh) {
+      await this.purgeDcSender(this.dcId);
+    }
+
+    // Ensure main client connection is healthy
+    if (!this.client.connected && typeof this.client.connect === "function") {
+      try {
+        await this.client.connect();
+      } catch (_) {}
+    }
+
+    if (typeof (this.client as any)._borrowExportedSender === "function") {
+      sender = await (this.client as any)._borrowExportedSender(this.dcId, true);
+    } else {
+      sender = await this.client.getSender(this.dcId);
+    }
+
     this.activeSenders.set(this.dcId, sender);
     return sender;
   }
@@ -178,7 +214,7 @@ export class TelegramRangeReader {
     if (refreshed.dcId) {
       this.dcId = refreshed.dcId;
     }
-    this.activeSenders.clear();
+    await this.purgeDcSender(this.dcId);
     this.chunkCache.clear();
   }
 
@@ -299,8 +335,9 @@ export class TelegramRangeReader {
         cdnSupported: false,
       });
 
+      // 8-second timeout is plenty for 512 KiB chunks while giving ample runway before SW 45s threshold
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 15000)
+        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 8000)
       );
 
       const response: any = await Promise.race([
@@ -336,10 +373,11 @@ export class TelegramRangeReader {
         throw new Error("ABORTED");
       }
 
-      // Handle Chunk Timeout
+      // Handle Chunk Timeout: purge dead sender from GramJS and force fresh connection
       if (errMsg.includes("MTPROTO_CHUNK_TIMEOUT") && retryCount < 3) {
-        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset}. Retrying DC ${this.dcId}...`);
-        this.activeSenders.delete(this.dcId);
+        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset}. Force-reconnecting DC ${this.dcId}... (attempt ${retryCount + 1}/3)`);
+        await this.purgeDcSender(this.dcId);
+        await this.getSender(true);
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
@@ -348,8 +386,9 @@ export class TelegramRangeReader {
       const newDc = (err as any)?.newDc || (migrateMatch ? parseInt(migrateMatch[1], 10) : null);
       if (newDc && retryCount < 3) {
         console.info(`[TelegramRangeReader] File lives in DC ${newDc}. Switching sender from DC ${this.dcId}...`);
+        await this.purgeDcSender(this.dcId);
         this.dcId = newDc;
-        this.activeSenders.delete(newDc);
+        await this.getSender(true);
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
@@ -390,16 +429,11 @@ export class TelegramRangeReader {
         errMsg.toLowerCase().includes("network");
 
       if (isConnectionError && retryCount < 5) {
-        console.warn(`[TelegramRangeReader] Socket disconnected (${errMsg}). Auto-reconnecting sender for DC ${this.dcId}... (attempt ${retryCount + 1}/5)`);
-        this.activeSenders.delete(this.dcId);
+        console.warn(`[TelegramRangeReader] Socket disconnected (${errMsg}). Force-reconnecting sender for DC ${this.dcId}... (attempt ${retryCount + 1}/5)`);
+        await this.purgeDcSender(this.dcId);
+        await this.getSender(true);
 
-        if (!this.client.connected && this.client.connect) {
-          try {
-            await this.client.connect();
-          } catch (_) {}
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 300));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }

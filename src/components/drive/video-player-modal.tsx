@@ -448,6 +448,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   const retryStream = (targetEngine: "native" | "mse" = "native") => {
     setHasError(false);
     setIsBuffering(true);
+    if (activeFile) {
+      unregisterActiveStreamFile(activeFile.id);
+      registerActiveStreamFile(activeFile);
+    }
     setEngine(targetEngine);
     setRetryCount((c) => c + 1);
   };
