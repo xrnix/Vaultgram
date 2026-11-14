@@ -108,8 +108,6 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
         const fileSize = file.size;
         let start = 0;
         let end = fileSize - 1;
-        const TARGET_CHUNK_SIZE = 512 * 1024; // 512 KiB per range response for fast first-frame start
-
         if (range) {
           // Case A: Suffix range request (e.g. Range: bytes=-524288 for moov atom at EOF)
           const suffixMatch = range.match(/bytes=-(\d+)/i);
@@ -125,13 +123,15 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
               if (rangeMatch[2]) {
                 end = Math.min(fileSize - 1, parseInt(rangeMatch[2], 10));
               } else {
-                // Open-ended range: limit to TARGET_CHUNK_SIZE to minimize round-trip latency
-                end = Math.min(fileSize - 1, start + TARGET_CHUNK_SIZE - 1);
+                // Open-ended range: 512 KiB for initial probe (start === 0) for instant start;
+                // 1024 KiB (1 MiB) for continuous playback to provide a wide buffer runway on high-latency DCs
+                const targetBatchSize = start === 0 ? 512 * 1024 : 1024 * 1024;
+                end = Math.min(fileSize - 1, start + targetBatchSize - 1);
               }
             }
           }
         } else {
-          end = Math.min(fileSize - 1, TARGET_CHUNK_SIZE - 1);
+          end = Math.min(fileSize - 1, 512 * 1024 - 1);
         }
 
         const requestLength = Math.max(0, end - start + 1);

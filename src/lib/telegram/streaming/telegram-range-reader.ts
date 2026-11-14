@@ -87,6 +87,7 @@ export class TelegramRangeReader {
   private abortControllers = new Set<AbortController>();
   private activeSenders = new Map<number, any>();
   private chunkCache = new Map<number, Uint8Array>();
+  private inFlightPrefetches = new Set<number>();
 
   constructor(
     client: TelegramClient,
@@ -154,10 +155,16 @@ export class TelegramRangeReader {
   }
 
   /**
-   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
+   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client,
+   * and clears the DC auth key from session so that stale/corrupt session keys (like Pluto DC 1) are re-created fresh.
    */
   private async purgeDcSender(dcId: number): Promise<void> {
     this.activeSenders.delete(dcId);
+    try {
+      if (this.client.session && typeof (this.client.session as any).setAuthKey === "function") {
+        (this.client.session as any).setAuthKey(undefined, dcId);
+      }
+    } catch (_) {}
     try {
       if (typeof (this.client as any)._cleanupExportedSender === "function") {
         await (this.client as any)._cleanupExportedSender(dcId);
@@ -293,6 +300,12 @@ export class TelegramRangeReader {
         }
       }
 
+      if (bytesWritten > 0 && subRequests.length > 0) {
+        const lastAligned = subRequests[subRequests.length - 1].alignedOffset;
+        this.triggerPrefetch(lastAligned + TELEGRAM_CHUNK_SIZE);
+        this.triggerPrefetch(lastAligned + TELEGRAM_CHUNK_SIZE * 2);
+      }
+
       return resultBuffer.subarray(0, bytesWritten);
     } finally {
       this.activeRequestsCount = Math.max(0, this.activeRequestsCount - 1);
@@ -302,6 +315,33 @@ export class TelegramRangeReader {
       }
       this.notifyTelemetry();
     }
+  }
+
+  /**
+   * Proactively prefetches the next consecutive MTProto chunk into the in-memory LRU cache
+   * so high-latency DCs (like Pluto DC 1) have chunks ready before playback runs dry.
+   */
+  private triggerPrefetch(offset: number) {
+    if (this.isDestroyed || offset >= this.fileSize) return;
+    const alignedOffset = Math.floor(offset / TELEGRAM_CHUNK_SIZE) * TELEGRAM_CHUNK_SIZE;
+    if (alignedOffset >= this.fileSize) return;
+
+    if (this.chunkCache.has(alignedOffset) || this.inFlightPrefetches.has(alignedOffset)) {
+      return;
+    }
+
+    this.inFlightPrefetches.add(alignedOffset);
+
+    // Run in background without awaiting
+    const prefetchController = new AbortController();
+    this.abortControllers.add(prefetchController);
+
+    this.fetchSingleAlignedChunk(alignedOffset, TELEGRAM_CHUNK_SIZE, prefetchController.signal)
+      .catch(() => {})
+      .finally(() => {
+        this.inFlightPrefetches.delete(alignedOffset);
+        this.abortControllers.delete(prefetchController);
+      });
   }
 
   /**
@@ -418,6 +458,24 @@ export class TelegramRangeReader {
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
+      // Handle Broken Auth Key / Invalid Auth Bytes (specifically on secondary DCs like Pluto DC 1)
+      const isAuthError =
+        errMsg.includes("AUTH_KEY_UNREGISTERED") ||
+        errMsg.includes("AUTH_BYTES_INVALID") ||
+        errMsg.includes("SESSION_REVOKED") ||
+        errMsg.includes("SESSION_EXPIRED");
+
+      if (isAuthError && retryCount < 3) {
+        console.warn(
+          `[TelegramRangeReader] DC ${this.dcId} authorization issue (${errMsg}). Purging DC ${this.dcId} session key & re-authenticating... (attempt ${retryCount + 1}/3)`
+        );
+        await this.purgeDcSender(this.dcId);
+        await this.getSender(true);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
+        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
+      }
+
       // Handle Connection drops / Disconnects / Transport retries
       const isConnectionError =
         errMsg.toLowerCase().includes("disconnect") ||
@@ -463,6 +521,7 @@ export class TelegramRangeReader {
   public destroy() {
     this.isDestroyed = true;
     this.abortAll();
+    this.inFlightPrefetches.clear();
     this.chunkCache.clear();
     this.activeSenders.clear();
   }
