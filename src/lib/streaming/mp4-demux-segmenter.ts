@@ -170,7 +170,7 @@ export class Mp4DemuxSegmenter {
       if (!this.isReady) {
         this.readyReject(new Error("MP4 metadata probe timed out (likely non-FastStart or non-MP4 container)"));
       }
-    }, 15000);
+    }, 45000);
 
     try {
       // 1. Fetch initial head chunk (0 to 512KB)

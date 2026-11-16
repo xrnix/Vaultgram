@@ -155,16 +155,10 @@ export class TelegramRangeReader {
   }
 
   /**
-   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client,
-   * and clears the DC auth key from session so that stale/corrupt session keys (like Pluto DC 1) are re-created fresh.
+   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
    */
   private async purgeDcSender(dcId: number): Promise<void> {
     this.activeSenders.delete(dcId);
-    try {
-      if (this.client.session && typeof (this.client.session as any).setAuthKey === "function") {
-        (this.client.session as any).setAuthKey(undefined, dcId);
-      }
-    } catch (_) {}
     try {
       if (typeof (this.client as any)._cleanupExportedSender === "function") {
         await (this.client as any)._cleanupExportedSender(dcId);
@@ -202,7 +196,7 @@ export class TelegramRangeReader {
     }
 
     if (typeof (this.client as any)._borrowExportedSender === "function") {
-      sender = await (this.client as any)._borrowExportedSender(this.dcId, true);
+      sender = await (this.client as any)._borrowExportedSender(this.dcId, forceFresh);
     } else {
       sender = await this.client.getSender(this.dcId);
     }
@@ -303,7 +297,6 @@ export class TelegramRangeReader {
       if (bytesWritten > 0 && subRequests.length > 0) {
         const lastAligned = subRequests[subRequests.length - 1].alignedOffset;
         this.triggerPrefetch(lastAligned + TELEGRAM_CHUNK_SIZE);
-        this.triggerPrefetch(lastAligned + TELEGRAM_CHUNK_SIZE * 2);
       }
 
       return resultBuffer.subarray(0, bytesWritten);
@@ -375,9 +368,9 @@ export class TelegramRangeReader {
         cdnSupported: false,
       });
 
-      // 8-second timeout is plenty for 512 KiB chunks while giving ample runway before SW 45s threshold
+      // 35-second timeout gives ample runway for high-latency transatlantic links (e.g. Pluto DC 1 Miami)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 8000)
+        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 35000)
       );
 
       const response: any = await Promise.race([
@@ -413,11 +406,16 @@ export class TelegramRangeReader {
         throw new Error("ABORTED");
       }
 
-      // Handle Chunk Timeout: purge dead sender from GramJS and force fresh connection
+      // Handle Chunk Timeout: only reconnect if sender connection is dead, avoid abrupt auth churn
       if (errMsg.includes("MTPROTO_CHUNK_TIMEOUT") && retryCount < 3) {
-        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset}. Force-reconnecting DC ${this.dcId}... (attempt ${retryCount + 1}/3)`);
-        await this.purgeDcSender(this.dcId);
-        await this.getSender(true);
+        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset} on DC ${this.dcId}. Retrying chunk request... (attempt ${retryCount + 1}/3)`);
+        const sender = this.activeSenders.get(this.dcId);
+        if (!sender || typeof sender.isConnected !== "function" || !sender.isConnected() || sender.userDisconnected) {
+          await this.purgeDcSender(this.dcId);
+          await this.getSender(true);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 

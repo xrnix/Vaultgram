@@ -23,25 +23,39 @@ export class TelegramBrowserWebSocket extends PromisedWebSockets {
   getWebSocketLink(ip: string, _port: number, testServers?: boolean) {
     const testSuffix = testServers ? "_test" : "";
 
-    // 1. If GramJS passed a full Telegram domain (e.g. pluto-1.web.telegram.org, flora-1.web.telegram.org), USE IT DIRECTLY!
-    if (ip.includes("web.telegram.org") || ip.includes("telegram.org")) {
-      return `wss://${ip}/apiws${testSuffix}`;
+    // 1. If GramJS passed a Telegram domain (e.g. pluto-1.web.telegram.org, flora-1.web.telegram.org),
+    // normalize by stripping "-1" so we always route through the primary DC WebSocket gateway that supports
+    // both full MTProto authorization (auth.importAuthorization) and high-speed media streaming.
+    const cleanHost = ip.replace(/-1\.web\.telegram\.org/g, ".web.telegram.org");
+    if (cleanHost.includes("web.telegram.org") || cleanHost.includes("telegram.org")) {
+      return `wss://${cleanHost}/apiws${testSuffix}`;
     }
 
     // 2. IP / DC Number to Telegram WebSocket Gateway Mapping
-    if (ip.startsWith("149.154.175") || String(ip) === "1" || ip.includes("pluto")) {
+    const ipStr = String(ip);
+
+    // DC 1 (Pluto - Miami): 149.154.175.50 - 149.154.175.60
+    if (ipStr === "1" || ipStr.startsWith("149.154.175.5") || ipStr.startsWith("149.154.175.6") || ipStr.includes("pluto")) {
       return `wss://pluto.web.telegram.org/apiws${testSuffix}`;
     }
-    if (ip.startsWith("149.154.167.5") || String(ip) === "2" || ip.includes("venus")) {
+
+    // DC 2 (Venus - Amsterdam): 149.154.167.40 - 149.154.167.59, 149.154.167.151
+    if (ipStr === "2" || ipStr.startsWith("149.154.167.4") || ipStr.startsWith("149.154.167.5") || ipStr.startsWith("149.154.167.15") || ipStr.includes("venus")) {
       return `wss://venus.web.telegram.org/apiws${testSuffix}`;
     }
-    if (ip.startsWith("149.154.175.1") || String(ip) === "3" || ip.includes("aurora")) {
+
+    // DC 3 (Aurora - Miami): 149.154.175.100
+    if (ipStr === "3" || ipStr.startsWith("149.154.175.1") || ipStr.includes("aurora")) {
       return `wss://aurora.web.telegram.org/apiws${testSuffix}`;
     }
-    if (ip.startsWith("149.154.167.9") || ip.includes("149.154.167") || String(ip) === "4" || ip.includes("vesta")) {
+
+    // DC 4 (Vesta - Amsterdam): 149.154.167.91, 149.154.166.111
+    if (ipStr === "4" || ipStr.startsWith("149.154.167.9") || ipStr.startsWith("149.154.166") || ipStr.includes("vesta")) {
       return `wss://vesta.web.telegram.org/apiws${testSuffix}`;
     }
-    if (ip.startsWith("91.108.56") || String(ip) === "5" || ip.includes("flora")) {
+
+    // DC 5 (Flora - Singapore): 91.108.56.x
+    if (ipStr === "5" || ipStr.startsWith("91.108.56") || ipStr.includes("flora")) {
       return `wss://flora.web.telegram.org/apiws${testSuffix}`;
     }
 
@@ -93,7 +107,7 @@ export class TgStreamClient {
       // Pre-assign primary production DC 4 for instant WebSocket handshake
       stringSession.setDC(4, "149.154.167.91", 443);
     }
-    return new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
+    const client = new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
       connection: ConnectionWebSocketObfuscated,
       connectionRetries: 3,
       useWSS: true,
@@ -102,6 +116,50 @@ export class TgStreamClient {
       systemVersion: "Web/Linux",
       appVersion: "2.0.0",
     });
+
+    // Ensure getDC NEVER returns -1 download endpoints for browser WebSocket connections,
+    // because -1 endpoints reject auth.importAuthorization with 400 AUTH_BYTES_INVALID!
+    const origGetDC = client.getDC.bind(client);
+    client.getDC = async (dcId: number, _downloadDC = false, web = false) => {
+      return origGetDC(dcId, false, web);
+    };
+
+    // Patch _connectSender to gracefully handle AUTH_BYTES_INVALID / AUTH_KEY_UNREGISTERED
+    // and prevent GramJS from getting stuck in an infinite while(true) retry loop.
+    const origConnectSender = (client as any)._connectSender?.bind(client);
+    if (origConnectSender) {
+      (client as any)._connectSender = async (sender: any, dcId: number) => {
+        let attempts = 0;
+        const maxAttempts = 3;
+        while (attempts < maxAttempts) {
+          attempts++;
+          try {
+            return await origConnectSender(sender, dcId);
+          } catch (err: any) {
+            const msg = String(err?.message || err);
+            if (msg.includes("AUTH_BYTES_INVALID") || msg.includes("AUTH_KEY_UNREGISTERED")) {
+              console.warn(
+                `[TgStreamClient] DC ${dcId} auth handshake failed (${msg}). Resetting sender key (attempt ${attempts}/${maxAttempts})...`
+              );
+              try {
+                if (sender.authKey && typeof sender.authKey.setKey === "function") {
+                  await sender.authKey.setKey(undefined);
+                }
+                if (typeof sender.disconnect === "function") {
+                  await sender.disconnect();
+                }
+              } catch (_) {}
+              if (attempts >= maxAttempts) throw err;
+              await new Promise((r) => setTimeout(r, 1000));
+            } else {
+              throw err;
+            }
+          }
+        }
+      };
+    }
+
+    return client;
   }
 
   private initPromise: Promise<boolean> | null = null;
