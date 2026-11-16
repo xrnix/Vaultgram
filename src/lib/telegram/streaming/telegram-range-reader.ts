@@ -157,8 +157,11 @@ export class TelegramRangeReader {
   /**
    * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
    */
-  private async purgeDcSender(dcId: number): Promise<void> {
+  private async purgeDcSender(dcId: number, isAuthError = false): Promise<void> {
     this.activeSenders.delete(dcId);
+    if (isAuthError && typeof (this.client as any).invalidateDcAuthKey === "function") {
+      (this.client as any).invalidateDcAuthKey(dcId);
+    }
     try {
       if (typeof (this.client as any)._cleanupExportedSender === "function") {
         await (this.client as any)._cleanupExportedSender(dcId);
@@ -459,7 +462,7 @@ export class TelegramRangeReader {
         console.warn(
           `[TelegramRangeReader] DC ${this.dcId} authorization issue (${errMsg}). Purging DC ${this.dcId} session key & re-authenticating... (attempt ${retryCount + 1}/3)`
         );
-        await this.purgeDcSender(this.dcId);
+        await this.purgeDcSender(this.dcId, true);
         await this.getSender(true);
         await new Promise((resolve) => setTimeout(resolve, 300));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");

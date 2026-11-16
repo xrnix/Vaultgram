@@ -105,6 +105,48 @@ export class TgStreamClient {
       stringSession.setDC(4, "149.154.167.91", 443);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // FIX: Patch StringSession to persist foreign DC auth keys in memory.
+    //
+    // GramJS's MemorySession.getAuthKey(dcId) returns `undefined` for any
+    // dcId != the primary DC. This means every time an exported sender for a
+    // foreign DC (e.g. Pluto DC 1) is created, GramJS must:
+    //   1. Run a full Diffie-Hellman key exchange (3-4 RTTs)
+    //   2. Export authorization from the home DC
+    //   3. Import authorization on the foreign DC via InvokeWithLayer
+    //
+    // On high-latency links (India → Miami ≈ 280ms RTT), this adds 2-4 seconds
+    // PER sender creation. Since senders are released after 30 seconds of
+    // inactivity or on any connection break, video playback on Pluto constantly
+    // stalls while new senders are bootstrapped from scratch.
+    //
+    // By caching foreign DC auth keys ONLY AFTER auth.importAuthorization has
+    // succeeded, subsequent sender creation reuses the existing key, skipping DH
+    // entirely and directly connecting to the high-speed download endpoints (-1).
+    // ─────────────────────────────────────────────────────────────────────────
+    const foreignDcAuthKeys = new Map<number, any>();
+    const origGetAuthKey = stringSession.getAuthKey.bind(stringSession);
+    const origSetAuthKey = stringSession.setAuthKey.bind(stringSession);
+
+    stringSession.getAuthKey = (dcId?: number): any => {
+      // Home DC: use original behavior (returns the primary auth key)
+      if (!dcId || dcId === stringSession.dcId) {
+        return origGetAuthKey(dcId);
+      }
+      // Foreign DC: return cached key if available
+      return foreignDcAuthKeys.get(dcId);
+    };
+
+    stringSession.setAuthKey = (authKey: any, dcId?: number): any => {
+      // Home DC: use original behavior
+      if (!dcId || dcId === stringSession.dcId) {
+        return origSetAuthKey(authKey, dcId);
+      }
+      // Foreign DC: We do NOT store unverified keys from _authKeyCallback here.
+      // Keys are strictly committed to foreignDcAuthKeys after auth.importAuthorization
+      // has definitively succeeded.
+    };
+
     const client = new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
       connection: ConnectionWebSocketObfuscated,
       connectionRetries: 3,
@@ -117,8 +159,169 @@ export class TgStreamClient {
       systemLangCode: "en",
     });
 
-    // Deduplicate concurrent _borrowExportedSender requests for the same DC ID
-    // and protect against runaway infinite recursions on network interruptions.
+    (client as any).invalidateDcAuthKey = (dcId: number) => {
+      foreignDcAuthKeys.delete(dcId);
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // FIX: Override _cleanupExportedSender to NOT destroy the auth key cache
+    // on routine disconnects.
+    // ─────────────────────────────────────────────────────────────────────────
+    (client as any)._cleanupExportedSender = async (dcId: number) => {
+      const senderPromise = (client as any)._exportedSenderPromises?.get(dcId);
+      (client as any)._exportedSenderPromises?.delete(dcId);
+      if (senderPromise) {
+        try {
+          const sender = await senderPromise;
+          await sender?.disconnect();
+        } catch (_) {}
+      }
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // FIX: Full rewrite of _connectSender with bounded retries and correct auth.
+    //
+    // GramJS's built-in _connectSender has an infinite while(true) loop that catches
+    // AUTH_BYTES_INVALID, sleeps 1s, and reconnects. On the second iteration,
+    // the sender already has an authKey from the DH exchange in iteration 1, which
+    // causes GramJS to skip auth.importAuthorization and return an unauthorized sender,
+    // immediately triggering AUTH_KEY_UNREGISTERED on the first chunk request!
+    //
+    // Our rewrite:
+    //   1. Uses bounded 3-attempt retries (no infinite loops).
+    //   2. Routes to download endpoints (-1) ONLY when a verified authKey exists.
+    //   3. Connects to the main DC endpoint (pluto.web.telegram.org) for DH + auth import.
+    //   4. Freshly constructs InitConnection to avoid mutation corruption.
+    //   5. Commits the key to foreignDcAuthKeys ONLY after auth.importAuthorization succeeds.
+    //   6. Properly invalidates cached keys on any auth errors.
+    // ─────────────────────────────────────────────────────────────────────────
+    (client as any)._connectSender = async (sender: any, dcId: number) => {
+      const maxAttempts = 3;
+      let lastErr: any = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const cachedKey = foreignDcAuthKeys.get(dcId);
+          const hasAuthorizedKey = !!(cachedKey && typeof cachedKey.getKey === "function" && cachedKey.getKey());
+
+          // Download endpoint (-1) is only usable when we already have an authorized authKey.
+          // When performing fresh DH or auth.importAuthorization, we MUST use the primary endpoint.
+          const dc = await client.getDC(dcId, hasAuthorizedKey);
+
+          await sender.connect(
+            new (client as any)._connection({
+              ip: dc.ipAddress,
+              port: dc.port,
+              dcId: dcId,
+              loggers: (client as any)._log,
+              proxy: (client as any)._proxy,
+              testServers: (client as any).testServers,
+              socket: (client as any).networkSocket,
+            }),
+            false
+          );
+
+          if (client.session.dcId !== dcId && !sender._authenticated) {
+            console.info(`[TgStreamClient] Authorizing DC ${dcId} (${dc.ipAddress}) with layer 198 (attempt ${attempt}/${maxAttempts})...`);
+
+            if (!client.connected && typeof client.connect === "function") {
+              await client.connect();
+            }
+
+            const auth: any = await client.invoke(new Api.auth.ExportAuthorization({ dcId }));
+
+            const initReq = new Api.InitConnection({
+              apiId: client.apiId,
+              deviceModel: "Vaultgram React Web",
+              systemVersion: "Web/Linux",
+              appVersion: "2.0.0",
+              langCode: "en",
+              langPack: "",
+              systemLangCode: "en",
+              query: new Api.auth.ImportAuthorization({
+                id: auth.id,
+                bytes: auth.bytes,
+              }),
+            });
+
+            const req = new Api.InvokeWithLayer({
+              layer: 198,
+              query: initReq,
+            });
+
+            await sender.send(req);
+            sender._authenticated = true;
+
+            // Commit the authorized key to the cache
+            if (sender.authKey && typeof sender.authKey.getKey === "function" && sender.authKey.getKey()) {
+              foreignDcAuthKeys.set(dcId, sender.authKey);
+            }
+          }
+
+          sender.dcId = dcId;
+          sender.userDisconnected = false;
+          return sender;
+        } catch (err: any) {
+          lastErr = err;
+          const errMsg = String(err?.errorMessage || err?.message || err);
+          console.warn(
+            `[TgStreamClient] DC ${dcId} _connectSender failed (attempt ${attempt}/${maxAttempts}):`,
+            errMsg
+          );
+
+          if (errMsg === "DC_ID_INVALID") {
+            sender._authenticated = true;
+            sender.userDisconnected = false;
+            return sender;
+          }
+
+          if (
+            errMsg.includes("AUTH_BYTES_INVALID") ||
+            errMsg.includes("AUTH_KEY_UNREGISTERED") ||
+            errMsg.includes("invalid new nonce hash") ||
+            errMsg.includes("SESSION_REVOKED") ||
+            errMsg.includes("SESSION_EXPIRED")
+          ) {
+            foreignDcAuthKeys.delete(dcId);
+            try {
+              if (sender.authKey && typeof sender.authKey.setKey === "function") {
+                await sender.authKey.setKey(undefined);
+              }
+            } catch (_) {}
+          }
+
+          try {
+            await sender.disconnect();
+          } catch (_) {}
+
+          if (attempt >= maxAttempts) {
+            throw err;
+          }
+
+          await new Promise((r) => setTimeout(r, 1000 * attempt));
+
+          // Create clean sender without corrupted authKey for the next attempt
+          if (!sender.authKey || !sender.authKey.getKey()) {
+            sender = (client as any)._createExportedSender(dcId);
+          }
+        }
+      }
+
+      throw lastErr || new Error(`[TgStreamClient] Failed to connect sender for DC ${dcId}`);
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // FIX: Extend the exported sender release timeout from 30s to 5 minutes.
+    //
+    // The default 30-second idle timeout causes senders to be disconnected
+    // during natural video playback pauses (buffering, seeking, user pausing).
+    // On Pluto DC 1, rebuilding a sender takes 2-4 seconds due to the DH
+    // handshake (even with auth key caching, the WebSocket connection setup
+    // and TLS handshake still takes ~600ms on a 280ms RTT link).
+    //
+    // 5 minutes keeps the sender alive through typical viewing sessions while
+    // still preventing indefinite resource leaks.
+    // ─────────────────────────────────────────────────────────────────────────
     const origBorrow = (client as any)._borrowExportedSender?.bind(client);
     if (origBorrow) {
       const inFlightBorrows = new Map<number, Promise<any>>();
@@ -131,12 +334,40 @@ export class TgStreamClient {
           while (attempts < 3) {
             attempts++;
             try {
-              return await origBorrow(dcId, shouldReconnect && attempts === 1, existingSender);
+              const sender = await origBorrow(dcId, shouldReconnect && attempts === 1, existingSender);
+
+              // Extend the release timeout: clear any existing 30s timer and set 5 minutes
+              const releaseTimeouts = (client as any)._exportedSenderReleaseTimeouts;
+              if (releaseTimeouts?.has(dcId)) {
+                clearTimeout(releaseTimeouts.get(dcId));
+                releaseTimeouts.delete(dcId);
+              }
+              releaseTimeouts?.set(dcId, setTimeout(() => {
+                releaseTimeouts.delete(dcId);
+                // Check if sender still has pending requests before disconnecting
+                if (sender._pendingState?.values()?.length) {
+                  sender._reconnect();
+                  (client as any)._borrowExportedSender(dcId, false, sender);
+                } else {
+                  sender.disconnect();
+                }
+              }, 300_000)); // 5 minutes
+
+              return sender;
             } catch (err: any) {
+              const errMsg = String(err?.message || err);
               console.warn(
                 `[TgStreamClient] DC ${dcId} exported sender borrow failed (attempt ${attempts}/3):`,
-                err?.message || err
+                errMsg
               );
+              // On auth errors, clear the cached key to force fresh DH on next attempt
+              if (
+                errMsg.includes("AUTH_BYTES_INVALID") ||
+                errMsg.includes("AUTH_KEY_UNREGISTERED") ||
+                errMsg.includes("invalid new nonce hash")
+              ) {
+                foreignDcAuthKeys.delete(dcId);
+              }
               if (attempts >= 3) throw err;
               await new Promise((r) => setTimeout(r, 1000));
             }
