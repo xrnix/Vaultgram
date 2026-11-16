@@ -73,8 +73,6 @@ export class Mp4DemuxSegmenter {
       console.log("[Mp4DemuxSegmenter] MP4 Header parsed successfully:", info);
       this.isReady = true;
 
-      const duration = (info.duration || 0) / (info.timescale || 1);
-
       let videoMeta: TrackMeta | undefined;
       let audioMeta: TrackMeta | undefined;
 
@@ -119,8 +117,17 @@ export class Mp4DemuxSegmenter {
 
       this.mp4boxfile.start();
 
+      let resolvedDuration = 0;
+      if (videoMeta?.duration && isFinite(videoMeta.duration) && videoMeta.duration > 0 && videoMeta.duration < 86400 * 7) {
+        resolvedDuration = videoMeta.duration;
+      } else if (audioMeta?.duration && isFinite(audioMeta.duration) && audioMeta.duration > 0 && audioMeta.duration < 86400 * 7) {
+        resolvedDuration = audioMeta.duration;
+      } else if (info.duration && info.timescale && isFinite(info.duration / info.timescale) && (info.duration / info.timescale) < 86400 * 7) {
+        resolvedDuration = info.duration / info.timescale;
+      }
+
       this.readyResolve({
-        duration,
+        duration: resolvedDuration,
         videoTrack: videoMeta,
         audioTrack: audioMeta,
         isFragmented: !!info.isFragmented,

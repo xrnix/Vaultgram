@@ -105,7 +105,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     setIsBuffering(true);
     setHasError(false);
     setCurrentTime(0);
-    setDuration(0);
+    setDuration(activeFile.duration && activeFile.duration < 86400 * 7 ? activeFile.duration : 0);
     setBufferedEnd(0);
 
     let isCancelled = false;
@@ -154,7 +154,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             videoRef.current,
             (stats) => {
               if (isCancelled) return;
-              if (stats.duration && stats.duration > 0) {
+              if (stats.duration && isFinite(stats.duration) && stats.duration > 0 && stats.duration < 86400 * 7) {
                 setDuration(stats.duration);
               }
               if (stats.status === "ERROR" || stats.status === "UNSUPPORTED") {
@@ -376,7 +376,9 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   const handleLoadedMetadata = () => {
     if (!videoRef.current) return;
     const dur = videoRef.current.duration;
-    setDuration(dur);
+    if (isFinite(dur) && dur > 0 && dur < 86400 * 7) {
+      setDuration(dur);
+    }
     setIsBuffering(false);
 
     // Auto-resume from previous session
@@ -422,6 +424,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   };
 
   const formatTime = (secs: number) => {
+    if (!isFinite(secs) || isNaN(secs) || secs < 0 || secs > 86400 * 7) return "00:00";
     const total = Math.floor(secs || 0);
     const hrs = Math.floor(total / 3600);
     const mins = Math.floor((total % 3600) / 60);

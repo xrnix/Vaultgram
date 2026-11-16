@@ -1,5 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import React, { useRef, useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { FileCard } from "./file-card";
@@ -9,23 +8,40 @@ interface FileGridProps {
   onDownload: (file: DriveFile) => void;
 }
 
+function getInitialConfig() {
+  if (typeof window === "undefined") {
+    return { columns: 4, gap: 12 };
+  }
+  const w = window.innerWidth;
+  const currentGap = w < 640 ? 8 : 12;
+  const minCardWidth = w < 640 ? 140 : 185;
+  const computed = Math.max(1, Math.floor((w - 240 + currentGap) / (minCardWidth + currentGap)));
+  return { columns: Math.max(2, computed), gap: currentGap };
+}
+
 export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [columns, setColumns] = useState(4);
-  const [gap, setGap] = useState(12);
+  const initial = useMemo(() => getInitialConfig(), []);
+  const [columns, setColumns] = useState(initial.columns);
+  const [gap, setGap] = useState(initial.gap);
 
   // Compute responsive columns dynamically from container width
-  useEffect(() => {
-    const updateColumns = () => {
-      if (!parentRef.current) return;
-      const width = parentRef.current.clientWidth;
-      const currentGap = width < 500 ? 8 : 12;
-      const minCardWidth = width < 500 ? 140 : 185;
-      const computed = Math.max(1, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
-      setColumns(computed);
-      setGap(currentGap);
-    };
+  const updateColumns = () => {
+    if (!parentRef.current) return;
+    const width = parentRef.current.clientWidth;
+    if (width <= 0) return;
+    const currentGap = width < 500 ? 8 : 12;
+    const minCardWidth = width < 500 ? 140 : 185;
+    const computed = Math.max(1, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
+    setColumns(computed);
+    setGap(currentGap);
+  };
 
+  useLayoutEffect(() => {
+    updateColumns();
+  }, []);
+
+  useEffect(() => {
     updateColumns();
 
     const observer = new ResizeObserver(() => {
@@ -54,8 +70,16 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
-    overscan: 5,
+    overscan: 8,
   });
+
+  // Reset scroll to top whenever files list changes (e.g. channel switch, search, filter)
+  useEffect(() => {
+    if (parentRef.current) {
+      parentRef.current.scrollTop = 0;
+    }
+    rowVirtualizer.scrollToOffset(0);
+  }, [files]);
 
   return (
     <div ref={parentRef} className="h-full w-full overflow-y-auto select-none p-0.5 sm:p-1">
@@ -68,12 +92,9 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
           if (!rowFiles) return null;
 
           return (
-            <motion.div
-              key={virtualRow.index}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-0 left-0 w-full grid"
+            <div
+              key={virtualRow.key}
+              className="absolute top-0 left-0 w-full grid will-change-transform"
               style={{
                 height: `${virtualRow.size - gap}px`,
                 transform: `translateY(${virtualRow.start}px)`,
@@ -84,7 +105,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
               {rowFiles.map((file) => (
                 <FileCard key={file.id} file={file} onDownload={onDownload} />
               ))}
-            </motion.div>
+            </div>
           );
         })}
       </div>

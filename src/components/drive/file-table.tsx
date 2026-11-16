@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { FileTableRow } from "./file-table-row";
@@ -17,6 +17,14 @@ export const FileTable: React.FC<FileTableProps> = ({ files, onDownload }) => {
     estimateSize: () => 44, // 44px row height (h-11)
     overscan: 10,
   });
+
+  // Reset scroll to top on files array changes
+  useEffect(() => {
+    if (parentRef.current) {
+      parentRef.current.scrollTop = 0;
+    }
+    rowVirtualizer.scrollToOffset(0);
+  }, [files]);
 
   return (
     <div className="flex flex-col h-full rounded-[4px] border border-white/[0.08] bg-[#121215]/60 backdrop-blur-md overflow-hidden select-none">

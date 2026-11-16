@@ -335,109 +335,113 @@ export const DriveCanvas: React.FC = () => {
             </div>
           )}
 
-          {/* Content Stage */}
-          <div className="flex-1 overflow-y-auto no-scrollbar">
+          {/* Content Stage - Rigid flex container so virtualizer inner container is the sole scroll element */}
+          <div className="flex-1 min-h-0 w-full relative flex flex-col overflow-hidden">
             {files.length === 0 && syncStatus.isSyncing ? (
-              viewMode === "grid" ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col justify-between rounded-[5px] border border-white/[0.06] bg-white/[0.02] p-3 h-[142px] animate-pulse"
-                    >
-                      <div className="h-8 w-8 rounded-[4px] bg-white/[0.05]" />
-                      <div className="space-y-1.5">
-                        <div className="h-3 w-3/4 rounded-[2px] bg-white/[0.06]" />
-                        <div className="h-2 w-1/2 rounded-[2px] bg-white/[0.04]" />
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-1">
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col justify-between rounded-[5px] border border-white/[0.06] bg-white/[0.02] p-3 h-[142px] animate-pulse"
+                      >
+                        <div className="h-8 w-8 rounded-[4px] bg-white/[0.05]" />
+                        <div className="space-y-1.5">
+                          <div className="h-3 w-3/4 rounded-[2px] bg-white/[0.06]" />
+                          <div className="h-2 w-1/2 rounded-[2px] bg-white/[0.04]" />
+                        </div>
+                        <div className="h-2 w-full rounded-[2px] bg-white/[0.03]" />
                       </div>
-                      <div className="h-2 w-full rounded-[2px] bg-white/[0.03]" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div
-                      key={i}
-                      className="h-10 w-full rounded-[4px] bg-white/[0.02] border border-white/[0.05] animate-pulse"
-                    />
-                  ))}
-                </div>
-              )
-            ) : filteredFiles.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex h-[380px] flex-col items-center justify-center gap-4 text-center px-4"
-              >
-                {/* Precision Architectural Crosshair Reticle */}
-                <div className="relative p-6 border border-dashed border-white/[0.08] rounded-[6px] bg-[#0c0c0e]">
-                  {/* Industrial Corner Crosshairs */}
-                  <span className="absolute -top-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                  <span className="absolute -top-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                  <span className="absolute -bottom-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                  <span className="absolute -bottom-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-[4px] bg-[#121215] border border-white/[0.1] text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-                    {sizeFilter !== "ALL" || searchQuery ? (
-                      <FilterX className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-400" />
-                    ) : (
-                      <Inbox className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-300" />
-                    )}
+                    ))}
                   </div>
-                </div>
-
-                <div className="space-y-1 max-w-sm">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-medium">
-                    {sizeFilter !== "ALL" || searchQuery ? "FILTER_RETURN :: NULL" : "DIRECTORY_STATUS :: 00"}
-                  </div>
-                  <h3 className="text-sm font-medium text-zinc-100 font-sans tracking-tight">
-                    {sizeFilter !== "ALL" || searchQuery ? "No matching records found" : "Directory Index Empty"}
-                  </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                    {sizeFilter !== "ALL"
-                      ? `No records match the "${sizeFilter === "SMALL" ? "< 10MB" : sizeFilter === "MEDIUM" ? "10-100MB" : "> 100MB"}" criteria.`
-                      : searchQuery
-                      ? "No records matched your search query. Try searching for a different keyword."
-                      : "Drag & drop files onto this canvas or click below to store them directly onto Telegram."}
-                  </p>
-                </div>
-
-                {sizeFilter !== "ALL" || searchQuery ? (
-                  <motion.div whileTap={{ scale: 0.97 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSizeFilter("ALL");
-                        setSearchQuery("");
-                      }}
-                      className="specimen-card hairline-sheen h-8 px-3.5 text-xs text-zinc-300 hover:text-white rounded-[4px] font-mono flex items-center gap-1.5 transition-colors"
-                    >
-                      <FilterX className="h-3 w-3 stroke-[1.5px]" />
-                      <span>RESET ACTIVE FILTERS</span>
-                    </button>
-                  </motion.div>
                 ) : (
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="space-y-1">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div
+                        key={i}
+                        className="h-10 w-full rounded-[4px] bg-white/[0.02] border border-white/[0.05] animate-pulse"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : filteredFiles.length === 0 ? (
+              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex h-[380px] flex-col items-center justify-center gap-4 text-center px-4"
+                >
+                  {/* Precision Architectural Crosshair Reticle */}
+                  <div className="relative p-6 border border-dashed border-white/[0.08] rounded-[6px] bg-[#0c0c0e]">
+                    {/* Industrial Corner Crosshairs */}
+                    <span className="absolute -top-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
+                    <span className="absolute -top-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
+                    <span className="absolute -bottom-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
+                    <span className="absolute -bottom-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
+
+                    <div className="flex h-11 w-11 items-center justify-center rounded-[4px] bg-[#121215] border border-white/[0.1] text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                      {sizeFilter !== "ALL" || searchQuery ? (
+                        <FilterX className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-400" />
+                      ) : (
+                        <Inbox className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-300" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 max-w-sm">
+                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-medium">
+                      {sizeFilter !== "ALL" || searchQuery ? "FILTER_RETURN :: NULL" : "DIRECTORY_STATUS :: 00"}
+                    </div>
+                    <h3 className="text-sm font-medium text-zinc-100 font-sans tracking-tight">
+                      {sizeFilter !== "ALL" || searchQuery ? "No matching records found" : "Directory Index Empty"}
+                    </h3>
+                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                      {sizeFilter !== "ALL"
+                        ? `No records match the "${sizeFilter === "SMALL" ? "< 10MB" : sizeFilter === "MEDIUM" ? "10-100MB" : "> 100MB"}" criteria.`
+                        : searchQuery
+                        ? "No records matched your search query. Try searching for a different keyword."
+                        : "Drag & drop files onto this canvas or click below to store them directly onto Telegram."}
+                    </p>
+                  </div>
+
+                  {sizeFilter !== "ALL" || searchQuery ? (
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <button
                         type="button"
-                        onClick={handleTriggerUpload}
-                        className="specimen-card hairline-sheen h-8 px-4 text-xs text-zinc-100 hover:text-white rounded-[4px] font-medium flex items-center gap-2 transition-all hover:border-white/[0.25]"
+                        onClick={() => {
+                          setSizeFilter("ALL");
+                          setSearchQuery("");
+                        }}
+                        className="specimen-card hairline-sheen h-8 px-3.5 text-xs text-zinc-300 hover:text-white rounded-[4px] font-mono flex items-center gap-1.5 transition-colors"
                       >
-                        <Upload className="h-3.5 w-3.5 stroke-[1.6px]" />
-                        <span>Upload File</span>
+                        <FilterX className="h-3 w-3 stroke-[1.5px]" />
+                        <span>RESET ACTIVE FILTERS</span>
                       </button>
                     </motion.div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-600 tracking-tight">
-                      <span>PRESS</span>
-                      <kbd className="tactile-keycap px-1.5 py-0.2 rounded text-[9px] text-zinc-400">U</kbd>
-                      <span>TO INGEST • DRAG & DROP BUFFER</span>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <motion.div whileTap={{ scale: 0.97 }}>
+                        <button
+                          type="button"
+                          onClick={handleTriggerUpload}
+                          className="specimen-card hairline-sheen h-8 px-4 text-xs text-zinc-100 hover:text-white rounded-[4px] font-medium flex items-center gap-2 transition-all hover:border-white/[0.25]"
+                        >
+                          <Upload className="h-3.5 w-3.5 stroke-[1.6px]" />
+                          <span>Upload File</span>
+                        </button>
+                      </motion.div>
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-600 tracking-tight">
+                        <span>PRESS</span>
+                        <kbd className="tactile-keycap px-1.5 py-0.2 rounded text-[9px] text-zinc-400">U</kbd>
+                        <span>TO INGEST • DRAG & DROP BUFFER</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </motion.div>
+                  )}
+                </motion.div>
+              </div>
             ) : viewMode === "grid" ? (
               <FileGrid files={filteredFiles} onDownload={handleDownload} />
             ) : (

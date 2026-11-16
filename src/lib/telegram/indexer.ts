@@ -25,6 +25,7 @@ export interface DriveFile {
   accessHash?: string | bigint | any;
   fileReference?: any;
   location?: any;
+  duration?: number;
 }
 
 export function classifyFileType(fileName: string, mimeType: string, isPhoto = false): FileCategory {
@@ -142,6 +143,16 @@ export function normalizeTelegramMessage(msg: any, channel: ChannelMeta): DriveF
     };
   }
 
+  let duration: number | undefined = undefined;
+  if (doc?.attributes && Array.isArray(doc.attributes)) {
+    for (const attr of doc.attributes) {
+      if (typeof attr.duration === "number" && attr.duration > 0 && attr.duration < 86400 * 7) {
+        duration = attr.duration;
+        break;
+      }
+    }
+  }
+
   return {
     id: `${channelId}_${messageId}`,
     messageId,
@@ -156,6 +167,7 @@ export function normalizeTelegramMessage(msg: any, channel: ChannelMeta): DriveF
     accessHash,
     fileReference,
     location,
+    duration,
     streamUrl: `/stream/${channelId}_${messageId}?size=${size}&mime=${encodeURIComponent(mimeType)}`,
   };
 }
