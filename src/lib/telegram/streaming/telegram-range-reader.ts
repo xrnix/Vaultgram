@@ -164,9 +164,6 @@ export class TelegramRangeReader {
         await (this.client as any)._cleanupExportedSender(dcId);
       }
     } catch (_) {}
-    if ((this.client as any)._exportedSenderPromises) {
-      (this.client as any)._exportedSenderPromises.delete(dcId);
-    }
   }
 
   /**
@@ -195,12 +192,7 @@ export class TelegramRangeReader {
       } catch (_) {}
     }
 
-    if (typeof (this.client as any)._borrowExportedSender === "function") {
-      sender = await (this.client as any)._borrowExportedSender(this.dcId, forceFresh);
-    } else {
-      sender = await this.client.getSender(this.dcId);
-    }
-
+    sender = await this.client.getSender(this.dcId);
     this.activeSenders.set(this.dcId, sender);
     return sender;
   }
