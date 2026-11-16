@@ -105,29 +105,6 @@ export class TgStreamClient {
       stringSession.setDC(4, "149.154.167.91", 443);
     }
 
-    // Cache foreign DC auth keys in memory so secondary DCs (like Pluto DC 1)
-    // persist their Diffie-Hellman keys across sender reuses without re-handshaking.
-    const dcAuthKeys = new Map<number, any>();
-    const origGetAuthKey = stringSession.getAuthKey.bind(stringSession);
-    stringSession.getAuthKey = (dcId?: number) => {
-      if (dcId && dcId !== stringSession.dcId) {
-        return dcAuthKeys.get(dcId);
-      }
-      return origGetAuthKey(dcId);
-    };
-    const origSetAuthKey = stringSession.setAuthKey.bind(stringSession);
-    stringSession.setAuthKey = (authKey: any, dcId?: number) => {
-      if (dcId && dcId !== stringSession.dcId) {
-        if (authKey) {
-          dcAuthKeys.set(dcId, authKey);
-        } else {
-          dcAuthKeys.delete(dcId);
-        }
-        return;
-      }
-      origSetAuthKey(authKey, dcId);
-    };
-
     const client = new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
       connection: ConnectionWebSocketObfuscated,
       connectionRetries: 3,
@@ -136,6 +113,8 @@ export class TgStreamClient {
       deviceModel: "Vaultgram React Web",
       systemVersion: "Web/Linux",
       appVersion: "2.0.0",
+      langCode: "en",
+      systemLangCode: "en",
     });
 
     // Deduplicate concurrent _borrowExportedSender requests for the same DC ID

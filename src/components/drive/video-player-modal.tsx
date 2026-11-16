@@ -91,7 +91,16 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Cinema playback lifecycle: Register with StreamBridge & manage engines
+  // Register active file with StreamBridge for native ServiceWorker streaming
+  useEffect(() => {
+    if (!isOpen || !activeFile) return;
+    registerActiveStreamFile(activeFile);
+    return () => {
+      unregisterActiveStreamFile(activeFile.id);
+    };
+  }, [isOpen, activeFile?.id]);
+
+  // Cinema playback lifecycle: manage engines & player stream
   useEffect(() => {
     if (!isOpen || !activeFile) {
       if (mseControllerRef.current) {
@@ -101,7 +110,6 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
       return;
     }
 
-    registerActiveStreamFile(activeFile);
     setIsBuffering(true);
     setHasError(false);
     setCurrentTime(0);
@@ -186,7 +194,6 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
         mseControllerRef.current.destroy();
         mseControllerRef.current = null;
       }
-      unregisterActiveStreamFile(activeFile.id);
     };
   }, [isOpen, activeFile?.id, engine, retryCount]);
 

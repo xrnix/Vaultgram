@@ -100,7 +100,7 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
         }
 
         let reader = readerCache.get(file.id);
-        if (!reader) {
+        if (!reader || (reader as any).isDestroyed) {
           reader = new TelegramRangeReader(client, file);
           readerCache.set(file.id, reader);
         }
@@ -123,9 +123,9 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
               if (rangeMatch[2]) {
                 end = Math.min(fileSize - 1, parseInt(rangeMatch[2], 10));
               } else {
-                // Open-ended range: 512 KiB for initial probe (start === 0) for instant start;
-                // 1024 KiB (1 MiB) for continuous playback to provide a wide buffer runway on high-latency DCs
-                const targetBatchSize = start === 0 ? 512 * 1024 : 1024 * 1024;
+                // Open-ended range: 512 KiB per batch to guarantee rapid TTFB and prevent
+                // transatlantic 45s ServiceWorker timeouts on high-latency DCs (e.g. Pluto DC 1).
+                const targetBatchSize = 512 * 1024;
                 end = Math.min(fileSize - 1, start + targetBatchSize - 1);
               }
             }
@@ -152,6 +152,10 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
 
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
+            if ((reader as any).isDestroyed) {
+              reader = new TelegramRangeReader(client, file);
+              readerCache.set(file.id, reader);
+            }
             payload = await reader.readRange(start, requestLength);
             break;
           } catch (err: any) {
@@ -160,6 +164,10 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
               `[StreamBridge] Range fetch attempt ${attempt + 1}/3 failed for ${file.name} [${start}-${end}]:`,
               err?.message || err
             );
+            if (String(err?.message || err).includes("ABORTED")) {
+              reader = new TelegramRangeReader(client, file);
+              readerCache.set(file.id, reader);
+            }
             await new Promise((resolve) => setTimeout(resolve, 250));
           }
         }
