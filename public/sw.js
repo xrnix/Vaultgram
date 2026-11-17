@@ -60,6 +60,9 @@ async function handleStreamRequest(request, url) {
           isResolved = true;
           clearTimeout(timeoutTimer);
           try {
+            channel.port1.postMessage({ type: "ABORT" });
+          } catch (_) {}
+          try {
             channel.port1.close();
             channel.port2.close();
           } catch (_) {}

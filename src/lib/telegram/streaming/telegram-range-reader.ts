@@ -157,14 +157,17 @@ export class TelegramRangeReader {
   /**
    * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
    */
-  private async purgeDcSender(dcId: number, isAuthError = false): Promise<void> {
+  private async purgeDcSender(dcId: number, _isAuthError = false): Promise<void> {
     this.activeSenders.delete(dcId);
-    if (isAuthError && typeof (this.client as any).invalidateDcAuthKey === "function") {
+    if (typeof (this.client as any).invalidateDcAuthKey === "function") {
       (this.client as any).invalidateDcAuthKey(dcId);
     }
     try {
-      if (typeof (this.client as any)._cleanupExportedSender === "function") {
-        await (this.client as any)._cleanupExportedSender(dcId);
+      if (typeof (this.client as any)._network?.removeSession === "function") {
+        (this.client as any)._network.removeSession(dcId);
+      }
+      if ((this.client as any)._dcenters?.get(dcId)) {
+        (this.client as any)._dcenters.get(dcId).unauthorize();
       }
     } catch (_) {}
   }
@@ -172,7 +175,9 @@ export class TelegramRangeReader {
   /**
    * Retrieves or re-establishes a live pooled MTProto sender for the target media DC.
    */
-  private async getSender(forceFresh = false): Promise<any> {
+  private async getSender(forceFresh = false, signal?: AbortSignal): Promise<any> {
+    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
+
     let sender = this.activeSenders.get(this.dcId);
     if (
       !forceFresh &&
@@ -188,12 +193,16 @@ export class TelegramRangeReader {
       await this.purgeDcSender(this.dcId);
     }
 
+    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
+
     // Ensure main client connection is healthy
     if (!this.client.connected && typeof this.client.connect === "function") {
       try {
         await this.client.connect();
       } catch (_) {}
     }
+
+    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
 
     sender = await this.client.getSender(this.dcId);
     this.activeSenders.set(this.dcId, sender);
@@ -354,7 +363,7 @@ export class TelegramRangeReader {
     const startTime = Date.now();
 
     try {
-      const sender = await this.getSender();
+      const sender = await this.getSender(false, signal);
       const request = new Api.upload.GetFile({
         location: this.location,
         offset: bigInt(alignedOffset),
@@ -363,14 +372,21 @@ export class TelegramRangeReader {
         cdnSupported: false,
       });
 
+      // Abort immediately when signal aborts or reader is destroyed
+      const abortPromise = new Promise<never>((_, reject) => {
+        if (signal.aborted || this.isDestroyed) return reject(new Error("ABORTED"));
+        signal.addEventListener("abort", () => reject(new Error("ABORTED")), { once: true });
+      });
+
       // 35-second timeout gives ample runway for high-latency transatlantic links (e.g. Pluto DC 1 Miami)
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 35000)
       );
 
       const response: any = await Promise.race([
         this.client.invokeWithSender(request, sender),
         timeoutPromise,
+        abortPromise,
       ]);
       const latency = Date.now() - startTime;
 
@@ -395,9 +411,9 @@ export class TelegramRangeReader {
       this.notifyTelemetry(latency, bytes.length);
       return bytes;
     } catch (err: any) {
-      const errMsg = String(err?.message || err);
+      const errMsg = String(err?.errorMessage || err?.message || err);
 
-      if (signal.aborted || this.isDestroyed) {
+      if (signal.aborted || this.isDestroyed || errMsg === "ABORTED") {
         throw new Error("ABORTED");
       }
 
@@ -407,7 +423,7 @@ export class TelegramRangeReader {
         const sender = this.activeSenders.get(this.dcId);
         if (!sender || typeof sender.isConnected !== "function" || !sender.isConnected() || sender.userDisconnected) {
           await this.purgeDcSender(this.dcId);
-          await this.getSender(true);
+          await this.getSender(true, signal);
         }
         await new Promise((resolve) => setTimeout(resolve, 800));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
@@ -421,7 +437,7 @@ export class TelegramRangeReader {
         console.info(`[TelegramRangeReader] File lives in DC ${newDc}. Switching sender from DC ${this.dcId}...`);
         await this.purgeDcSender(this.dcId);
         this.dcId = newDc;
-        await this.getSender(true);
+        await this.getSender(true, signal);
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
@@ -451,19 +467,22 @@ export class TelegramRangeReader {
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
-      // Handle Broken Auth Key / Invalid Auth Bytes (specifically on secondary DCs like Pluto DC 1)
+      // Handle Broken Auth Key / Invalid Auth Bytes (specifically on secondary DCs like Pluto DC 1 or Venus DC 2)
       const isAuthError =
         errMsg.includes("AUTH_KEY_UNREGISTERED") ||
+        errMsg.includes("authorization key is not registered") ||
+        errMsg.includes("PFS temporary key has expired") ||
         errMsg.includes("AUTH_BYTES_INVALID") ||
         errMsg.includes("SESSION_REVOKED") ||
-        errMsg.includes("SESSION_EXPIRED");
+        errMsg.includes("SESSION_EXPIRED") ||
+        (err as any)?.code === 401;
 
       if (isAuthError && retryCount < 3) {
         console.warn(
           `[TelegramRangeReader] DC ${this.dcId} authorization issue (${errMsg}). Purging DC ${this.dcId} session key & re-authenticating... (attempt ${retryCount + 1}/3)`
         );
         await this.purgeDcSender(this.dcId, true);
-        await this.getSender(true);
+        await this.getSender(true, signal);
         await new Promise((resolve) => setTimeout(resolve, 300));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
@@ -482,7 +501,7 @@ export class TelegramRangeReader {
       if (isConnectionError && retryCount < 5) {
         console.warn(`[TelegramRangeReader] Socket disconnected (${errMsg}). Force-reconnecting sender for DC ${this.dcId}... (attempt ${retryCount + 1}/5)`);
         await this.purgeDcSender(this.dcId);
-        await this.getSender(true);
+        await this.getSender(true, signal);
 
         await new Promise((resolve) => setTimeout(resolve, 300));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");

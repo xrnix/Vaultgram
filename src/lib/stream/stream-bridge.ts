@@ -160,22 +160,29 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
         let payload: Uint8Array | null = null;
         let lastErr: any = null;
 
+        const rangeAbortController = new AbortController();
+        port.onmessage = (event) => {
+          if (event.data?.type === "ABORT") {
+            rangeAbortController.abort();
+          }
+        };
+
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
-            if (!activeStreamFiles.has(file.id)) {
+            if (!activeStreamFiles.has(file.id) || rangeAbortController.signal.aborted) {
               throw new Error("ABORTED");
             }
             if ((reader as any).isDestroyed) {
               reader = new TelegramRangeReader(client, file);
               readerCache.set(file.id, reader);
             }
-            payload = await reader.readRange(start, requestLength);
+            payload = await reader.readRange(start, requestLength, rangeAbortController.signal);
             break;
           } catch (err: any) {
             lastErr = err;
             const errMsg = String(err?.message || err);
             // On ABORTED or when stream file is no longer registered, exit immediately without retries
-            if (errMsg.includes("ABORTED") || !activeStreamFiles.has(file.id)) {
+            if (errMsg.includes("ABORTED") || !activeStreamFiles.has(file.id) || rangeAbortController.signal.aborted) {
               port.postMessage({ error: "ABORTED" });
               return;
             }

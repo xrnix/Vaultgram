@@ -2,8 +2,6 @@
 import { TelegramClient, Api, WebSocketTransport, password as tgPassword } from "teleproto";
 // @ts-ignore
 import { StringSession } from "teleproto/sessions";
-// @ts-ignore
-import { AuthKey } from "teleproto/crypto/AuthKey";
 
 const computeCheck = tgPassword.computeCheck;
 import {
@@ -64,43 +62,14 @@ export class TgStreamClient {
       stringSession.setDC(4, "149.154.167.91", 443);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // TELEPROTO MULTI-DC OPTIMIZATION:
-    // Persist and restore foreign DC auth keys in localStorage across sessions.
-    // Teleproto natively supports multi-DC auth keys in MemorySession / SessionPool.
-    // Persisting them in localStorage completely bypasses the 3-4s Diffie-Hellman
-    // handshake when connecting to high-latency transatlantic DCs (e.g. Pluto DC 1).
-    // ─────────────────────────────────────────────────────────────────────────
+    // Clean up any stale/expired temporary PFS keys from previous localStorage implementations
     if (typeof window !== "undefined") {
-      for (const dcId of [1, 2, 3, 4, 5]) {
+      for (let i = 1; i <= 5; i++) {
         try {
-          const hex = localStorage.getItem(`vg_dc_${dcId}_auth_key`);
-          if (hex && hex.length === 512) {
-            const k = new AuthKey();
-            k.setKey(Buffer.from(hex, "hex")).then(() => {
-              stringSession.setAuthKey(k, dcId);
-            }).catch(() => {});
-          }
+          localStorage.removeItem(`vg_dc_${i}_auth_key`);
         } catch (_) {}
       }
     }
-
-    const origSetAuthKey = stringSession.setAuthKey.bind(stringSession);
-    stringSession.setAuthKey = (authKey: any, dcId?: number): any => {
-      origSetAuthKey(authKey, dcId);
-      if (typeof window !== "undefined" && dcId && dcId !== stringSession.dcId) {
-        try {
-          if (authKey) {
-            const raw = typeof authKey.getKey === "function" ? authKey.getKey() : authKey;
-            if (raw && raw.length === 256) {
-              localStorage.setItem(`vg_dc_${dcId}_auth_key`, Buffer.from(raw).toString("hex"));
-            }
-          } else {
-            localStorage.removeItem(`vg_dc_${dcId}_auth_key`);
-          }
-        } catch (_) {}
-      }
-    };
 
     const client = new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
       transport: new WebSocketTransport(),
@@ -118,9 +87,12 @@ export class TgStreamClient {
 
     (client as any).invalidateDcAuthKey = (dcId: number) => {
       try {
-        localStorage.removeItem(`vg_dc_${dcId}_auth_key`);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`vg_dc_${dcId}_auth_key`);
+        }
         stringSession.setAuthKey(undefined, dcId);
         (client as any)._network?.removeSession(dcId);
+        (client as any)._dcenters?.get(dcId)?.unauthorize();
       } catch (_) {}
     };
 
@@ -129,9 +101,9 @@ export class TgStreamClient {
     //
     // Telegram media servers (like Pluto DC 1 or Venus DC 2) serve upload.getFile
     // solely using the DH authKey + file_reference + access_hash.
-    // If auth.ExportAuthorization / ImportAuthorization returns AUTH_BYTES_INVALID
-    // or DC_ID_INVALID, we must NOT destroy the sender or abort, as the DH key
-    // is fully valid for media downloads!
+    // If auth.ExportAuthorization / ImportAuthorization returns AUTH_BYTES_INVALID,
+    // AUTH_KEY_UNREGISTERED, or DC_ID_INVALID, we must NOT destroy the sender or abort,
+    // as the DH key is fully valid for media downloads!
     // ─────────────────────────────────────────────────────────────────────────
     (client as any)._connectSender = async function (
       sender: any,
@@ -151,7 +123,7 @@ export class TgStreamClient {
           await client.getDC(dcId, mediaCluster && !!sender.authKey.getKey())
         );
         await sender.connect(connection);
-        if (dcId !== client.session.dcId && !sender.authKey.getKey()) {
+        if (dcId !== client.session.dcId) {
           try {
             await (client as any)._dcenters.get(dcId).authorize(async () => {
               const auth: any = await client.invoke(new Api.auth.ExportAuthorization({ dcId }));
@@ -165,7 +137,7 @@ export class TgStreamClient {
           } catch (authErr: any) {
             const msg = String(authErr?.errorMessage || authErr?.message || authErr);
             console.warn(
-              `[TgStreamClient] DC ${dcId} authorization export/import: ${msg}. Proceeding with DH key for media.`
+              `[TgStreamClient] DC ${dcId} authorization export/import warning: ${msg}. Proceeding with DH key for media.`
             );
           }
         }
