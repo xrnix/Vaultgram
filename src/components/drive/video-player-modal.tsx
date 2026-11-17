@@ -544,6 +544,17 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline-block px-1.5 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] flex-shrink-0">
                 {engine === "mse" ? "ENGINE: MSE" : "ENGINE: RANGE 206"}
               </span>
+              {activeFile.dcId && (
+                <span className="text-[10px] text-amber-300 font-mono px-1.5 py-0.5 rounded-[3px] bg-amber-500/10 border border-amber-500/25 flex-shrink-0">
+                  {activeFile.dcId === 1
+                    ? "DC 1 (Pluto)"
+                    : activeFile.dcId === 2
+                    ? "DC 2 (Venus)"
+                    : activeFile.dcId === 4
+                    ? "DC 4 (Vesta)"
+                    : `DC ${activeFile.dcId}`}
+                </span>
+              )}
             </div>
           </div>
 

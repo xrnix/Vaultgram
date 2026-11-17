@@ -70,6 +70,14 @@ export function splitTelegramRange(
   return requests;
 }
 
+export const DC_NAMES: Record<number, string> = {
+  1: "Pluto (Miami, USA)",
+  2: "Venus (Amsterdam, NL)",
+  3: "Aurora (Miami, USA)",
+  4: "Vesta (Amsterdam, NL)",
+  5: "Flora (Singapore)",
+};
+
 export class TelegramRangeReader {
   private client: TelegramClient;
   private file: DriveFile;
@@ -115,6 +123,10 @@ export class TelegramRangeReader {
         thumbSize: "",
       });
     }
+
+    console.info(
+      `[TelegramRangeReader] Ready for "${this.file.name}" -> DC ${this.dcId} [${DC_NAMES[this.dcId] || "Unknown DC"}] (${(this.fileSize / 1048576).toFixed(1)} MB)`
+    );
   }
 
   public setTelemetryListener(listener: RangeReaderTelemetryListener) {
@@ -378,9 +390,9 @@ export class TelegramRangeReader {
         signal.addEventListener("abort", () => reject(new Error("ABORTED")), { once: true });
       });
 
-      // 35-second timeout gives ample runway for high-latency transatlantic links (e.g. Pluto DC 1 Miami)
+      // 45-second timeout gives ample runway for high-latency transatlantic links (e.g. Pluto DC 1 Miami)
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 35000)
+        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 45000)
       );
 
       const response: any = await Promise.race([

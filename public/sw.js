@@ -36,7 +36,7 @@ async function handleStreamRequest(request, url) {
     const channel = new MessageChannel();
     let isResolved = false;
 
-    // Timeout safeguard after 45 seconds to prevent premature cuts during MTProto socket reconnects
+    // Timeout safeguard after 65 seconds to prevent premature cuts during MTProto transatlantic high-latency fetches
     const timeoutTimer = setTimeout(() => {
       if (!isResolved) {
         isResolved = true;
@@ -51,7 +51,7 @@ async function handleStreamRequest(request, url) {
           })
         );
       }
-    }, 45000);
+    }, 65000);
 
     // Cancel / abort propagation if browser cancels the media request (e.g. seeking or closing)
     if (request.signal) {

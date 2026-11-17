@@ -156,6 +156,16 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
           return;
         }
 
+        const dcLabel =
+          file.dcId === 1
+            ? "Pluto (DC 1)"
+            : file.dcId === 2
+            ? "Venus (DC 2)"
+            : file.dcId === 4
+            ? "Vesta (DC 4)"
+            : `DC ${file.dcId || "default"}`;
+        console.info(`[StreamBridge] Range fetch [${start}-${end}] for "${file.name}" on ${dcLabel}`);
+
         // Perform MTProto range fetch with transparent jitter retry
         let payload: Uint8Array | null = null;
         let lastErr: any = null;

@@ -85,6 +85,33 @@ export class TgStreamClient {
       systemLangCode: "en",
     });
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // FIX: Extend Teleproto Session watchdog timer for high-latency DCs
+    //
+    // By default, Teleproto's Session watchdog sets `readDisconnect = rtt * 3.5 = 7.0s`
+    // when online. On high-latency transatlantic DCs like Pluto DC 1 (Miami, ~300ms RTT),
+    // downloading a 512 KiB chunk across the ocean routinely takes 6-10s.
+    // Teleproto's 7.0s watchdog prematurely killed the WebSocket connection with:
+    // `Connection to dc 1 closed (lost: Error: Read timeout of 7.0s expired)`
+    // By giving at least 45 seconds before considering a read timed out,
+    // large chunks from Pluto finish streaming smoothly without socket drops!
+    // ─────────────────────────────────────────────────────────────────────────
+    try {
+      const tempSender = (client as any)._makeSender(1, () => {});
+      const SessionProto = Object.getPrototypeOf(tempSender);
+      if (SessionProto && typeof SessionProto.timers === "function" && !SessionProto.__vg_patched) {
+        SessionProto.__vg_patched = true;
+        const origTimers = SessionProto.timers;
+        SessionProto.timers = function (now: number) {
+          const res = origTimers.call(this, now);
+          if (res && typeof res.readDisconnect === "number") {
+            res.readDisconnect = Math.max(res.readDisconnect, 45);
+          }
+          return res;
+        };
+      }
+    } catch (_) {}
+
     (client as any).invalidateDcAuthKey = (dcId: number) => {
       try {
         if (typeof window !== "undefined") {
