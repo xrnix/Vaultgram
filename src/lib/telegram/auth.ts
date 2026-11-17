@@ -1,6 +1,6 @@
-import { TelegramClient, Api } from "telegram";
-// @ts-ignore
-import { computeCheck } from "telegram/Password";
+import { TelegramClient, Api, password as tgPassword } from "teleproto";
+
+const computeCheck = tgPassword.computeCheck;
 
 /**
  * Verifies the user's 2FA Cloud Password against Telegram MTProto.

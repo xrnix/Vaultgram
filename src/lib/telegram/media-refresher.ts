@@ -1,4 +1,4 @@
-import { TelegramClient, Api } from "telegram";
+import { TelegramClient, Api } from "teleproto";
 import { DriveFile } from "./indexer";
 import { useDriveStore } from "../stores/drive-store";
 import { updateFileInDb } from "./session";

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { TelegramClient } from "telegram";
+import { TelegramClient } from "teleproto";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { tgStreamClient } from "@/lib/telegram/client";
 

@@ -1,5 +1,4 @@
-import { TelegramClient } from "telegram";
-import { useDriveStore } from "@/lib/stores/drive-store";
+import { TelegramClient } from "teleproto";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { TelegramRangeReader } from "@/lib/telegram/streaming/telegram-range-reader";
 
@@ -19,6 +18,16 @@ export function unregisterActiveStreamFile(fileId: string) {
     reader.destroy();
     readerCache.delete(fileId);
   }
+}
+
+export function unregisterAllActiveStreamFiles() {
+  activeStreamFiles.clear();
+  for (const reader of readerCache.values()) {
+    try {
+      reader.destroy();
+    } catch (_) {}
+  }
+  readerCache.clear();
 }
 
 export async function ensureStreamBridgeReady(): Promise<boolean> {
@@ -86,16 +95,17 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
           return;
         }
 
-        // 1. Locate file metadata from active cache, Zustand store, or dialogs
-        let file = activeStreamFiles.get(fileId) || useDriveStore.getState().files.find((f) => f.id === fileId);
+        // 1. Locate file metadata strictly from active stream files
+        let file = activeStreamFiles.get(fileId);
 
         if (!file) {
-          // Attempt fuzzy match on messageId / channelId
+          // Attempt fuzzy match on messageId / channelId within active files
           file = Array.from(activeStreamFiles.values()).find((f) => f.id.endsWith(fileId) || fileId.endsWith(f.id));
         }
 
+        // If file is no longer active (user closed player or switched video), immediately abort without querying MTProto
         if (!file) {
-          port.postMessage({ error: `File with ID "${fileId}" not found in catalog` });
+          port.postMessage({ error: "ABORTED" });
           return;
         }
 
@@ -152,6 +162,9 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
 
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
+            if (!activeStreamFiles.has(file.id)) {
+              throw new Error("ABORTED");
+            }
             if ((reader as any).isDestroyed) {
               reader = new TelegramRangeReader(client, file);
               readerCache.set(file.id, reader);
@@ -160,14 +173,16 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
             break;
           } catch (err: any) {
             lastErr = err;
+            const errMsg = String(err?.message || err);
+            // On ABORTED or when stream file is no longer registered, exit immediately without retries
+            if (errMsg.includes("ABORTED") || !activeStreamFiles.has(file.id)) {
+              port.postMessage({ error: "ABORTED" });
+              return;
+            }
             console.warn(
               `[StreamBridge] Range fetch attempt ${attempt + 1}/3 failed for ${file.name} [${start}-${end}]:`,
-              err?.message || err
+              errMsg
             );
-            if (String(err?.message || err).includes("ABORTED")) {
-              reader = new TelegramRangeReader(client, file);
-              readerCache.set(file.id, reader);
-            }
             await new Promise((resolve) => setTimeout(resolve, 250));
           }
         }

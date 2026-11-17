@@ -1,4 +1,4 @@
-import { Api } from "telegram";
+import { Api } from "teleproto";
 import { DriveFile } from "../indexer";
 import bigInt from "big-integer";
 

@@ -86,7 +86,7 @@ export const FileShareModal: React.FC<FileShareModalProps> = ({ file, isOpen, on
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-xl bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-w-xl max-h-[90dvh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-y-auto backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
@@ -210,7 +210,7 @@ export const FileShareModal: React.FC<FileShareModalProps> = ({ file, isOpen, on
                     <Clock className="w-3 h-3 text-zinc-500" />
                     <span>Link Expiration</span>
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { id: "1h", label: "1 Hour" },
                       { id: "24h", label: "24 Hours" },

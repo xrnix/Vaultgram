@@ -190,6 +190,13 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
     return () => {
       isCancelled = true;
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.removeAttribute("src");
+          videoRef.current.load();
+        } catch (_) {}
+      }
       if (mseControllerRef.current) {
         mseControllerRef.current.destroy();
         mseControllerRef.current = null;
@@ -204,7 +211,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "Escape" && !document.fullscreenElement) {
-        onClose();
+        handleClose();
       }
       if (e.key === " " || e.key === "k" || e.key === "K") {
         e.preventDefault();
@@ -450,9 +457,34 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     setIsSpeedMenuOpen(false);
   };
 
+  const handleClose = () => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute("src");
+        videoRef.current.load();
+      } catch (_) {}
+    }
+    if (activeFile) {
+      unregisterActiveStreamFile(activeFile.id);
+    }
+    onClose();
+  };
+
+  const handleScrubberTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!scrubberRef.current || !videoRef.current || duration === 0) return;
+    const touch = e.touches[0];
+    const rect = scrubberRef.current.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+    const target = pos * duration;
+    videoRef.current.currentTime = target;
+    setCurrentTime(target);
+    resetHideTimer();
+  };
+
   const handleDownload = () => {
     enqueueDownload(activeFile);
-    onClose();
+    handleClose();
   };
 
   const retryStream = (targetEngine: "native" | "mse" = "native") => {
@@ -481,24 +513,26 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
       onMouseMove={resetHideTimer}
       onMouseEnter={resetHideTimer}
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/94 backdrop-blur-2xl ${
-        isFullscreen ? "w-screen h-screen p-0" : "p-4 sm:p-6"
+        isFullscreen ? "w-screen h-screen p-0" : "p-0 sm:p-6"
       } ${!showControls && isPlaying ? "cursor-none" : "cursor-default"}`}
     >
       <div
-        className={`relative flex flex-col bg-black border border-white/[0.1] shadow-[0_30px_90px_rgba(0,0,0,0.95)] rounded-[8px] overflow-hidden ${
-          isFullscreen ? "w-full h-full rounded-none border-none" : "w-full max-w-[94vw] max-h-[88vh]"
+        className={`relative flex flex-col bg-black border-0 sm:border border-white/[0.1] shadow-[0_30px_90px_rgba(0,0,0,0.95)] overflow-hidden ${
+          isFullscreen
+            ? "w-full h-full rounded-none border-none"
+            : "w-full h-full sm:h-auto sm:max-w-[94vw] sm:max-h-[88vh] rounded-none sm:rounded-[8px]"
         }`}
       >
         {/* Floating Top Header Bar (Rectangular Pods) */}
         <div
-          className={`absolute top-4 inset-x-4 z-30 flex items-center justify-between pointer-events-none transition-opacity duration-300 ${
+          className={`absolute top-2 sm:top-4 inset-x-2 sm:inset-x-4 z-30 flex items-center justify-between pointer-events-none transition-opacity duration-300 ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
         >
           {/* Header Info Pod */}
-          <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-3.5 py-2 flex items-center gap-3 shadow-2xl min-w-0 max-w-[70%]">
+          <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 shadow-2xl min-w-0 max-w-[70%]">
             <div className="p-1 bg-white/[0.04] border border-white/[0.08] rounded-[4px] text-[#e6cfa3] flex-shrink-0">
-              <VideoIcon className="w-4 h-4" />
+              <VideoIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0 flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium text-white truncate tracking-tight font-sans">
@@ -514,18 +548,18 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           </div>
 
           {/* Header Action Buttons Pod */}
-          <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-2.5 py-1.5 flex items-center gap-2 shadow-2xl">
+          <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-2 sm:px-2.5 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 shadow-2xl">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-white/[0.08] hover:bg-white/[0.15] border border-white/[0.18] rounded-[4px] transition-all active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-white bg-white/[0.08] hover:bg-white/[0.15] border border-white/[0.18] rounded-[4px] transition-all active:scale-[0.98]"
               title="Download original file"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Download</span>
             </button>
             <button
-              onClick={isFullscreen ? toggleFullscreen : onClose}
-              className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+              onClick={isFullscreen ? toggleFullscreen : handleClose}
+              className="p-1 sm:p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
               title="Close player (Esc)"
             >
               <X className="w-4 h-4" />
@@ -535,7 +569,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
         {/* Insecure Origin HTTP Notice */}
         {!isSecureContext && (
-          <div className="absolute top-16 inset-x-4 z-40 bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] px-3.5 py-2 rounded-[4px] flex items-center justify-between font-mono shadow-xl backdrop-blur-md">
+          <div className="absolute top-14 sm:top-16 inset-x-2 sm:inset-x-4 z-40 bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] px-3.5 py-2 rounded-[4px] flex items-center justify-between font-mono shadow-xl backdrop-blur-md">
             <span>
               HTTP detected: Browsers require HTTPS or localhost for ServiceWorker video streaming. Use{" "}
               <a
@@ -635,7 +669,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
         {/* YouTube-Style Bottom Floating Control Pods & Seekbar */}
         <div
-          className={`absolute bottom-4 inset-x-4 z-30 flex flex-col gap-2.5 transition-opacity duration-300 pointer-events-none ${
+          className={`absolute bottom-2 sm:bottom-4 inset-x-2 sm:inset-x-4 z-30 flex flex-col gap-1.5 sm:gap-2.5 transition-opacity duration-300 pointer-events-none ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -646,7 +680,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             onClick={handleScrubberClick}
             onMouseMove={handleScrubberMouseMove}
             onMouseLeave={() => setHoverTime(null)}
-            className="pointer-events-auto group/scrubber relative w-full h-4 flex items-center cursor-pointer select-none px-0.5"
+            onTouchStart={handleScrubberTouch}
+            onTouchMove={handleScrubberTouch}
+            onTouchEnd={() => setHoverTime(null)}
+            className="pointer-events-auto group/scrubber relative w-full h-4 sm:h-5 flex items-center cursor-pointer select-none px-0.5 touch-none"
           >
             {/* Hover Floating Timestamp Tooltip */}
             {hoverTime !== null && (
@@ -672,23 +709,23 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               />
             </div>
 
-            {/* YouTube Scrubber Playhead Knob (Expands on Hover) */}
+            {/* YouTube Scrubber Playhead Knob (Expands on Hover/Touch) */}
             <div
-              className="absolute top-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg scale-0 group-hover/scrubber:scale-100 transition-transform duration-100 pointer-events-none"
+              className="absolute top-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg scale-0 group-hover/scrubber:scale-100 group-active/scrubber:scale-100 transition-transform duration-100 pointer-events-none"
               style={{ left: `${progressPercent}%`, transform: "translate(-50%, -50%)" }}
             />
           </div>
 
           {/* Clustered Rectangular Control Pods */}
-          <div className="flex items-center justify-between select-none">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 select-none">
             
             {/* Left Pod: [Play/Pause] -> [10s Rewind] -> [Timeline Timestamp] -> [10s Forward] */}
-            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-3 py-2 flex items-center gap-2.5 shadow-2xl">
+            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2.5 shadow-2xl">
               {/* 1. Play / Pause Button */}
               <button
                 type="button"
                 onClick={togglePlay}
-                className="p-1.5 hover:bg-white/[0.08] text-white rounded-[4px] transition-colors"
+                className="p-1 sm:p-1.5 hover:bg-white/[0.08] text-white rounded-[4px] transition-colors"
                 title={isPlaying ? "Pause (k/space)" : "Play (k/space)"}
               >
                 {isPlaying ? (
@@ -702,14 +739,14 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <button
                 type="button"
                 onClick={() => seekRelative(-10)}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors flex items-center"
+                className="p-1 sm:p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors hidden xs:flex items-center"
                 title="Rewind 10s (j)"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
 
               {/* 3. Timeline Monospace Timestamp */}
-              <div className="flex items-center gap-2 px-2.5 text-xs font-mono text-zinc-400 border-x border-white/[0.08]">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 text-[11px] sm:text-xs font-mono text-zinc-400 border-x border-white/[0.08]">
                 <span className="text-zinc-100 font-medium">{formatTime(currentTime)}</span>
                 <span className="text-zinc-600">/</span>
                 <span>{formatTime(duration)}</span>
@@ -719,7 +756,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <button
                 type="button"
                 onClick={() => seekRelative(10)}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors flex items-center"
+                className="p-1 sm:p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors hidden xs:flex items-center"
                 title="Forward 10s (l)"
               >
                 <RotateCw className="w-3.5 h-3.5" />
@@ -727,10 +764,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             </div>
 
             {/* Right Pod: [Sound Panel] -> [Speed Selector] -> [PiP] -> [Fullscreen] */}
-            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-3 py-2 flex items-center gap-3 shadow-2xl">
+            <div className="pointer-events-auto bg-[#121215]/95 backdrop-blur-md border border-white/[0.1] rounded-[6px] px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-3 shadow-2xl">
               
               {/* Sound Panel (Mute Button + Volume Slider) */}
-              <div className="group/vol flex items-center gap-1.5 pr-1 border-r border-white/[0.08]">
+              <div className="group/vol flex items-center gap-1 sm:gap-1.5 pr-1 border-r border-white/[0.08]">
                 <button
                   type="button"
                   onClick={toggleMute}
@@ -766,7 +803,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSpeedMenuOpen(!isSpeedMenuOpen)}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono bg-white/[0.04] border border-white/[0.1] hover:border-white/20 rounded-[3px] text-zinc-300 transition-colors"
+                  className="flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-mono bg-white/[0.04] border border-white/[0.1] hover:border-white/20 rounded-[3px] text-zinc-300 transition-colors"
                 >
                   <span>{playbackRate.toFixed(playbackRate % 1 === 0 ? 0 : 2)}x</span>
                   <ChevronUp
@@ -804,7 +841,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <button
                 type="button"
                 onClick={togglePiP}
-                className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors border-l border-white/[0.08] pl-2"
+                className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors border-l border-white/[0.08] pl-1.5 sm:pl-2 hidden xs:block"
                 title="Picture in Picture"
               >
                 <PictureInPicture2 className="w-4 h-4" />

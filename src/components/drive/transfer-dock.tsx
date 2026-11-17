@@ -2,6 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTransferStore, TransferTask } from "@/lib/stores/transfer-store";
 import { useDriveStore } from "@/lib/stores/drive-store";
+import { useAudioPlayerStore } from "@/lib/stores/audio-player-store";
 import {
   X,
   ChevronDown,
@@ -29,6 +30,7 @@ export const TransferDock: React.FC = () => {
     clearCompleted,
   } = useTransferStore();
   const { activeFilter, showTransferDock, setShowTransferDock } = useDriveStore();
+  const isAudioFloating = useAudioPlayerStore((s) => !!s.currentTrack && s.isFloatingVisible && !s.isModalOpen);
 
   // If user is currently on dedicated Transfers View, or transfers dock is toggled off, or no tasks: hide
   if (!showTransferDock || activeFilter === "TRANSFERS" || tasks.length === 0) {
@@ -54,7 +56,10 @@ export const TransferDock: React.FC = () => {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 24, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 450, damping: 32 }}
-      className="specimen-card hairline-sheen fixed bottom-3 left-2.5 right-2.5 sm:left-auto sm:right-4 sm:bottom-4 z-50 sm:w-96 rounded-[6px] overflow-hidden select-none transition-all"
+      className={cn(
+        "specimen-card hairline-sheen fixed left-2.5 right-2.5 sm:left-auto sm:right-4 z-50 sm:w-96 rounded-[6px] overflow-hidden select-none transition-all",
+        isAudioFloating ? "bottom-16 sm:bottom-4" : "bottom-3 sm:bottom-4"
+      )}
     >
       {/* Top Hairline Sheen */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />

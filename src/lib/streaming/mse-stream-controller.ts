@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram";
+import { TelegramClient } from "teleproto";
 import { DriveFile } from "../telegram/indexer";
 import { TelegramRangeReader } from "../telegram/streaming/telegram-range-reader";
 import { Mp4DemuxSegmenter, DemuxerInitResult } from "./mp4-demux-segmenter";

@@ -1,4 +1,4 @@
-import { TelegramClient, Api } from "telegram";
+import { TelegramClient, Api } from "teleproto";
 import { DriveFile, normalizeTelegramMessage } from "./indexer";
 import { ChannelMeta } from "./session";
 

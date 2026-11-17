@@ -1,4 +1,4 @@
-import { Api } from "telegram";
+import { Api } from "teleproto";
 import { tgStreamClient } from "./client";
 import { get, set } from "idb-keyval";
 

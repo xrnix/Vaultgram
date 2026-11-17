@@ -1,4 +1,4 @@
-import { TelegramClient, Api } from "telegram";
+import { TelegramClient, Api } from "teleproto";
 import bigInt from "big-integer";
 import { DriveFile } from "../indexer";
 import { rehydrateFileLocation } from "../utils/rehydrate-media";

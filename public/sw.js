@@ -75,6 +75,10 @@ async function handleStreamRequest(request, url) {
 
       const { status, headers, body, error } = event.data;
       if (error) {
+        if (error === "ABORTED") {
+          resolve(new Response(null, { status: 499, statusText: "Client Closed Request" }));
+          return;
+        }
         resolve(
           new Response(String(error), {
             status: 500,

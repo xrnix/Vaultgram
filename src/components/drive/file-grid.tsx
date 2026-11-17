@@ -73,13 +73,14 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     overscan: 8,
   });
 
-  // Reset scroll to top whenever files list changes (e.g. channel switch, search, filter)
+  // Reset scroll to top and remeasure whenever files or columns change
   useEffect(() => {
     if (parentRef.current) {
       parentRef.current.scrollTop = 0;
     }
     rowVirtualizer.scrollToOffset(0);
-  }, [files]);
+    rowVirtualizer.measure();
+  }, [files, columns]);
 
   return (
     <div ref={parentRef} className="h-full w-full overflow-y-auto select-none p-0.5 sm:p-1">
@@ -93,7 +94,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
 
           return (
             <div
-              key={virtualRow.key}
+              key={`${virtualRow.index}-${rowFiles[0]?.id || ""}`}
               className="absolute top-0 left-0 w-full grid will-change-transform"
               style={{
                 height: `${virtualRow.size - gap}px`,

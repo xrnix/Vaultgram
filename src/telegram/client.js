@@ -1,52 +1,11 @@
-import { TelegramClient, Api } from "telegram";
-import { StringSession } from "telegram/sessions";
-import { ConnectionTCPObfuscated } from "telegram/network";
-import { PromisedWebSockets } from "telegram/extensions";
-import { computeCheck } from "telegram/Password";
+import { TelegramClient, Api, WebSocketTransport, password as tgPassword } from "teleproto";
+import { StringSession } from "teleproto/sessions";
 import { getSavedSession, getTgConfig, getTgConfigSync, setSavedSession, setSavedUserProfile } from "./session.js";
 
-// Official Telegram WebSocket Gateways for all 5 DCs
-const DC_WEBSOCKET_DOMAINS = {
-  1: "pluto.web.telegram.org",
-  2: "venus.web.telegram.org",
-  3: "aurora.web.telegram.org",
-  4: "vesta.web.telegram.org",
-  5: "flora.web.telegram.org",
-};
+const computeCheck = tgPassword.computeCheck;
 
-export class TelegramBrowserWebSocket extends PromisedWebSockets {
-  getWebSocketLink(ip, _port, testServers) {
-    const testSuffix = testServers ? "_test" : "";
-
-    if (ip.includes("web.telegram.org") || ip.includes("telegram.org")) {
-      return `wss://${ip}/apiws${testSuffix}`;
-    }
-
-    if (ip.startsWith("149.154.175") || String(ip) === "1" || ip.includes("pluto")) {
-      return `wss://pluto.web.telegram.org/apiws${testSuffix}`;
-    }
-    if (ip.startsWith("149.154.167.5") || String(ip) === "2" || ip.includes("venus")) {
-      return `wss://venus.web.telegram.org/apiws${testSuffix}`;
-    }
-    if (ip.startsWith("149.154.175.1") || String(ip) === "3" || ip.includes("aurora")) {
-      return `wss://aurora.web.telegram.org/apiws${testSuffix}`;
-    }
-    if (ip.startsWith("149.154.167.9") || ip.includes("149.154.167") || String(ip) === "4" || ip.includes("vesta")) {
-      return `wss://vesta.web.telegram.org/apiws${testSuffix}`;
-    }
-    if (ip.startsWith("91.108.56") || String(ip) === "5" || ip.includes("flora")) {
-      return `wss://flora.web.telegram.org/apiws${testSuffix}`;
-    }
-
-    return `wss://vesta.web.telegram.org/apiws${testSuffix}`;
-  }
-}
-
-export class ConnectionWebSocketObfuscated extends ConnectionTCPObfuscated {
-  constructor(args) {
-    super({ ...args, socket: TelegramBrowserWebSocket });
-  }
-}
+export const ConnectionWebSocketObfuscated = WebSocketTransport;
+export const TelegramBrowserWebSocket = WebSocketTransport;
 
 class TgStreamClient {
   constructor() {
@@ -83,7 +42,7 @@ class TgStreamClient {
       stringSession.setDC(4, "149.154.167.91", 443);
     }
     return new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
-      connection: ConnectionWebSocketObfuscated,
+      transport: new WebSocketTransport(),
       connectionRetries: 3,
       useWSS: true,
       autoReconnect: true,

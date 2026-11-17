@@ -70,6 +70,15 @@ export const AudioPlayerModal: React.FC = () => {
     seek(targetTime);
   };
 
+  const handleProgressBarTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || duration <= 0) return;
+    const touch = e.touches[0];
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const clickPos = (touch.clientX - rect.left) / rect.width;
+    const targetTime = Math.max(0, Math.min(duration, clickPos * duration));
+    seek(targetTime);
+  };
+
   const handleSkip = (seconds: number) => {
     const target = Math.max(0, Math.min(duration, currentTime + seconds));
     seek(target);
@@ -111,7 +120,7 @@ export const AudioPlayerModal: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-xl bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-w-xl max-h-[90dvh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-y-auto backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
@@ -205,7 +214,9 @@ export const AudioPlayerModal: React.FC = () => {
               <div
                 ref={progressBarRef}
                 onClick={handleProgressBarClick}
-                className="group relative h-2 w-full cursor-pointer rounded-full bg-white/[0.08] overflow-hidden"
+                onTouchStart={handleProgressBarTouch}
+                onTouchMove={handleProgressBarTouch}
+                className="group relative h-2.5 sm:h-2 w-full cursor-pointer rounded-full bg-white/[0.08] overflow-hidden touch-none"
               >
                 <div
                   className="h-full bg-gradient-to-r from-[#c49b56] via-amber-200 to-white transition-all rounded-full relative shadow-[0_0_10px_rgba(196,155,86,0.5)]"

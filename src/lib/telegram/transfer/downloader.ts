@@ -1,4 +1,4 @@
-import { TelegramClient, Api } from "telegram";
+import { TelegramClient, Api } from "teleproto";
 import { tgStreamClient } from "../client";
 import { useTransferStore, TransferTask } from "../../stores/transfer-store";
 import { DriveFile } from "../indexer";
