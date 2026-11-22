@@ -16,8 +16,9 @@ export const SpringHamburger: React.FC<SpringHamburgerProps> = ({
 
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`relative flex h-8 w-8 items-center justify-center rounded-sm text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors focus:outline-none ${className}`}
+      className={`relative flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-[4px] text-zinc-300 hover:text-white hover:bg-white/[0.06] active:scale-95 transition-all focus:outline-none ${className}`}
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       <div className="relative flex h-3 w-3.5 flex-col justify-between items-center pointer-events-none">

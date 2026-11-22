@@ -105,15 +105,16 @@ export const PhoneLoginTab: React.FC = () => {
               Phone Number (International Format)
             </label>
             <div className="relative">
-              <Phone className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-500 stroke-[1.5px]" />
               <Input
                 type="tel"
+                autoComplete="tel"
                 placeholder="+1 234 567 8900"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="h-8.5 pl-8 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+                className="h-11 sm:h-9 pl-9 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
             <p className="text-[10px] text-zinc-500 font-sans">
@@ -123,7 +124,7 @@ export const PhoneLoginTab: React.FC = () => {
 
           <Button
             type="submit"
-            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            className="w-full h-11 sm:h-9 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
             disabled={isSubmitting}
           >
             <span>{isSubmitting ? "Sending Code..." : "Send Verification Code"}</span>
@@ -139,23 +140,25 @@ export const PhoneLoginTab: React.FC = () => {
               Verification Code (Sent to {useAuthStore.getState().phoneNumber})
             </label>
             <div className="relative">
-              <KeyRound className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-500 stroke-[1.5px]" />
               <Input
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 placeholder="12345"
                 maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="h-8.5 pl-8 tracking-[0.25em] font-mono text-center bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+                className="h-11 sm:h-9 pl-9 tracking-[0.25em] font-mono text-center bg-white/[0.03] border-white/[0.1] rounded-[4px] text-base sm:text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
             </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            className="w-full h-11 sm:h-9 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
             disabled={isSubmitting}
           >
             <span>{isSubmitting ? "Verifying..." : "Verify & Sign In"}</span>
@@ -168,7 +171,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("phone")}
             disabled={isSubmitting}
-            className="w-full h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
+            className="w-full h-9 sm:h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Change Phone Number
@@ -183,26 +186,28 @@ export const PhoneLoginTab: React.FC = () => {
               Two-Step Cloud Password
             </label>
             <div className="relative">
-              <ShieldCheck className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+              <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-500 stroke-[1.5px]" />
               <Input
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 placeholder="Enter your 2FA password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoFocus
                 disabled={isSubmitting}
-                className="h-8.5 pl-8 pr-8 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+                className="h-11 sm:h-9 pl-9 pr-10 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
                 tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <EyeOff className="h-3.5 w-3.5 stroke-[1.5px]" />
+                  <EyeOff className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px]" />
                 ) : (
-                  <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
+                  <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px]" />
                 )}
               </button>
             </div>
@@ -210,7 +215,7 @@ export const PhoneLoginTab: React.FC = () => {
 
           <Button
             type="submit"
-            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+            className="w-full h-11 sm:h-9 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
             disabled={isSubmitting}
           >
             <span>{isSubmitting ? "Authenticating..." : "Confirm & Connect"}</span>
@@ -223,7 +228,7 @@ export const PhoneLoginTab: React.FC = () => {
             size="sm"
             onClick={() => setPhoneStep("otp")}
             disabled={isSubmitting}
-            className="w-full h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
+            className="w-full h-9 sm:h-7 gap-1 text-[11px] font-mono text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[3px] transition-colors"
           >
             <ArrowLeft className="h-3 w-3 stroke-[1.5px]" />
             Back to OTP Code

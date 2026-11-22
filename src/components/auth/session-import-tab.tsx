@@ -57,7 +57,7 @@ export const SessionImportTab: React.FC = () => {
           value={sessionString}
           onChange={(e) => setSessionString(e.target.value)}
           disabled={isSubmitting}
-          className="w-full bg-white/[0.03] border border-white/[0.1] rounded-[4px] p-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus-visible:outline-none transition-all resize-none"
+          className="w-full bg-white/[0.03] border border-white/[0.1] rounded-[4px] p-2.5 text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus-visible:outline-none transition-all resize-none"
         />
         <p className="text-[10px] text-zinc-500 font-sans leading-normal">
           Paste an existing GramJS string session exported from another Vaultgram instance or Telegram development tool.
@@ -68,7 +68,7 @@ export const SessionImportTab: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="w-full text-xs font-mono text-zinc-400 hover:text-zinc-200 px-3 py-2 flex justify-between items-center transition-colors"
+          className="w-full min-h-[40px] sm:min-h-0 text-xs font-mono text-zinc-400 hover:text-zinc-200 px-3 py-2 flex justify-between items-center transition-colors"
         >
           <span>Override API ID &amp; Hash (Optional)</span>
           {showAdvanced ? (
@@ -79,20 +79,21 @@ export const SessionImportTab: React.FC = () => {
         </button>
 
         {showAdvanced && (
-          <div className="space-y-2 p-3 pt-1 border-t border-white/[0.06] bg-[#09090b]/60">
+          <div className="space-y-2 p-3 pt-2 border-t border-white/[0.06] bg-[#09090b]/60">
             <Input
               type="text"
+              inputMode="numeric"
               placeholder="Custom API ID (e.g. 2040)"
               value={customApiId}
               onChange={(e) => setCustomApiId(e.target.value)}
-              className="bg-white/[0.03] border-white/[0.1] rounded-[4px] h-8 px-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+              className="bg-white/[0.03] border-white/[0.1] rounded-[4px] h-10 sm:h-8 px-2.5 text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
             />
             <Input
               type="text"
               placeholder="Custom API Hash"
               value={customApiHash}
               onChange={(e) => setCustomApiHash(e.target.value)}
-              className="bg-white/[0.03] border-white/[0.1] rounded-[4px] h-8 px-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+              className="bg-white/[0.03] border-white/[0.1] rounded-[4px] h-10 sm:h-8 px-2.5 text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
             />
           </div>
         )}
@@ -100,7 +101,7 @@ export const SessionImportTab: React.FC = () => {
 
       <Button
         type="submit"
-        className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
+        className="w-full h-11 sm:h-9 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all gap-1.5"
         disabled={isSubmitting}
       >
         <Key className="h-3.5 w-3.5 stroke-[1.75px]" />

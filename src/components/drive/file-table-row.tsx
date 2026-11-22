@@ -45,6 +45,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
     const isPinned = useDriveStore((s) => s.pinnedFileIds.has(file.id));
     const isFavorite = useDriveStore((s) => s.favoriteFileIds.has(file.id));
     const isSelected = useDriveStore((s) => s.selectedFileIds.has(file.id));
+    const hasSelection = useDriveStore((s) => s.selectedFileIds.size > 0);
     const toggleSelectFile = useDriveStore((s) => s.toggleSelectFile);
     const togglePin = useDriveStore((s) => s.togglePin);
     const toggleFavorite = useDriveStore((s) => s.toggleFavorite);
@@ -59,7 +60,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
       !!file.name.toLowerCase().match(/\.(txt|md|json|js|ts|tsx|jsx|html|css|py|rs|go|sh|yml|yaml|xml|csv|log|env)$/);
 
     const handleClick = (e: React.MouseEvent) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
         e.preventDefault();
         toggleSelectFile(file.id);
       } else {
@@ -101,28 +102,39 @@ export const FileTableRow = React.memo<FileTableRowProps>(
           <div
             onClick={handleClick}
             className={cn(
-              "group flex h-11 w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2 sm:px-3 active:bg-white/[0.05]",
+              "group flex h-full w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2.5 sm:px-3 active:bg-white/[0.05]",
               isSelected && "bg-white/[0.06] border-white/20"
             )}
           >
-            {/* Name & Icon */}
-            <div className="flex items-center gap-2 sm:gap-2.5 overflow-hidden flex-1 min-w-0 pr-2 sm:pr-4">
-              <div className="specimen-inset flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] transition-colors">
+            {/* Name & Icon (2-line stacked metadata on mobile) */}
+            <div className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0 pr-2 sm:pr-4">
+              <div className="specimen-inset flex h-8 w-8 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-[4px] sm:rounded-[3px] transition-colors">
                 {getFileIcon()}
               </div>
               {isSelected && (
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-[2px] bg-white text-black shrink-0">
+                <span className="flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded-[2px] bg-white text-black shrink-0">
                   <Check className="h-2.5 w-2.5 stroke-[3px]" />
                 </span>
               )}
-              <span
-                className="truncate font-medium text-zinc-200 group-hover:text-white font-sans tracking-tight"
-                title={file.name}
-              >
-                {file.name}
-              </span>
-              {isPinned && <Pin className="h-2.5 w-2.5 text-zinc-300 fill-zinc-300 shrink-0" />}
-              {isFavorite && <Star className="h-2.5 w-2.5 text-[#c49b56] fill-[#c49b56] shrink-0" />}
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="truncate font-medium text-zinc-200 group-hover:text-white font-sans tracking-tight"
+                    title={file.name}
+                  >
+                    {file.name}
+                  </span>
+                  {isPinned && <Pin className="h-2.5 w-2.5 text-zinc-300 fill-zinc-300 shrink-0" />}
+                  {isFavorite && <Star className="h-2.5 w-2.5 text-[#c49b56] fill-[#c49b56] shrink-0" />}
+                </div>
+                <div className="sm:hidden flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 truncate mt-0.5 tabular-nums">
+                  <span className="text-zinc-400">{formatBytes(file.size)}</span>
+                  <span>·</span>
+                  <span>{formatDate(file.date)}</span>
+                  <span>·</span>
+                  <span className="truncate">{file.channelTitle}</span>
+                </div>
+              </div>
             </div>
 
             {/* Channel Source (hidden on mobile) */}
@@ -137,8 +149,8 @@ export const FileTableRow = React.memo<FileTableRowProps>(
               </span>
             </div>
 
-            {/* Size */}
-            <div className="w-16 sm:w-24 shrink-0 font-mono text-[11px] text-zinc-300 px-1.5 sm:px-2 text-right sm:text-left tabular-nums">
+            {/* Size (desktop column; mobile shows size inline under filename) */}
+            <div className="w-24 shrink-0 font-mono text-[11px] text-zinc-300 px-2 hidden sm:block tabular-nums">
               {formatBytes(file.size)}
             </div>
 
@@ -148,8 +160,9 @@ export const FileTableRow = React.memo<FileTableRowProps>(
             </div>
 
             {/* Actions: Desktop hover buttons + Touch dropdown trigger */}
-            <div className="w-9 sm:w-12 shrink-0 flex items-center justify-end gap-1">
+            <div className="w-10 sm:w-12 shrink-0 flex items-center justify-end gap-1">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDownload(file);
@@ -163,21 +176,33 @@ export const FileTableRow = React.memo<FileTableRowProps>(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
+                    type="button"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex h-7.5 w-7.5 sm:h-6 sm:w-6 items-center justify-center rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.08] sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="flex h-10 w-10 sm:h-6 sm:w-6 items-center justify-center rounded-[4px] sm:rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.08] sm:opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="More options"
                   >
-                    <MoreVertical className="h-3.5 w-3.5 stroke-[1.5px]" />
+                    <MoreVertical className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52 bg-[#121215] border-white/[0.1] text-zinc-300">
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
+                      toggleSelectFile(file.id);
+                    }}
+                    className="gap-2 py-2 sm:py-1.5 text-xs hover:bg-white/[0.06] hover:text-white"
+                  >
+                    <Check className="h-3.5 w-3.5 stroke-[1.75px]" />
+                    <span>{isSelected ? "Deselect Item" : "Select Item"}</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (isCodeOrText) setTextViewerFile(file);
                       else setPreviewFile(file);
                     }}
-                    className="gap-2 text-xs hover:bg-white/[0.06] hover:text-white"
+                    className="gap-2 py-2 sm:py-1.5 text-xs hover:bg-white/[0.06] hover:text-white"
                   >
                     <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
                     <span>{isCodeOrText ? "View Code / Text" : "Quick Preview"}</span>

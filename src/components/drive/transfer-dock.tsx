@@ -57,8 +57,10 @@ export const TransferDock: React.FC = () => {
       exit={{ opacity: 0, y: 24, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 450, damping: 32 }}
       className={cn(
-        "specimen-card hairline-sheen fixed left-2.5 right-2.5 sm:left-auto sm:right-4 z-50 sm:w-96 rounded-[6px] overflow-hidden select-none transition-all",
-        isAudioFloating ? "bottom-16 sm:bottom-4" : "bottom-3 sm:bottom-4"
+        "specimen-card hairline-sheen fixed left-2.5 right-2.5 md:left-auto md:right-4 z-40 md:w-96 rounded-[6px] overflow-hidden select-none transition-all",
+        isAudioFloating
+          ? "bottom-[calc(8.25rem+env(safe-area-inset-bottom))] md:bottom-20"
+          : "bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4"
       )}
     >
       {/* Top Hairline Sheen */}

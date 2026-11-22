@@ -29,9 +29,13 @@ import { cn } from "@/lib/utils";
 
 interface DriveToolbarProps {
   onTriggerUpload: () => void;
+  hideHeader?: boolean;
 }
 
-export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) => {
+export const DriveToolbar: React.FC<DriveToolbarProps> = ({
+  onTriggerUpload,
+  hideHeader = false,
+}) => {
   const {
     channels,
     activeChannelId,
@@ -44,14 +48,15 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
     syncStatus,
     isMobileSidebarOpen,
     isSettingsOpen,
+    isCommandPaletteOpen,
     setViewMode,
     setSorting,
     refreshIndex,
     setMobileSidebarOpen,
     setSettingsOpen,
+    setCommandPaletteOpen,
   } = useDriveStore();
 
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
   const [isSessionExportOpen, setIsSessionExportOpen] = useState(false);
 
@@ -60,16 +65,16 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        setCommandPaletteOpen(!useDriveStore.getState().isCommandPaletteOpen);
       }
       if (e.key === "/" && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
         e.preventDefault();
-        setIsCommandPaletteOpen(true);
+        setCommandPaletteOpen(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [setCommandPaletteOpen]);
 
   const getChannelTitle = () => {
     if (activeChannelId === "UNIFIED") return "All Channels";
@@ -104,203 +109,204 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({ onTriggerUpload }) =
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/80 px-2 sm:px-4 backdrop-blur-xl select-none gap-1 sm:gap-2 z-20">
-        {/* Left: Spring Morph Hamburger + Channel Breadcrumb */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0 min-w-0">
-          {/* Animated Spring Morph Hamburger Icon on Mobile */}
-          <div className="md:hidden shrink-0">
-            <SpringHamburger
-              isOpen={isMobileSidebarOpen}
-              onClick={() => setMobileSidebarOpen(!isMobileSidebarOpen)}
-            />
-          </div>
-
-          {/* Archival Breadcrumb */}
-          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 text-xs">
-            <span
-              className="font-medium text-xs sm:text-xs text-white max-w-[110px] xs:max-w-[140px] sm:max-w-[160px] truncate"
-              title={getChannelTitle()}
-            >
-              {getChannelTitle()}
-            </span>
-            <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0 hidden sm:inline-block" />
-            <span
-              className="font-sans font-normal text-zinc-400 max-w-[100px] truncate hidden sm:inline-block"
-              title={getCategoryLabel()}
-            >
-              {getCategoryLabel()}
-            </span>
-          </div>
-
-          {/* Live Background Sync Status Pill */}
-          {syncStatus.isSyncing && (
-            <div className="ml-1 flex items-center gap-1.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 shrink-0">
-              <RefreshCw className="h-2.5 w-2.5 animate-spin text-zinc-300" />
-              <span className="hidden md:inline truncate max-w-[140px]">{syncStatus.statusText}</span>
+      {!hideHeader && (
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/90 px-2 sm:px-4 backdrop-blur-xl select-none gap-2 z-20 pt-[env(safe-area-inset-top)]">
+          {/* Left: Spring Morph Hamburger + Channel Breadcrumb */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 flex-1 sm:flex-initial">
+            {/* Animated Spring Morph Hamburger Icon on Mobile */}
+            <div className="md:hidden shrink-0">
+              <SpringHamburger
+                isOpen={isMobileSidebarOpen}
+                onClick={() => setMobileSidebarOpen(!isMobileSidebarOpen)}
+              />
             </div>
-          )}
-        </div>
 
-        {/* Center: Search Capsule (hidden on small mobile screens, opens via search button) */}
-        <div className="hidden sm:flex flex-1 min-w-[120px] max-w-xs md:max-w-md mx-2">
-          <div
-            onClick={() => setIsCommandPaletteOpen(true)}
-            className="group relative flex items-center cursor-pointer w-full"
-          >
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.5px] pointer-events-none transition-colors" />
-            <Input
-              type="text"
-              readOnly
-              placeholder="Search or press ⌘K..."
-              value={searchQuery}
-              className="h-8 pl-8 pr-12 text-xs bg-[#0c0c0e] group-hover:bg-[#141418] border-white/[0.08] group-hover:border-white/[0.18] rounded-[5px] placeholder:text-zinc-500 text-zinc-200 cursor-pointer transition-all w-full"
-            />
-            <div className="absolute right-2 flex items-center gap-1 pointer-events-none">
-              <kbd className="hidden md:inline-flex items-center gap-0.5 rounded-[3px] tactile-keycap px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-400">
-                <Command className="h-2.5 w-2.5" /> K
-              </kbd>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Controls & CTAs */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Mobile Search Button (Visible only on < sm) */}
-          <button
-            onClick={() => setIsCommandPaletteOpen(true)}
-            title="Search (⌘K)"
-            className="sm:hidden flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
-          >
-            <Search className="h-4 w-4 stroke-[1.5px]" />
-          </button>
-
-          {/* Desktop Refresh Index Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refreshIndex()}
-            disabled={syncStatus.isSyncing}
-            title="Refresh MTProto Index"
-            className="hidden sm:flex h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px]"
-          >
-            <RefreshCw
-              className={cn(
-                "h-3.5 w-3.5 stroke-[1.5px]",
-                syncStatus.isSyncing && "animate-spin text-white"
-              )}
-            />
-          </Button>
-
-          {/* Sort Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                title={`Sort by ${sortField} (${sortOrder.toUpperCase()})`}
-                className="h-8 px-2 sm:px-2.5 gap-1.5 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.16] text-xs text-zinc-300 hover:text-white rounded-[4px] transition-colors"
+            {/* Archival Breadcrumb — stacked 2-line title/category on mobile, inline on sm+ */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5 min-w-0 leading-tight">
+              <span
+                className="font-medium text-xs text-white truncate max-w-[170px] sm:max-w-[160px]"
+                title={getChannelTitle()}
               >
-                <ArrowUpDown className="h-3.5 w-3.5 stroke-[1.5px] text-zinc-400" />
-                <span className="hidden md:inline capitalize">
-                  {sortField} ({sortOrder.toUpperCase()})
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 bg-[#121215] border-white/[0.1] text-zinc-300">
-              <DropdownMenuItem onClick={() => setSorting("date")} className="hover:bg-white/[0.06] hover:text-white text-xs">
-                <span>Date {sortField === "date" ? `(${sortOrder.toUpperCase()})` : ""}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSorting("name")} className="hover:bg-white/[0.06] hover:text-white text-xs">
-                <span>Name {sortField === "name" ? `(${sortOrder.toUpperCase()})` : ""}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSorting("size")} className="hover:bg-white/[0.06] hover:text-white text-xs">
-                <span>Size {sortField === "size" ? `(${sortOrder.toUpperCase()})` : ""}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {getChannelTitle()}
+              </span>
+              <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0 hidden sm:inline-block" />
+              <span
+                className="font-mono sm:font-sans font-normal text-[10px] sm:text-xs text-zinc-400 truncate max-w-[140px] sm:max-w-[110px]"
+                title={getCategoryLabel()}
+              >
+                {getCategoryLabel()}
+              </span>
+            </div>
 
-          {/* View Toggle (Grid <-> List) */}
-          {/* On Mobile: 1-Tap Toggle Icon Button (32px) */}
-          <button
-            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-            title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
-            className="sm:hidden flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
-          >
-            {viewMode === "grid" ? (
-              <List className="h-4 w-4 stroke-[1.5px]" />
-            ) : (
-              <LayoutGrid className="h-4 w-4 stroke-[1.5px]" />
+            {/* Live Background Sync Status Pill */}
+            {syncStatus.isSyncing && (
+              <div className="ml-1 flex items-center gap-1.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 shrink-0">
+                <RefreshCw className="h-2.5 w-2.5 animate-spin text-zinc-300" />
+                <span className="hidden lg:inline truncate max-w-[140px]">{syncStatus.statusText}</span>
+              </div>
             )}
-          </button>
-
-          {/* On Desktop: Segmented Pill (Grid / List) */}
-          <div className="hidden sm:flex items-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] p-0.5">
-            <button
-              onClick={() => setViewMode("grid")}
-              title="Grid View"
-              className={cn(
-                "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
-                viewMode === "grid"
-                  ? "text-white"
-                  : "text-zinc-500 hover:text-zinc-300"
-              )}
-            >
-              {viewMode === "grid" && (
-                <motion.span
-                  layoutId="viewModePill"
-                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                  className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
-                />
-              )}
-              <LayoutGrid className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              title="List View"
-              className={cn(
-                "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
-                viewMode === "list"
-                  ? "text-white"
-                  : "text-zinc-500 hover:text-zinc-300"
-              )}
-            >
-              {viewMode === "list" && (
-                <motion.span
-                  layoutId="viewModePill"
-                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                  className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
-                />
-              )}
-              <List className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
-            </button>
           </div>
 
-          {/* Upload Button */}
-          <Button
-            onClick={onTriggerUpload}
-            size="sm"
-            className="h-8 px-2 sm:px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
-            title="Upload File to Telegram"
-          >
-            <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
-            <span className="hidden sm:inline">Upload</span>
-          </Button>
+          {/* Center: Search Capsule (sm+ screens; mobile uses dedicated thumb-bar Search) */}
+          <div className="hidden sm:flex flex-1 min-w-[120px] max-w-xs md:max-w-md mx-2">
+            <div
+              onClick={() => setCommandPaletteOpen(true)}
+              className="group relative flex items-center cursor-pointer w-full"
+            >
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.5px] pointer-events-none transition-colors" />
+              <Input
+                type="text"
+                readOnly
+                placeholder="Search or press ⌘K..."
+                value={searchQuery}
+                className="h-8 pl-8 pr-12 text-xs bg-[#0c0c0e] group-hover:bg-[#141418] border-white/[0.08] group-hover:border-white/[0.18] rounded-[5px] placeholder:text-zinc-500 text-zinc-200 cursor-pointer transition-all w-full"
+              />
+              <div className="absolute right-2 flex items-center gap-1 pointer-events-none">
+                <kbd className="hidden md:inline-flex items-center gap-0.5 rounded-[3px] tactile-keycap px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-400">
+                  <Command className="h-2.5 w-2.5" /> K
+                </kbd>
+              </div>
+            </div>
+          </div>
 
-          {/* Unified Settings Menu Button */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors"
-            title="Settings & Preferences"
-          >
-            <Settings className="h-4 w-4 stroke-[1.5px]" />
-          </button>
-        </div>
-      </header>
+          {/* Right: Controls & CTAs */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Refresh Index Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refreshIndex()}
+              disabled={syncStatus.isSyncing}
+              title="Refresh MTProto Index"
+              className="hidden sm:flex h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px]"
+            >
+              <RefreshCw
+                className={cn(
+                  "h-3.5 w-3.5 stroke-[1.5px]",
+                  syncStatus.isSyncing && "animate-spin text-white"
+                )}
+              />
+            </Button>
+
+            {/* Sort Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  title={`Sort by ${sortField} (${sortOrder.toUpperCase()})`}
+                  className="h-9 w-9 sm:h-8 sm:w-auto px-0 sm:px-2.5 gap-1.5 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.16] text-xs text-zinc-300 hover:text-white rounded-[4px] transition-colors"
+                >
+                  <ArrowUpDown className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px] text-zinc-300 sm:text-zinc-400" />
+                  <span className="hidden md:inline capitalize">
+                    {sortField} ({sortOrder.toUpperCase()})
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 bg-[#121215] border-white/[0.1] text-zinc-300">
+                <DropdownMenuItem onClick={() => setSorting("date")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
+                  <span>Date {sortField === "date" ? `(${sortOrder.toUpperCase()})` : ""}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting("name")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
+                  <span>Name {sortField === "name" ? `(${sortOrder.toUpperCase()})` : ""}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting("size")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
+                  <span>Size {sortField === "size" ? `(${sortOrder.toUpperCase()})` : ""}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => refreshIndex()} className="sm:hidden py-2 hover:bg-white/[0.06] hover:text-white text-xs border-t border-white/[0.06] mt-1 pt-2">
+                  <RefreshCw className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                  <span>Sync Channel Index</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* View Toggle (Grid <-> List) */}
+            {/* On Mobile: 1-Tap Toggle Icon Button */}
+            <button
+              type="button"
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
+              className="sm:hidden flex h-9 w-9 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] active:scale-95 transition-all"
+            >
+              {viewMode === "grid" ? (
+                <List className="h-4 w-4 stroke-[1.5px]" />
+              ) : (
+                <LayoutGrid className="h-4 w-4 stroke-[1.5px]" />
+              )}
+            </button>
+
+            {/* On Desktop: Segmented Pill (Grid / List) */}
+            <div className="hidden sm:flex items-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                title="Grid View"
+                className={cn(
+                  "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
+                  viewMode === "grid"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                {viewMode === "grid" && (
+                  <motion.span
+                    layoutId="viewModePill"
+                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
+                  />
+                )}
+                <LayoutGrid className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                title="List View"
+                className={cn(
+                  "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
+                  viewMode === "list"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                {viewMode === "list" && (
+                  <motion.span
+                    layoutId="viewModePill"
+                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
+                  />
+                )}
+                <List className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
+              </button>
+            </div>
+
+            {/* Desktop Upload Button (mobile uses MobileBottomNav primary Upload CTA) */}
+            <Button
+              onClick={onTriggerUpload}
+              size="sm"
+              className="hidden md:flex h-8 px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+              title="Upload File to Telegram"
+            >
+              <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
+              <span>Upload</span>
+            </Button>
+
+            {/* Unified Settings Menu Button */}
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 sm:text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] active:scale-95 transition-all"
+              title="Settings & Preferences"
+            >
+              <Settings className="h-4 w-4 stroke-[1.5px]" />
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Global ⌘K Command Palette Modal */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
+        onClose={() => setCommandPaletteOpen(false)}
         onTriggerUpload={onTriggerUpload}
         onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
         onOpenExport={() => setIsSessionExportOpen(true)}

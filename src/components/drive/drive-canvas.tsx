@@ -26,6 +26,7 @@ import { ShortcutsCheatSheetModal } from "./shortcuts-cheat-sheet";
 import { DropzoneOverlay } from "./dropzone-overlay";
 import { UploadChannelSelectModal } from "./upload-channel-select-modal";
 import { TransfersView } from "./transfers-view";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { Inbox, Upload, FilterX } from "lucide-react";
 import { formatBytes, cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ export const DriveCanvas: React.FC = () => {
     activeChannelId,
     files,
     activeFilter,
+    setActiveFilter,
     sizeFilter,
     setSizeFilter,
     customFolders,
@@ -229,7 +231,7 @@ export const DriveCanvas: React.FC = () => {
   const isVideo = previewFile && previewFile.category === "VIDEO";
 
   return (
-    <main className="relative flex flex-1 flex-col h-screen overflow-hidden bg-zinc-950 text-zinc-100">
+    <main className="relative flex flex-1 flex-col h-[100dvh] w-full min-w-0 overflow-hidden bg-zinc-950 text-zinc-100">
       {/* Hidden File Input for Button Triggers */}
       <input
         ref={hiddenFileInputRef}
@@ -261,18 +263,58 @@ export const DriveCanvas: React.FC = () => {
         }}
       />
 
-      {/* Top Toolbar (Hidden on Transfers view for dedicated header) */}
-      {activeFilter !== "TRANSFERS" && <DriveToolbar onTriggerUpload={handleTriggerUpload} />}
+      {/* Top Toolbar (header hidden on Transfers view, modals stay mounted) */}
+      <DriveToolbar
+        onTriggerUpload={handleTriggerUpload}
+        hideHeader={activeFilter === "TRANSFERS"}
+      />
+
+      {/* Mobile Quick Category Strip (1-tap filtering without opening drawer) */}
+      {activeFilter !== "TRANSFERS" && (
+        <div className="md:hidden shrink-0 border-b border-white/[0.06] bg-[#0e0e11]/90 px-2.5 py-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-pan-x">
+            {(
+              [
+                { id: "ALL", label: "All" },
+                { id: "IMAGE", label: "Images" },
+                { id: "VIDEO", label: "Videos" },
+                { id: "DOC", label: "Docs" },
+                { id: "AUDIO", label: "Audio" },
+                { id: "ARCHIVE", label: "Archives" },
+                { id: "FAVORITES", label: "Starred" },
+                { id: "PINNED", label: "Pinned" },
+              ] as const
+            ).map((cat) => {
+              const isAct = activeFilter === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveFilter(cat.id)}
+                  className={cn(
+                    "shrink-0 h-8 px-3 rounded-[4px] text-[11px] font-mono transition-colors active:scale-95",
+                    isAct
+                      ? "bg-white/[0.12] text-white border border-white/[0.2] font-medium"
+                      : "bg-white/[0.02] text-zinc-400 border border-white/[0.06] hover:text-zinc-200"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Render Dedicated Transfers View if Selected */}
       {activeFilter === "TRANSFERS" ? (
         <TransfersView />
       ) : (
         /* Main Virtualized Content Area */
-        <div className="flex-1 overflow-hidden p-2 sm:p-3 md:p-5 flex flex-col">
+        <div className="flex-1 overflow-hidden px-2.5 pt-2.5 pb-0 sm:p-3 md:p-5 flex flex-col">
           {/* Telemetry & Size Filter Chips Bar (Persistent whenever files exist in this view) */}
           {files.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 px-0.5 border-b border-white/[0.06] mb-3 text-xs shrink-0 select-none gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 px-0.5 border-b border-white/[0.06] mb-2.5 sm:mb-3 text-xs shrink-0 select-none gap-2">
               <div className="flex items-center gap-2 overflow-hidden text-[11px] font-mono text-zinc-400">
                 <span>
                   <strong className="text-white font-medium">{filteredFiles.length}</strong>
@@ -297,7 +339,7 @@ export const DriveCanvas: React.FC = () => {
               </div>
 
               {/* Filter Chips: horizontal scroll on mobile */}
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex items-center gap-1.5 sm:gap-1 overflow-x-auto no-scrollbar py-0.5 touch-pan-x">
                 {(
                   [
                     { id: "ALL", label: "All Sizes" },
@@ -314,7 +356,7 @@ export const DriveCanvas: React.FC = () => {
                       whileTap={{ scale: 0.96 }}
                       onClick={() => setSizeFilter(chip.id)}
                       className={cn(
-                        "relative px-2.5 py-0.5 rounded-[4px] text-[10px] font-mono transition-colors whitespace-nowrap",
+                        "relative px-2.5 py-1 sm:py-0.5 rounded-[4px] text-[10px] font-mono transition-colors whitespace-nowrap",
                         isAct
                           ? "text-white font-medium"
                           : "text-zinc-500 hover:text-zinc-300 bg-white/[0.02] border border-white/[0.05]"
@@ -384,9 +426,9 @@ export const DriveCanvas: React.FC = () => {
 
                     <div className="flex h-11 w-11 items-center justify-center rounded-[4px] bg-[#121215] border border-white/[0.1] text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                       {sizeFilter !== "ALL" || searchQuery ? (
-                        <FilterX className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-400" />
+                        <FilterX className="h-5 w-5 stroke-[1.4px] text-zinc-400" />
                       ) : (
-                        <Inbox className="h-4.5 w-4.5 stroke-[1.4px] text-zinc-300" />
+                        <Inbox className="h-5 w-5 stroke-[1.4px] text-zinc-300" />
                       )}
                     </div>
                   </div>
@@ -403,7 +445,7 @@ export const DriveCanvas: React.FC = () => {
                         ? `No records match the "${sizeFilter === "SMALL" ? "< 10MB" : sizeFilter === "MEDIUM" ? "10-100MB" : "> 100MB"}" criteria.`
                         : searchQuery
                         ? "No records matched your search query. Try searching for a different keyword."
-                        : "Drag & drop files onto this canvas or click below to store them directly onto Telegram."}
+                        : "Upload files below to store them directly on your Telegram channel vault."}
                     </p>
                   </div>
 
@@ -415,9 +457,9 @@ export const DriveCanvas: React.FC = () => {
                           setSizeFilter("ALL");
                           setSearchQuery("");
                         }}
-                        className="specimen-card hairline-sheen h-8 px-3.5 text-xs text-zinc-300 hover:text-white rounded-[4px] font-mono flex items-center gap-1.5 transition-colors"
+                        className="specimen-card hairline-sheen h-10 sm:h-8 px-4 sm:px-3.5 text-xs text-zinc-300 hover:text-white rounded-[4px] font-mono flex items-center gap-1.5 transition-colors"
                       >
-                        <FilterX className="h-3 w-3 stroke-[1.5px]" />
+                        <FilterX className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[1.5px]" />
                         <span>RESET ACTIVE FILTERS</span>
                       </button>
                     </motion.div>
@@ -427,15 +469,15 @@ export const DriveCanvas: React.FC = () => {
                         <button
                           type="button"
                           onClick={handleTriggerUpload}
-                          className="specimen-card hairline-sheen h-8 px-4 text-xs text-zinc-100 hover:text-white rounded-[4px] font-medium flex items-center gap-2 transition-all hover:border-white/[0.25]"
+                          className="specimen-card hairline-sheen h-10 sm:h-8 px-4 text-xs text-zinc-100 hover:text-white rounded-[4px] font-medium flex items-center gap-2 transition-all hover:border-white/[0.25]"
                         >
                           <Upload className="h-3.5 w-3.5 stroke-[1.6px]" />
                           <span>Upload File</span>
                         </button>
                       </motion.div>
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-600 tracking-tight">
+                      <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-zinc-600 tracking-tight">
                         <span>PRESS</span>
-                        <kbd className="tactile-keycap px-1.5 py-0.2 rounded text-[9px] text-zinc-400">U</kbd>
+                        <kbd className="tactile-keycap px-1.5 py-0.5 rounded text-[9px] text-zinc-400">U</kbd>
                         <span>TO INGEST • DRAG & DROP BUFFER</span>
                       </div>
                     </div>
@@ -554,6 +596,9 @@ export const DriveCanvas: React.FC = () => {
 
       {/* Floating Multi-Select Batch Action Bar */}
       <BatchActionBar />
+
+      {/* Mobile Bottom Thumb-Zone Navigation */}
+      <MobileBottomNav onTriggerUpload={handleTriggerUpload} />
     </main>
   );
 };

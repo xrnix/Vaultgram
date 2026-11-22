@@ -30,7 +30,7 @@ export const AuthPortal: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-4 bg-[#09090b] selection:bg-white/10">
+    <div className="flex min-h-[100dvh] w-full items-center justify-center px-3.5 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-4 bg-[#09090b] selection:bg-white/10">
       {/* Subtle radial vignette */}
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
 
@@ -38,12 +38,12 @@ export const AuthPortal: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="specimen-card hairline-sheen relative z-10 w-full max-w-[430px] rounded-[6px] p-5 sm:p-7 overflow-hidden"
+        className="specimen-card hairline-sheen relative z-10 w-full max-w-[430px] rounded-[6px] p-4 sm:p-7 overflow-hidden"
       >
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2.5 pb-4">
           <div className="specimen-inset flex h-10 w-10 items-center justify-center rounded-[5px] text-zinc-100">
-            <HardDrive className="h-4.5 w-4.5 stroke-[1.4px]" />
+            <HardDrive className="h-5 w-5 stroke-[1.4px]" />
           </div>
           <div>
             <span className="text-[9px] font-mono tracking-[0.25em] uppercase text-zinc-500 font-semibold block pb-0.5 select-none">
@@ -102,7 +102,7 @@ export const AuthPortal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowKeyEditor(true)}
-                  className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400 hover:text-white transition-all px-2 py-0.5 rounded-[3px] border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.98]"
+                  className="flex items-center gap-1.5 h-8 sm:h-6 text-[10px] font-mono text-zinc-400 hover:text-white transition-all px-2.5 sm:px-2 rounded-[3px] border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.98]"
                   title="Configure Telegram API credentials"
                 >
                   <Settings2 className="h-3 w-3 text-zinc-400" />
@@ -112,18 +112,18 @@ export const AuthPortal: React.FC = () => {
 
               {/* Tab Switcher */}
               <Tabs defaultValue="qr" className="w-full">
-                <TabsList>
-                  <TabsTrigger value="qr">
-                    <QrCode className="h-3.5 w-3.5 mr-1.5 stroke-[1.5px]" />
-                    QR Code
+                <TabsList className="h-10 sm:h-9">
+                  <TabsTrigger value="qr" className="h-8 sm:h-7 text-[11px] sm:text-xs">
+                    <QrCode className="h-3.5 w-3.5 mr-1 sm:mr-1.5 stroke-[1.5px] shrink-0" />
+                    <span>QR Code</span>
                   </TabsTrigger>
-                  <TabsTrigger value="phone">
-                    <Phone className="h-3.5 w-3.5 mr-1.5 stroke-[1.5px]" />
-                    Phone OTP
+                  <TabsTrigger value="phone" className="h-8 sm:h-7 text-[11px] sm:text-xs">
+                    <Phone className="h-3.5 w-3.5 mr-1 sm:mr-1.5 stroke-[1.5px] shrink-0" />
+                    <span>Phone</span>
                   </TabsTrigger>
-                  <TabsTrigger value="session">
-                    <KeyRound className="h-3.5 w-3.5 mr-1.5 stroke-[1.5px]" />
-                    Session
+                  <TabsTrigger value="session" className="h-8 sm:h-7 text-[11px] sm:text-xs">
+                    <KeyRound className="h-3.5 w-3.5 mr-1 sm:mr-1.5 stroke-[1.5px] shrink-0" />
+                    <span>Session</span>
                   </TabsTrigger>
                 </TabsList>
 

@@ -54,6 +54,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopiedRef, setIsCopiedRef] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const {
     imageUrl,
@@ -173,6 +174,35 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
     setTimeout(() => setIsCopiedRef(false), 2000);
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length !== 1) {
+      touchStartRef.current = null;
+      return;
+    }
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchStartRef.current || e.changedTouches.length !== 1 || zoom > 1.05) {
+      touchStartRef.current = null;
+      return;
+    }
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -181,28 +211,28 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-between p-0 select-none bg-black/92 backdrop-blur-2xl"
+          className="fixed inset-0 z-50 h-[100dvh] flex flex-col items-center justify-between p-0 select-none bg-black/95 backdrop-blur-2xl"
         >
           {/* Top Floating Control Bar */}
-          <div className="w-full flex items-center justify-between px-4 sm:px-6 py-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-30 shrink-0">
+          <div className="w-full flex items-center justify-between px-3 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-gradient-to-b from-black/85 via-black/45 to-transparent z-30 shrink-0 gap-2">
             {/* Left: Metadata info */}
-            <div className="flex items-center gap-3 min-w-0 mr-4">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/20 border border-[#c49b56]/40 px-2 py-0.5 rounded-[3px] shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/20 border border-[#c49b56]/40 px-2 py-0.5 rounded-[3px] shrink-0">
                 {file.category}
               </span>
-              <div className="min-w-0">
-                <h2 className="text-xs sm:text-sm font-medium text-white truncate max-w-sm sm:max-w-md md:max-w-lg">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xs sm:text-sm font-medium text-white truncate">
                   {file.name}
                 </h2>
-                <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-400 mt-0.5 truncate">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-400 mt-0.5 truncate">
                   <span>{formatBytes(file.size)}</span>
-                  <span>•</span>
-                  <span>{dimensions ? `${dimensions.width} × ${dimensions.height} px` : formatDate(file.date)}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">{dimensions ? `${dimensions.width} × ${dimensions.height} px` : formatDate(file.date)}</span>
                   {imagesList.length > 1 && currentImageIndex >= 0 && (
                     <>
                       <span>•</span>
                       <span className="text-[#c49b56] font-medium">
-                        {currentImageIndex + 1} of {imagesList.length}
+                        {currentImageIndex + 1} / {imagesList.length}
                       </span>
                     </>
                   )}
@@ -211,11 +241,11 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
                 onClick={copyReference}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[4px] transition-colors flex items-center gap-1.5 text-xs font-mono"
+                className="flex h-9 w-9 sm:h-8 sm:w-auto sm:px-2 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[4px] transition-colors gap-1.5 text-xs font-mono"
                 title="Copy Telegram reference"
               >
                 {isCopiedRef ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
@@ -225,7 +255,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[4px] transition-colors"
+                className="hidden sm:flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[4px] transition-colors"
                 title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -235,17 +265,18 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => onDownload(file)}
-                className="h-8 px-3 text-xs rounded-[4px] bg-white/[0.08] hover:bg-white/[0.16] text-white border-white/[0.18] gap-1.5 active:scale-[0.98] transition-all font-medium"
+                className="h-9 w-9 sm:h-8 sm:w-auto p-0 sm:px-3 text-xs rounded-[4px] bg-white/[0.08] hover:bg-white/[0.16] text-white border-white/[0.18] gap-1.5 active:scale-[0.98] transition-all font-medium"
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                 <span className="hidden sm:inline">Download</span>
               </Button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 hover:bg-white/[0.1] text-zinc-400 hover:text-white rounded-[4px] transition-colors ml-1"
+                className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] text-zinc-300 hover:text-white rounded-[4px] transition-colors"
                 title="Close (Esc)"
+                aria-label="Close preview"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -255,17 +286,20 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           {/* Center Canvas Viewport */}
           <div
             ref={viewportRef}
-            className="relative flex-1 w-full flex items-center justify-center p-4 sm:p-10 overflow-hidden select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="relative flex-1 w-full flex items-center justify-center p-2 sm:p-10 overflow-hidden select-none"
           >
             {/* Carousel Previous */}
             {hasPrev && (
               <button
                 type="button"
                 onClick={handlePrev}
-                className="absolute left-4 sm:left-8 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 border border-white/[0.15] text-zinc-300 hover:text-white hover:bg-black/90 hover:scale-105 active:scale-95 transition-all shadow-2xl backdrop-blur-md"
+                className="absolute left-2 sm:left-8 z-30 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/65 border border-white/[0.15] text-zinc-300 hover:text-white hover:bg-black/90 hover:scale-105 active:scale-95 transition-all shadow-2xl backdrop-blur-md"
                 title="Previous image (←)"
+                aria-label="Previous image"
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             )}
 
@@ -274,10 +308,11 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={handleNext}
-                className="absolute right-4 sm:right-8 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 border border-white/[0.15] text-zinc-300 hover:text-white hover:bg-black/90 hover:scale-105 active:scale-95 transition-all shadow-2xl backdrop-blur-md"
+                className="absolute right-2 sm:right-8 z-30 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/65 border border-white/[0.15] text-zinc-300 hover:text-white hover:bg-black/90 hover:scale-105 active:scale-95 transition-all shadow-2xl backdrop-blur-md"
                 title="Next image (→)"
+                aria-label="Next image"
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             )}
 
@@ -354,21 +389,21 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 450, damping: 30 }}
-              className="w-full flex items-center justify-center pb-6 pt-2 z-30 shrink-0"
+              className="w-full flex items-center justify-center pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 px-3 z-30 shrink-0"
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#121215]/90 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-[94vw] overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[6px] sm:rounded-full bg-[#121215]/92 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
                 {/* Zoom Out */}
                 <button
                   type="button"
                   onClick={handleZoomOut}
                   disabled={zoom <= 0.3}
-                  className="p-1.5 hover:bg-white/[0.1] disabled:opacity-30 text-zinc-300 hover:text-white rounded-full transition-colors"
+                  className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] disabled:opacity-30 text-zinc-300 hover:text-white rounded-[4px] sm:rounded-full transition-colors shrink-0"
                   title="Zoom Out (-)"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
 
-                <span className="text-[11px] font-mono text-zinc-200 px-1.5 min-w-[42px] text-center">
+                <span className="text-[11px] font-mono text-zinc-200 px-1 min-w-[40px] text-center shrink-0">
                   {Math.round(zoom * 100)}%
                 </span>
 
@@ -377,19 +412,19 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                   type="button"
                   onClick={handleZoomIn}
                   disabled={zoom >= 5}
-                  className="p-1.5 hover:bg-white/[0.1] disabled:opacity-30 text-zinc-300 hover:text-white rounded-full transition-colors"
+                  className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] disabled:opacity-30 text-zinc-300 hover:text-white rounded-[4px] sm:rounded-full transition-colors shrink-0"
                   title="Zoom In (+)"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
 
-                <div className="h-4 w-px bg-white/[0.14] mx-1" />
+                <div className="h-4 w-px bg-white/[0.14] mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Rotate 90 CW */}
                 <button
                   type="button"
                   onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                  className="p-1.5 hover:bg-white/[0.1] text-zinc-300 hover:text-white rounded-full transition-colors"
+                  className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] text-zinc-300 hover:text-white rounded-[4px] sm:rounded-full transition-colors shrink-0"
                   title="Rotate 90° Clockwise (R)"
                 >
                   <RotateCw className="w-4 h-4" />
@@ -399,7 +434,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsFlippedH((prev) => !prev)}
-                  className={`p-1.5 hover:bg-white/[0.1] rounded-full transition-colors ${
+                  className={`flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] rounded-[4px] sm:rounded-full transition-colors shrink-0 ${
                     isFlippedH ? "text-[#c49b56] bg-white/[0.1]" : "text-zinc-300 hover:text-white"
                   }`}
                   title="Flip Horizontally (F)"
@@ -411,7 +446,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsInverted((prev) => !prev)}
-                  className={`p-1.5 hover:bg-white/[0.1] rounded-full transition-colors ${
+                  className={`flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] rounded-[4px] sm:rounded-full transition-colors shrink-0 ${
                     isInverted ? "text-[#c49b56] bg-white/[0.1]" : "text-zinc-300 hover:text-white"
                   }`}
                   title="Invert Colors"
@@ -421,11 +456,11 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
 
                 {(zoom !== 1 || rotation !== 0 || isFlippedH || isInverted) && (
                   <>
-                    <div className="h-4 w-px bg-white/[0.14] mx-1" />
+                    <div className="h-4 w-px bg-white/[0.14] mx-0.5 sm:mx-1 shrink-0" />
                     <button
                       type="button"
                       onClick={handleResetTransforms}
-                      className="p-1.5 hover:bg-white/[0.1] text-zinc-400 hover:text-white rounded-full transition-colors"
+                      className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.1] text-zinc-400 hover:text-white rounded-[4px] sm:rounded-full transition-colors shrink-0"
                       title="Reset Transforms (0)"
                     >
                       <RotateCcw className="w-4 h-4" />

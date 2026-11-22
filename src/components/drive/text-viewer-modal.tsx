@@ -158,57 +158,58 @@ export const TextViewerModal: React.FC<TextViewerModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 10 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-5xl h-[92vh] sm:h-[88vh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-full max-w-5xl h-[94dvh] sm:h-[88dvh] bg-[#121215] border border-white/[0.1] rounded-[6px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
-            <div className="flex items-center gap-3 min-w-0 mr-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
-                <FileCode className="h-4.5 w-4.5 stroke-[1.5px]" />
+          <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] bg-[#121215]/95 shrink-0 gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
+                <FileCode className="h-4 w-4 stroke-[1.5px]" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-sm font-medium font-sans text-white truncate">
+                <h2 className="text-xs sm:text-sm font-medium font-sans text-white truncate">
                   {file.name}
                 </h2>
-                <div className="text-[11px] text-zinc-500 font-mono truncate flex items-center gap-2 mt-0.5">
+                <div className="text-[10px] sm:text-[11px] text-zinc-500 font-mono truncate flex items-center gap-1.5 sm:gap-2 mt-0.5">
                   <span>{formatBytes(file.size)}</span>
                   <span>•</span>
-                  <span>{stats.linesCount} lines</span>
-                  <span>•</span>
-                  <span>{stats.words.toLocaleString()} words</span>
+                  <span>{stats.linesCount}L</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">{stats.words.toLocaleString()} words</span>
                 </div>
               </div>
             </div>
 
             {/* Top Toolbar Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleCopy}
                 disabled={!content}
-                className="h-8 px-3 text-xs rounded-[6px] bg-white/[0.05] hover:bg-white/[0.12] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5 transition-all"
+                className="h-9 w-9 sm:h-8 sm:w-auto p-0 sm:px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.12] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5 transition-all"
               >
-                {isCopied ? <Check className="w-3.5 h-3.5 text-[#e6cfa3]" /> : <Copy className="w-3.5 h-3.5" />}
+                {isCopied ? <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-[#e6cfa3]" /> : <Copy className="w-4 h-4 sm:w-3.5 sm:h-3.5" />}
                 <span className="hidden sm:inline">Copy All</span>
               </Button>
 
               <Button
                 size="sm"
                 onClick={() => onDownload(file)}
-                className="h-8 px-3 text-xs rounded-[6px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] gap-1.5 transition-all"
+                className="h-9 w-9 sm:h-8 sm:w-auto p-0 sm:px-3 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] gap-1.5 transition-all"
               >
-                <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
+                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5 stroke-[1.5px]" />
                 <span className="hidden sm:inline">Download</span>
               </Button>
 
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors ml-1"
+                className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
                 title="Close (Esc)"
+                aria-label="Close text viewer"
               >
                 <X className="w-4 h-4 stroke-[1.5px]" />
               </button>
@@ -216,36 +217,36 @@ export const TextViewerModal: React.FC<TextViewerModalProps> = ({
           </div>
 
           {/* Sub-toolbar: Search & Formatting controls */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-2.5 border-b border-white/[0.06] bg-[#0d0d10] text-xs shrink-0">
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-3.5 sm:px-6 py-2.5 border-b border-white/[0.06] bg-[#0d0d10] text-xs shrink-0">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
               <input
                 type="text"
                 placeholder="Find in file..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-3 font-mono text-xs bg-white/[0.03] border border-white/[0.08] rounded-[5px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
+                className="w-full h-10 sm:h-8 pl-8 pr-3 font-mono text-base sm:text-xs bg-white/[0.03] border border-white/[0.08] rounded-[5px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
               />
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between sm:justify-end gap-2">
               <button
                 onClick={() => setWrapLines(!wrapLines)}
-                className={`p-1.5 px-2.5 rounded-[5px] border transition-colors flex items-center gap-1.5 text-[11px] font-mono ${
+                className={`h-9 sm:h-7 px-2.5 rounded-[5px] border transition-colors flex items-center gap-1.5 text-[11px] font-mono ${
                   wrapLines
                     ? "bg-[#c49b56]/20 text-[#e6cfa3] border-[#c49b56]/40 font-medium"
-                    : "bg-transparent text-zinc-400 hover:text-white border-transparent hover:bg-white/[0.05]"
+                    : "bg-transparent text-zinc-400 hover:text-white border-white/[0.08] sm:border-transparent hover:bg-white/[0.05]"
                 }`}
                 title="Toggle line wrapping"
               >
                 <WrapText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Wrap</span>
+                <span>Wrap</span>
               </button>
 
               <div className="flex items-center border border-white/[0.08] rounded-[5px] bg-white/[0.02] p-0.5">
                 <button
                   onClick={() => setFontSize((s) => Math.max(s - 1, 9))}
-                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded transition-colors"
+                  className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded transition-colors"
                   title="Smaller text"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
@@ -253,7 +254,7 @@ export const TextViewerModal: React.FC<TextViewerModalProps> = ({
                 <span className="px-2 font-mono text-[11px] text-zinc-400">{fontSize}px</span>
                 <button
                   onClick={() => setFontSize((s) => Math.min(s + 1, 18))}
-                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded transition-colors"
+                  className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded transition-colors"
                   title="Larger text"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
@@ -291,7 +292,7 @@ export const TextViewerModal: React.FC<TextViewerModalProps> = ({
             )}
 
             {/* Line Number Gutter */}
-            <div className="py-3 px-2 border-r border-white/[0.08] bg-[#0c0c0f] font-mono text-zinc-600 text-right select-none shrink-0" style={{ fontSize: `${fontSize}px`, minWidth: "3rem" }}>
+            <div className="py-3 px-2 border-r border-white/[0.08] bg-[#0c0c0f] font-mono text-zinc-600 text-right select-none shrink-0 min-w-[2.25rem] sm:min-w-[3rem]" style={{ fontSize: `${fontSize}px` }}>
               {lines.map((_, idx) => (
                 <div key={idx} className="leading-relaxed">
                   {idx + 1}
@@ -333,14 +334,14 @@ export const TextViewerModal: React.FC<TextViewerModalProps> = ({
           </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[10px] sm:text-[11px] font-mono text-zinc-500 shrink-0">
             <div className="flex items-center gap-2">
-              <span>UTF-8 Encoding</span>
+              <span>UTF-8</span>
               <span>•</span>
-              <span>{stats.chars.toLocaleString()} characters</span>
+              <span>{stats.chars.toLocaleString()} chars</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <span>Client-Side Stream Reader</span>
             </div>
           </div>

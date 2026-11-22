@@ -10,13 +10,15 @@ interface FileGridProps {
 
 function getInitialConfig() {
   if (typeof window === "undefined") {
-    return { columns: 4, gap: 12 };
+    return { columns: 4, gap: 12, isMobile: false };
   }
   const w = window.innerWidth;
+  const isMobile = w < 768;
+  const effectiveWidth = isMobile ? w - 20 : w - 288;
   const currentGap = w < 640 ? 8 : 12;
-  const minCardWidth = w < 640 ? 140 : 185;
-  const computed = Math.max(1, Math.floor((w - 240 + currentGap) / (minCardWidth + currentGap)));
-  return { columns: Math.max(2, computed), gap: currentGap };
+  const minCardWidth = w < 640 ? 148 : 185;
+  const computed = Math.max(2, Math.floor((effectiveWidth + currentGap) / (minCardWidth + currentGap)));
+  return { columns: computed, gap: currentGap, isMobile };
 }
 
 export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
@@ -24,17 +26,20 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
   const initial = useMemo(() => getInitialConfig(), []);
   const [columns, setColumns] = useState(initial.columns);
   const [gap, setGap] = useState(initial.gap);
+  const [isMobileViewport, setIsMobileViewport] = useState(initial.isMobile);
 
   // Compute responsive columns dynamically from container width
   const updateColumns = () => {
     if (!parentRef.current) return;
     const width = parentRef.current.clientWidth;
     if (width <= 0) return;
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : width < 640;
     const currentGap = width < 500 ? 8 : 12;
-    const minCardWidth = width < 500 ? 140 : 185;
-    const computed = Math.max(1, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
+    const minCardWidth = width < 500 ? 148 : 185;
+    const computed = Math.max(width < 340 ? 1 : 2, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
     setColumns(computed);
     setGap(currentGap);
+    setIsMobileViewport(isMobile);
   };
 
   useLayoutEffect(() => {
@@ -71,6 +76,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
     overscan: 8,
+    paddingEnd: isMobileViewport ? 96 : 16,
   });
 
   // Reset scroll to top and remeasure whenever files or columns change
@@ -80,7 +86,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     }
     rowVirtualizer.scrollToOffset(0);
     rowVirtualizer.measure();
-  }, [files, columns]);
+  }, [files, columns, isMobileViewport]);
 
   return (
     <div ref={parentRef} className="h-full w-full overflow-y-auto select-none p-0.5 sm:p-1">

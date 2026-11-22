@@ -330,7 +330,9 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   const [pageInput, setPageInput] = useState<string>("1");
   const [scale, setScale] = useState<number>(1.2);
   const [rotation, setRotation] = useState<number>(0);
-  const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
+  const [showThumbnails, setShowThumbnails] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingProgress, setLoadingProgress] = useState<PdfLoadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -356,6 +358,17 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
       setPdfDoc(doc);
       setNumPages(doc.numPages);
       setIsLoading(false);
+
+      // Auto-fit document width on mobile viewports so pages don't overflow horizontally
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        try {
+          const firstPage = await doc.getPage(1);
+          const vp = firstPage.getViewport({ scale: 1, rotation: 0 });
+          const availableWidth = Math.max(260, window.innerWidth - 24);
+          const mobileScale = Math.max(0.4, Math.min(2.0, availableWidth / vp.width));
+          setScale(Number(mobileScale.toFixed(2)));
+        } catch {}
+      }
     } catch (err: unknown) {
       console.error("[PdfViewerModal] Failed to load PDF:", err);
       const msg = err instanceof Error ? err.message : "Failed to load PDF document.";
@@ -455,7 +468,8 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
     try {
       const page = await pdfDoc.getPage(1);
       const vp = page.getViewport({ scale: 1, rotation });
-      const availableWidth = scrollContainerRef.current.clientWidth - 64;
+      const pad = window.innerWidth < 768 ? 24 : 64;
+      const availableWidth = Math.max(240, scrollContainerRef.current.clientWidth - pad);
       const targetScale = Math.max(0.4, Math.min(3.0, availableWidth / vp.width));
       setScale(Number(targetScale.toFixed(2)));
     } catch {}
@@ -482,7 +496,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex flex-col w-screen h-screen bg-[#101014] select-none overflow-hidden">
+      <div className="fixed inset-0 z-50 flex flex-col w-full h-[100dvh] bg-[#101014] select-none overflow-hidden">
         {/* Full-Screen Chrome-Grade PDF Reader Container */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -495,17 +509,18 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Chrome PDF Top Toolbar */}
-          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/[0.08] bg-[#141418] shrink-0 z-20">
+          <div className="flex items-center justify-between px-3 sm:px-6 pt-[max(0.625rem,env(safe-area-inset-top))] pb-2.5 sm:py-3 border-b border-white/[0.08] bg-[#141418] shrink-0 z-20 gap-2">
             {/* Left Section: Sidebar Toggle + Title */}
-            <div className="flex items-center gap-3 min-w-0 mr-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setShowThumbnails(!showThumbnails)}
-                className={`p-1.5 px-2.5 rounded-[5px] border transition-colors flex items-center gap-1.5 text-xs font-mono ${
+                className={`flex h-9 w-9 md:h-auto md:w-auto md:p-1.5 md:px-2.5 items-center justify-center rounded-[5px] border transition-colors gap-1.5 text-xs font-mono shrink-0 ${
                   showThumbnails
                     ? "bg-[#c49b56]/20 text-[#e6cfa3] border-[#c49b56]/40"
-                    : "bg-transparent text-zinc-400 hover:text-white border-transparent hover:bg-white/[0.05]"
+                    : "bg-transparent text-zinc-400 hover:text-white border-white/[0.08] md:border-transparent hover:bg-white/[0.05]"
                 }`}
                 title="Toggle page thumbnail sidebar"
+                aria-label="Toggle thumbnails"
               >
                 {showThumbnails ? (
                   <PanelLeftClose className="w-4 h-4 stroke-[1.5px]" />
@@ -515,25 +530,25 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                 <span className="hidden md:inline">Thumbnails</span>
               </button>
 
-              <div className="h-4 w-px bg-white/[0.1] hidden sm:block" />
+              <div className="h-4 w-px bg-white/[0.1] hidden sm:block shrink-0" />
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs sm:text-sm font-medium font-sans text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md" title={file.name}>
+                  <h2 className="text-xs sm:text-sm font-medium font-sans text-white truncate" title={file.name}>
                     {file.name}
                   </h2>
                 </div>
-                <div className="text-[11px] text-zinc-400 font-mono truncate hidden sm:flex items-center gap-2 mt-0.5">
+                <div className="text-[10px] sm:text-[11px] text-zinc-400 font-mono truncate flex items-center gap-1.5 sm:gap-2 mt-0.5">
                   <span>{formatBytes(file.size)}</span>
                   <span>•</span>
-                  <span>{numPages > 0 ? `${numPages} Pages` : "Loading Pages..."}</span>
+                  <span>{numPages > 0 ? `${numPages}p` : "Loading..."}</span>
                 </div>
               </div>
             </div>
 
-            {/* Center Section: Page Jump + Zoom Controls */}
+            {/* Center Section: Desktop Page Jump + Zoom Controls */}
             {numPages > 0 && !isLoading && (
-              <div className="flex items-center gap-2 shrink-0 bg-white/[0.03] border border-white/[0.08] rounded-[6px] px-2.5 py-1.5 shadow-sm">
+              <div className="hidden md:flex items-center gap-2 shrink-0 bg-white/[0.03] border border-white/[0.08] rounded-[6px] px-2.5 py-1.5 shadow-sm">
                 {/* Page Jump Form */}
                 <form onSubmit={handlePageSubmit} className="flex items-center gap-1.5 text-xs font-mono">
                   <input
@@ -575,12 +590,12 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
 
-                <div className="h-4 w-px bg-white/[0.1] mx-1 hidden sm:block" />
+                <div className="h-4 w-px bg-white/[0.1] mx-1" />
 
                 {/* Fit Width */}
                 <button
                   onClick={handleFitWidth}
-                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors hidden sm:block"
+                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors"
                   title="Fit to Width"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
@@ -589,7 +604,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                 {/* Fit Page */}
                 <button
                   onClick={handleFitPage}
-                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors hidden md:block"
+                  className="p-1 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[3px] transition-colors"
                   title="Fit to Page"
                 >
                   <Minimize2 className="w-3.5 h-3.5" />
@@ -607,21 +622,22 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
             )}
 
             {/* Right Section: Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => onDownload(file)}
-                className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.12] text-zinc-200 hover:text-white border-white/[0.1] gap-1.5 active:scale-[0.98] transition-all"
+                className="h-9 w-9 sm:h-8 sm:w-auto p-0 sm:px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.12] text-zinc-200 hover:text-white border-white/[0.1] gap-1.5 active:scale-[0.98] transition-all"
               >
-                <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
+                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5 stroke-[1.5px]" />
                 <span className="hidden sm:inline">Download</span>
               </Button>
 
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[5px] transition-colors ml-1"
+                className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-[5px] transition-colors"
                 title="Close (Esc)"
+                aria-label="Close PDF viewer"
               >
                 <X className="w-4 h-4 stroke-[1.5px]" />
               </button>
@@ -630,9 +646,17 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
 
           {/* Main Content Stage */}
           <div className="relative flex flex-1 overflow-hidden bg-[#0e0e11]">
-            {/* Left Page Thumbnails Sidebar (Real Miniature Rendered Canvases) */}
+            {/* Mobile Backdrop when Thumbnails Drawer is open */}
             {showThumbnails && numPages > 0 && pdfDoc && (
-              <div className="w-44 sm:w-52 border-r border-white/[0.08] bg-[#09090b] p-2.5 overflow-y-auto no-scrollbar shrink-0 flex flex-col items-center gap-3">
+              <div
+                onClick={() => setShowThumbnails(false)}
+                className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] md:hidden"
+              />
+            )}
+
+            {/* Left Page Thumbnails Sidebar (Overlay drawer on mobile, static sidebar on desktop) */}
+            {showThumbnails && numPages > 0 && pdfDoc && (
+              <div className="absolute inset-y-0 left-0 z-30 shadow-2xl md:static md:shadow-none w-44 sm:w-52 border-r border-white/[0.08] bg-[#09090b] p-2.5 overflow-y-auto no-scrollbar shrink-0 flex flex-col items-center gap-3">
                 <div className="w-full text-[10px] font-mono uppercase tracking-wider text-zinc-500 px-1 pb-1 border-b border-white/[0.06] flex items-center justify-between">
                   <span>Page Index</span>
                   <span className="text-[#c49b56]">{numPages}</span>
@@ -647,7 +671,12 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                       pdfDoc={pdfDoc}
                       rotation={rotation}
                       isActive={isActive}
-                      onClick={() => scrollToPage(pNum)}
+                      onClick={() => {
+                        scrollToPage(pNum);
+                        if (window.innerWidth < 768) {
+                          setShowThumbnails(false);
+                        }
+                      }}
                     />
                   );
                 })}
@@ -657,7 +686,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
             {/* Continuous Scroll Viewport Stage (Pixel-Perfect Pages) */}
             <div
               ref={scrollContainerRef}
-              className="relative flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-8 flex flex-col items-center bg-[#18181b]/40 scroll-smooth select-text"
+              className="relative flex-1 overflow-y-auto overflow-x-auto p-2.5 sm:p-8 flex flex-col items-center bg-[#18181b]/40 scroll-smooth select-text"
             >
               {isLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-zinc-400 bg-[#09090b]/80 backdrop-blur-sm z-20">
@@ -724,8 +753,58 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
             </div>
           </div>
 
-          {/* Chrome Footer Telemetry Bar */}
-          <div className="flex items-center justify-between px-3 sm:px-4 py-1.5 border-t border-white/[0.08] bg-[#121215]/95 text-[10px] font-mono text-zinc-500 shrink-0">
+          {/* Mobile Dedicated Bottom PDF Control Bar */}
+          {numPages > 0 && !isLoading && (
+            <div className="flex md:hidden items-center justify-between gap-2 px-3 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-white/[0.08] bg-[#141418]/98 backdrop-blur-xl shrink-0 z-20">
+              {/* Page Jump */}
+              <form onSubmit={handlePageSubmit} className="flex items-center gap-1.5 text-xs font-mono shrink-0">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onBlur={() => setPageInput(String(currentPage))}
+                  className="w-11 h-9 text-center font-mono text-base bg-white/[0.06] border border-white/[0.12] rounded-[4px] text-white focus:outline-none focus:border-white/40"
+                />
+                <span className="text-zinc-500 text-xs">/ {numPages}</span>
+              </form>
+
+              {/* Zoom + Fit + Rotate Controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setScale((s) => Math.max(0.4, Number((s - 0.15).toFixed(2))))}
+                  className="flex h-9 w-9 items-center justify-center hover:bg-white/[0.08] text-zinc-300 rounded-[4px]"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleFitWidth}
+                  className="flex h-9 px-2 items-center justify-center hover:bg-white/[0.08] text-zinc-300 font-mono text-[11px] rounded-[4px] border border-white/[0.08]"
+                  aria-label="Fit to width"
+                >
+                  Fit
+                </button>
+                <button
+                  onClick={() => setScale((s) => Math.min(3.5, Number((s + 0.15).toFixed(2))))}
+                  className="flex h-9 w-9 items-center justify-center hover:bg-white/[0.08] text-zinc-300 rounded-[4px]"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setRotation((r) => (r + 90) % 360)}
+                  className="flex h-9 w-9 items-center justify-center hover:bg-white/[0.08] text-zinc-300 rounded-[4px]"
+                  aria-label="Rotate page"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Chrome Footer Telemetry Bar (Desktop) */}
+          <div className="hidden md:flex items-center justify-between px-3 sm:px-4 py-1.5 border-t border-white/[0.08] bg-[#121215]/95 text-[10px] font-mono text-zinc-500 shrink-0">
             <div className="flex items-center gap-2 truncate">
               <span>Mozilla PDF.js Core</span>
               <span>•</span>

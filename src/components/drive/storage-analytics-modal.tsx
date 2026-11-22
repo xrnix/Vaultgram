@@ -129,22 +129,22 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-3xl max-h-[90vh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-full max-w-3xl max-h-[92dvh] bg-[#121215] border border-white/[0.1] rounded-[6px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.08] bg-[#121215]/95">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
             <div className="flex items-center gap-3 min-w-0 mr-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
-                <PieChart className="h-4.5 w-4.5 stroke-[1.5px]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
+                <PieChart className="h-4 w-4 stroke-[1.5px]" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-medium font-sans text-white truncate">
                   Storage &amp; Drive Intelligence
                 </h2>
-                <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                <div className="text-[11px] text-zinc-500 font-mono mt-0.5 truncate">
                   Telegram Cloud Telemetry · Unlimited Bandwidth
                 </div>
               </div>
@@ -152,15 +152,16 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+              className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors shrink-0"
               title="Close (Esc)"
+              aria-label="Close analytics"
             >
               <X className="w-4 h-4 stroke-[1.5px]" />
             </button>
           </div>
 
           {/* Body Content */}
-          <div className="p-5 sm:p-7 overflow-y-auto no-scrollbar space-y-5 text-xs font-sans bg-[#09090b]">
+          <div className="p-4 sm:p-6 overflow-y-auto no-scrollbar space-y-4 sm:space-y-5 text-xs font-sans bg-[#09090b] flex-1">
             {/* Top Stat Row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="p-3.5 rounded-[6px] border border-white/[0.08] bg-white/[0.02] space-y-1.5">
@@ -240,7 +241,7 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
               </div>
 
               {/* Legend Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1.5 font-mono text-[11px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1.5 font-mono text-[11px]">
                 <div className="flex items-center gap-2 text-zinc-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-white/90 shrink-0" />
                   <span>Videos:</span>
@@ -289,17 +290,17 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
                 {analytics.channels.map((ch) => {
                   const pct = getCatPercentage(ch.bytes);
                   return (
-                    <div key={ch.id} className="p-3 px-4 flex items-center justify-between">
-                      <div className="min-w-0 mr-3 flex-1">
-                        <div className="flex items-center justify-between text-zinc-200 pb-1.5">
+                    <div key={ch.id} className="p-3 px-4 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 text-zinc-200 pb-1.5">
                           <span className="truncate font-sans font-medium">{ch.title}</span>
-                          <span className="text-zinc-400 font-medium">{formatBytes(ch.bytes)} ({pct}%)</span>
+                          <span className="text-zinc-400 font-medium shrink-0 text-[11px]">{formatBytes(ch.bytes)} ({pct}%)</span>
                         </div>
                         <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                           <div className="h-full bg-white/60 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
-                      <span className="text-[11px] text-zinc-500 shrink-0 ml-2">{ch.count} files</span>
+                      <span className="text-[10px] sm:text-[11px] text-zinc-500 shrink-0">{ch.count}</span>
                     </div>
                   );
                 })}
@@ -321,15 +322,15 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
                         onSelectFile(file);
                       }
                     }}
-                    className="p-3 px-4 flex items-center justify-between hover:bg-white/[0.04] cursor-pointer transition-colors"
+                    className="min-h-[44px] p-3 px-4 flex items-center justify-between gap-2 hover:bg-white/[0.04] cursor-pointer transition-colors"
                   >
-                    <div className="flex items-center gap-3 truncate mr-3">
-                      <span className="text-[11px] text-zinc-600 w-4">{idx + 1}</span>
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="text-[11px] text-zinc-600 w-4 shrink-0">{idx + 1}</span>
                       <span className="text-zinc-200 truncate font-sans">{file.name}</span>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-zinc-400 font-medium">{formatBytes(file.size)}</span>
-                      <span className="text-[10px] uppercase px-2 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] text-zinc-400">
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                      <span className="text-zinc-400 font-medium text-[11px] sm:text-xs">{formatBytes(file.size)}</span>
+                      <span className="hidden sm:inline-block text-[10px] uppercase px-2 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] text-zinc-400">
                         {file.category}
                       </span>
                     </div>
@@ -340,21 +341,22 @@ export const StorageAnalyticsModal: React.FC<StorageAnalyticsModalProps> = ({
           </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500">
+          <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
             <Button
               size="sm"
               variant="outline"
               onClick={handleExportDriveIndex}
-              className="h-8 px-3 text-xs rounded-[6px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-2 transition-all"
+              className="h-9 sm:h-8 px-3 text-xs rounded-[5px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5 transition-all"
             >
               <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
-              <span>Export Metadata JSON</span>
+              <span className="sm:hidden">Export JSON</span>
+              <span className="hidden sm:inline">Export Metadata JSON</span>
             </Button>
 
             <Button
               size="sm"
               onClick={onClose}
-              className="h-8 px-4 text-xs rounded-[6px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] transition-all"
+              className="h-9 sm:h-8 px-4 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] transition-all"
             >
               Close
             </Button>

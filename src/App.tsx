@@ -57,7 +57,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      // Normalize to percentage
+      if (e.pointerType !== "mouse") return;
       const x = Math.round((e.clientX / window.innerWidth) * 100);
       const y = Math.round((e.clientY / window.innerHeight) * 100);
       setMousePos({ x, y });
@@ -67,25 +67,32 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-white/10 selection:text-white relative overflow-hidden font-sans">
+    <div className="min-h-[100dvh] bg-[#09090b] text-zinc-100 selection:bg-white/10 selection:text-white relative overflow-x-hidden font-sans">
       {/* Restrained Top-Ambient Radial Glow */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,rgba(255,255,255,0.04),transparent_70%)]" />
 
       {/* Architectural Dot-Matrix Atmosphere */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-dot-matrix [mask-image:radial-gradient(ellipse_75%_65%_at_50%_40%,#000_20%,transparent_100%)] opacity-30" />
 
-      {/* Interactive Cursor Spotlight Glow */}
+      {/* Interactive Cursor Spotlight Glow (Desktop only) */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 opacity-60"
+        className="pointer-events-none fixed inset-0 z-0 hidden md:block transition-opacity duration-700 opacity-60"
         style={{
           background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, rgba(255, 255, 255, 0.025), transparent 80%)`,
         }}
       />
 
-      <Toaster position="bottom-right" richColors theme="dark" />
+      <Toaster
+        position="top-center"
+        richColors
+        theme="dark"
+        toastOptions={{
+          className: "!bg-[#121215] !border !border-white/[0.1] !text-zinc-100 !rounded-[4px] !text-xs",
+        }}
+      />
 
       {bootStatus === "BOOTING" ? (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#09090b] relative z-10">
+        <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#09090b] relative z-10 px-4">
           <div className="relative flex flex-col items-center gap-3.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100 shadow-sm animate-pulse">
               <HardDrive className="h-5 w-5 stroke-[1.5px]" />
@@ -107,7 +114,7 @@ export const App: React.FC = () => {
           <ChannelWizard />
         </div>
       ) : (
-        <div className="relative z-10 flex h-screen w-screen overflow-hidden">
+        <div className="relative z-10 flex h-[100dvh] w-full overflow-hidden">
           <Sidebar />
           <DriveCanvas />
           {/* Floating Transfer Queue Dock */}

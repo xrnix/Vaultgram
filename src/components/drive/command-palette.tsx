@@ -149,7 +149,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-20 p-2.5 sm:p-3 select-none">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-20 p-2.5 sm:p-3 select-none">
           {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -166,37 +166,47 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -10 }}
             transition={{ type: "spring", stiffness: 450, damping: 32 }}
-            className="relative z-10 w-full max-w-2xl rounded-[8px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
+            className="relative z-10 w-full max-w-2xl rounded-[6px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
           >
             {/* Top Hairline Sheen */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
             {/* Input Bar */}
-            <div className="flex items-center px-4 sm:px-5 py-3.5 border-b border-white/[0.08] gap-3">
-              <Search className="h-4.5 w-4.5 text-zinc-400 stroke-[1.75px] shrink-0" />
+            <div className="flex items-center px-3.5 sm:px-5 py-3 border-b border-white/[0.08] gap-2.5">
+              <Search className="h-4 w-4 text-zinc-400 stroke-[1.75px] shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search files, channels, categories, or actions..."
+                placeholder="Search files, vaults, actions..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-transparent text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-sans"
+                className="w-full bg-transparent text-base sm:text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-sans"
               />
               {query && (
                 <button
+                  type="button"
                   onClick={() => setQuery("")}
-                  className="p-1 text-zinc-500 hover:text-zinc-300 rounded"
+                  aria-label="Clear search"
+                  className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white rounded-[4px] shrink-0"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close search"
+                className="sm:hidden flex h-9 px-2.5 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.04] text-[11px] font-mono text-zinc-300 shrink-0"
+              >
+                Done
+              </button>
               <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-[4px] border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-zinc-400">
                 ESC
               </kbd>
             </div>
 
             {/* Scrollable Results List */}
-            <div className="max-h-[60vh] overflow-y-auto p-2.5 sm:p-3 space-y-3 divide-y divide-white/[0.04]">
+            <div className="max-h-[68dvh] sm:max-h-[60vh] overflow-y-auto p-2 sm:p-3 space-y-3 divide-y divide-white/[0.04]">
               {/* Quick Actions */}
               {!query && (
                 <div className="space-y-1">
@@ -360,7 +370,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <div
                       key={file.id}
                       onClick={() => handleSelectFile(file)}
-                      className="group flex h-9 w-full items-center justify-between px-2.5 rounded-[4px] text-xs hover:bg-white/[0.06] cursor-pointer transition-colors"
+                      className="group flex min-h-[44px] sm:h-9 w-full items-center justify-between px-2.5 py-1.5 rounded-[4px] text-xs hover:bg-white/[0.06] active:bg-white/[0.08] cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-2 overflow-hidden mr-2">
                         <Files className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
@@ -370,7 +380,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       </div>
                       <div className="flex items-center gap-2 shrink-0 font-mono text-[10px] text-zinc-500">
                         <span className="hidden sm:inline text-zinc-400">{file.channelTitle}</span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <span>{formatBytes(file.size)}</span>
                       </div>
                     </div>
@@ -390,7 +400,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       <button
                         key={cat.id}
                         onClick={() => handleSelectCategory(cat.id)}
-                        className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                        className="flex min-h-[42px] sm:h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[10px] text-zinc-500">
@@ -416,14 +426,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <button
                       key={ch.id}
                       onClick={() => handleSelectChannel(ch.id)}
-                      className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                      className="flex min-h-[42px] sm:h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                     >
-                      <div className="flex items-center gap-2">
-                        <Layers className="h-3.5 w-3.5 text-zinc-400" />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Layers className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                         <span className="truncate">{ch.title}</span>
                       </div>
-                      <span className="font-mono text-[10px] text-zinc-500">
-                        {ch.isSelf ? "Saved Messages" : "Channel"}
+                      <span className="font-mono text-[10px] text-zinc-500 shrink-0 ml-2">
+                        {ch.isSelf ? "Saved" : "Vault"}
                       </span>
                     </button>
                   ))}
@@ -431,14 +441,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               )}
             </div>
 
-            {/* Footer Telemetry Bar */}
-            <div className="flex items-center justify-between px-3.5 py-2 border-t border-white/[0.08] bg-white/[0.01] font-mono text-[10px] text-zinc-500">
+            {/* Footer Telemetry Bar (Desktop only) */}
+            <div className="hidden sm:flex items-center justify-between px-3.5 py-2 border-t border-white/[0.08] bg-white/[0.01] font-mono text-[10px] text-zinc-500">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.2 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">↵</kbd> Select
+                  <kbd className="px-1 py-0.5 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">↵</kbd> Select
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.2 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">ESC</kbd> Close
+                  <kbd className="px-1 py-0.5 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">ESC</kbd> Close
                 </span>
               </div>
               <span>Vaultgram Command Center</span>

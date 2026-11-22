@@ -120,45 +120,49 @@ export const AudioPlayerModal: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-w-xl max-h-[90dvh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-y-auto backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-[calc(100vw-1rem)] sm:w-full max-w-xl max-h-[92dvh] bg-[#121215] border border-white/[0.1] rounded-[6px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-y-auto backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-white/[0.08] bg-[#121215]/95">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 border border-[#c49b56]/30 px-2 py-0.5 rounded-[3px]">
-                Audio Stream Engine · MTProto Range
+          <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 border-b border-white/[0.08] bg-[#121215]/95 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 border border-[#c49b56]/30 px-2 py-0.5 rounded-[3px] truncate">
+                <span className="sm:hidden">Audio Stream</span>
+                <span className="hidden sm:inline">Audio Stream Engine · MTProto Range</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setShowPlaylist(!showPlaylist)}
-                className={`p-1.5 px-2.5 rounded-[4px] border transition-colors flex items-center gap-1.5 text-[11px] font-mono ${
+                className={`flex h-9 px-2.5 sm:h-7 items-center justify-center rounded-[4px] border transition-colors gap-1.5 text-[11px] font-mono ${
                   showPlaylist
                     ? "bg-white/[0.08] text-white border-white/[0.18]"
                     : "bg-transparent text-zinc-400 hover:text-white border-transparent hover:bg-white/[0.05]"
                 }`}
                 title="Toggle Playlist"
               >
-                <ListMusic className="w-3.5 h-3.5 stroke-[1.5px]" />
+                <ListMusic className="w-4 h-4 sm:w-3.5 sm:h-3.5 stroke-[1.5px]" />
                 <span className="hidden sm:inline">Playlist ({playlist.length})</span>
+                <span className="sm:hidden text-[10px]">{playlist.length}</span>
               </button>
 
               <button
                 onClick={closeModal}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+                className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
                 title="Minimize to Floating Dock"
+                aria-label="Minimize player"
               >
                 <ChevronDown className="w-4 h-4 stroke-[1.5px]" />
               </button>
 
               <button
                 onClick={closeModal}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+                className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
                 title="Close"
+                aria-label="Close player"
               >
                 <X className="w-4 h-4 stroke-[1.5px]" />
               </button>
@@ -166,14 +170,14 @@ export const AudioPlayerModal: React.FC = () => {
           </div>
 
           {/* Main Stage */}
-          <div className="p-6 sm:p-8 flex flex-col items-center bg-[#09090b] relative overflow-hidden">
+          <div className="p-4 sm:p-8 flex flex-col items-center bg-[#09090b] relative overflow-hidden">
             {/* Background Radial Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_70%)] pointer-events-none" />
 
             {/* Vinyl Record Visual */}
-            <div className="relative mb-6">
+            <div className="relative mb-5 sm:mb-6">
               <div
-                className={`relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center rounded-full bg-gradient-to-tr from-[#121215] via-[#1a1a20] to-[#121215] border-2 border-white/[0.15] shadow-[0_15px_40px_rgba(0,0,0,0.9),inset_0_0_20px_rgba(0,0,0,0.8)] ${
+                className={`relative flex h-32 w-32 sm:h-44 sm:w-44 items-center justify-center rounded-full bg-gradient-to-tr from-[#121215] via-[#1a1a20] to-[#121215] border-2 border-white/[0.15] shadow-[0_15px_40px_rgba(0,0,0,0.9),inset_0_0_20px_rgba(0,0,0,0.8)] ${
                   isPlaying ? "animate-[spin_12s_linear_infinite]" : ""
                 }`}
               >
@@ -183,8 +187,8 @@ export const AudioPlayerModal: React.FC = () => {
                 <div className="absolute inset-9 rounded-full border border-white/[0.04]" />
 
                 {/* Center Disc Label */}
-                <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#18181b] border border-white/[0.2] shadow-inner text-zinc-300">
-                  <Disc3 className="h-6 w-6 stroke-[1.5px]" />
+                <div className="relative flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#18181b] border border-white/[0.2] shadow-inner text-zinc-300">
+                  <Disc3 className="h-5 w-5 sm:h-6 sm:w-6 stroke-[1.5px]" />
                 </div>
               </div>
 
@@ -200,8 +204,8 @@ export const AudioPlayerModal: React.FC = () => {
             </div>
 
             {/* Track Info */}
-            <div className="w-full text-center space-y-1 mb-5 z-10">
-              <h3 className="text-base sm:text-lg font-medium text-white tracking-tight font-sans truncate max-w-md mx-auto">
+            <div className="w-full text-center space-y-1 mb-4 sm:mb-5 z-10 px-1">
+              <h3 className="text-sm sm:text-lg font-medium text-white tracking-tight font-sans truncate max-w-md mx-auto">
                 {currentTrack.name}
               </h3>
               <p className="text-xs text-zinc-400 font-sans truncate max-w-sm mx-auto">
@@ -209,19 +213,21 @@ export const AudioPlayerModal: React.FC = () => {
               </p>
             </div>
 
-            {/* Scrubber Timeline */}
-            <div className="w-full space-y-1.5 mb-6 z-10">
+            {/* Scrubber Timeline (Expanded vertical touch zone) */}
+            <div className="w-full space-y-1 mb-5 sm:mb-6 z-10">
               <div
                 ref={progressBarRef}
                 onClick={handleProgressBarClick}
                 onTouchStart={handleProgressBarTouch}
                 onTouchMove={handleProgressBarTouch}
-                className="group relative h-2.5 sm:h-2 w-full cursor-pointer rounded-full bg-white/[0.08] overflow-hidden touch-none"
+                className="group relative py-2.5 w-full cursor-pointer touch-none"
               >
-                <div
-                  className="h-full bg-gradient-to-r from-[#c49b56] via-amber-200 to-white transition-all rounded-full relative shadow-[0_0_10px_rgba(196,155,86,0.5)]"
-                  style={{ width: `${progressPercent}%` }}
-                />
+                <div className="relative h-2.5 sm:h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#c49b56] via-amber-200 to-white transition-all rounded-full relative shadow-[0_0_10px_rgba(196,155,86,0.5)]"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
@@ -231,11 +237,11 @@ export const AudioPlayerModal: React.FC = () => {
             </div>
 
             {/* Transport Audio Controls */}
-            <div className="flex items-center justify-center gap-3 sm:gap-4 z-10">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-3.5 z-10 w-full">
               {/* Loop Button */}
               <button
                 onClick={toggleLoop}
-                className={`p-2 rounded-[4px] border transition-colors ${
+                className={`flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-[4px] border transition-colors ${
                   isLooping
                     ? "bg-white/[0.1] text-white border-white/[0.2]"
                     : "text-zinc-500 hover:text-white border-transparent hover:bg-white/[0.05]"
@@ -248,7 +254,7 @@ export const AudioPlayerModal: React.FC = () => {
               {/* Skip -10s */}
               <button
                 onClick={() => handleSkip(-10)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
+                className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
                 title="Rewind 10s"
               >
                 <RotateCcw className="w-4 h-4 stroke-[1.5px]" />
@@ -258,7 +264,7 @@ export const AudioPlayerModal: React.FC = () => {
               <button
                 onClick={prevTrack}
                 disabled={playlist.length <= 1}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors disabled:opacity-30 disabled:pointer-events-none"
                 title="Previous Track"
               >
                 <SkipBack className="w-5 h-5 stroke-[1.5px]" />
@@ -267,7 +273,7 @@ export const AudioPlayerModal: React.FC = () => {
               {/* Play / Pause Primary Button */}
               <button
                 onClick={togglePlay}
-                className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white hover:bg-zinc-200 text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,255,255,0.15)] active:scale-[0.96] transition-all"
+                className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white hover:bg-zinc-200 text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,255,255,0.15)] active:scale-[0.96] transition-all shrink-0 mx-0.5"
                 title={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
@@ -281,7 +287,7 @@ export const AudioPlayerModal: React.FC = () => {
               <button
                 onClick={nextTrack}
                 disabled={playlist.length <= 1}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors disabled:opacity-30 disabled:pointer-events-none"
                 title="Next Track"
               >
                 <SkipForward className="w-5 h-5 stroke-[1.5px]" />
@@ -290,7 +296,7 @@ export const AudioPlayerModal: React.FC = () => {
               {/* Skip +10s */}
               <button
                 onClick={() => handleSkip(10)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
+                className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px] transition-colors"
                 title="Forward 10s"
               >
                 <RotateCw className="w-4 h-4 stroke-[1.5px]" />
@@ -299,7 +305,7 @@ export const AudioPlayerModal: React.FC = () => {
               {/* Playback Rate */}
               <button
                 onClick={cyclePlaybackRate}
-                className="h-8 px-2 rounded-[4px] font-mono text-xs text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08] transition-colors"
+                className="flex h-10 sm:h-8 min-w-[40px] px-2 items-center justify-center rounded-[4px] font-mono text-xs text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08] transition-colors"
                 title="Playback Speed"
               >
                 {playbackRate}x
@@ -307,10 +313,10 @@ export const AudioPlayerModal: React.FC = () => {
             </div>
 
             {/* Volume Deck */}
-            <div className="flex items-center gap-2 mt-6 z-10 w-48">
+            <div className="flex items-center gap-2 mt-5 sm:mt-6 z-10 w-full max-w-[220px]">
               <button
                 onClick={toggleMute}
-                className="p-1 text-zinc-400 hover:text-white transition-colors"
+                className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center text-zinc-400 hover:text-white transition-colors shrink-0"
                 title={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted || volume === 0 ? (
@@ -326,14 +332,14 @@ export const AudioPlayerModal: React.FC = () => {
                 step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-full h-1 bg-white/[0.1] rounded-lg appearance-none cursor-pointer accent-white"
+                className="w-full h-1.5 sm:h-1 bg-white/[0.1] rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
           </div>
 
           {/* Playlist Drawer */}
           {showPlaylist && (
-            <div className="border-t border-white/[0.08] bg-[#0d0d10] p-3 max-h-48 overflow-y-auto no-scrollbar space-y-1">
+            <div className="border-t border-white/[0.08] bg-[#0d0d10] p-3 max-h-52 overflow-y-auto no-scrollbar space-y-1">
               <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 px-1 pb-1">
                 Queue ({playlist.length} Tracks)
               </div>
@@ -343,7 +349,7 @@ export const AudioPlayerModal: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => playTrack(item, playlist)}
-                    className={`w-full flex items-center justify-between p-2 rounded-[4px] border text-left transition-all ${
+                    className={`w-full min-h-[44px] sm:min-h-0 flex items-center justify-between p-2.5 sm:p-2 rounded-[4px] border text-left transition-all ${
                       isSelected
                         ? "border-white/[0.2] bg-white/[0.08] text-white"
                         : "border-transparent bg-transparent hover:bg-white/[0.04] text-zinc-400 hover:text-zinc-200"
@@ -364,10 +370,10 @@ export const AudioPlayerModal: React.FC = () => {
           )}
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500">
             <button
               onClick={copyReference}
-              className="hover:text-zinc-300 flex items-center gap-1.5 transition-colors"
+              className="min-h-[36px] sm:min-h-0 hover:text-zinc-300 flex items-center gap-1.5 transition-colors"
               title="Copy Telegram reference"
             >
               {isCopiedRef ? <Check className="w-3.5 h-3.5 text-[#e6cfa3]" /> : <Copy className="w-3.5 h-3.5" />}
@@ -376,10 +382,10 @@ export const AudioPlayerModal: React.FC = () => {
 
             <button
               onClick={() => enqueueDownload(currentTrack)}
-              className="hover:text-white flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors"
+              className="min-h-[36px] sm:min-h-0 hover:text-white flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download File</span>
+              <span>Download</span>
             </button>
           </div>
         </motion.div>

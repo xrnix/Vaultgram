@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SpringHamburger } from "@/components/ui/spring-hamburger";
+import { useDriveStore } from "@/lib/stores/drive-store";
 import { toast } from "sonner";
 
 type TypeFilter = "ALL" | "DOWNLOADS" | "UPLOADS";
@@ -55,6 +57,7 @@ export const TransfersView: React.FC = () => {
     resumeAllPaused,
     enqueueDownload,
   } = useTransferStore();
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useDriveStore();
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -124,45 +127,53 @@ export const TransfersView: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col h-full bg-[#09090b] text-zinc-100 overflow-hidden select-none font-sans">
       {/* Streamlined Header Section */}
-      <div className="flex flex-col gap-3.5 border-b border-white/[0.07] px-4 sm:px-6 py-3 sm:py-4 bg-[#121215]/80 backdrop-blur-xl">
+      <div className="flex flex-col gap-3 border-b border-white/[0.07] px-3 sm:px-6 py-3 sm:py-4 bg-[#121215]/85 backdrop-blur-xl pt-[max(0.75rem,env(safe-area-inset-top))]">
         {/* Top Row: Title + Concurrency Segmented Control + Batch Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
           {/* Clean Title & Count */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="md:hidden shrink-0">
+              <SpringHamburger
+                isOpen={isMobileSidebarOpen}
+                onClick={() => setMobileSidebarOpen(!isMobileSidebarOpen)}
+              />
+            </div>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100">
               <ArrowUpDown className="h-4 w-4 stroke-[1.75px]" />
             </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold text-white">Transfer Manager</h1>
-              <span className="font-mono text-xs px-2 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] text-zinc-400 tabular-nums">
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold text-white truncate">Transfer Manager</h1>
+              <span className="font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] text-zinc-400 tabular-nums shrink-0">
                 {tasks.length} Total
               </span>
             </div>
           </div>
 
           {/* Controls & Batch Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Minimalist Concurrency Segmented Control */}
             <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-[4px] border border-white/[0.08]">
-              <span className="text-xs font-mono text-zinc-400 pl-1.5 pr-0.5 flex items-center gap-1">
+              <span className="text-[11px] sm:text-xs font-mono text-zinc-400 pl-1.5 pr-0.5 flex items-center gap-1">
                 <Sliders className="h-3 w-3" />
-                <span>Concurrency:</span>
+                <span className="hidden sm:inline">Concurrency:</span>
               </span>
               <button
+                type="button"
                 onClick={() => setMaxConcurrentDownloads(1)}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded-[3px] transition-colors",
+                  "px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-[3px] transition-colors",
                   maxConcurrentDownloads === 1
                     ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.16] font-mono"
                     : "text-zinc-400 hover:text-zinc-200"
                 )}
               >
-                1 Active <span className="text-[10px] text-zinc-500 font-normal">(Optimal)</span>
+                1 Active <span className="hidden sm:inline text-[10px] text-zinc-500 font-normal">(Optimal)</span>
               </button>
               <button
+                type="button"
                 onClick={() => setMaxConcurrentDownloads(2)}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded-[3px] transition-colors",
+                  "px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-[3px] transition-colors",
                   maxConcurrentDownloads === 2
                     ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.16] font-mono"
                     : "text-zinc-400 hover:text-zinc-200"
@@ -178,10 +189,10 @@ export const TransfersView: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={pauseAllActive}
-                className="h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-300 hover:text-zinc-100"
+                className="h-9 sm:h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-300 hover:text-zinc-100"
               >
                 <Pause className="h-3.5 w-3.5" />
-                <span>Pause All ({activeCount})</span>
+                <span>Pause ({activeCount})</span>
               </Button>
             )}
 
@@ -190,10 +201,10 @@ export const TransfersView: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={resumeAllPaused}
-                className="h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-300 hover:text-zinc-100"
+                className="h-9 sm:h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-300 hover:text-zinc-100"
               >
                 <Play className="h-3.5 w-3.5" />
-                <span>Resume All ({pausedCount})</span>
+                <span>Resume ({pausedCount})</span>
               </Button>
             )}
 
@@ -202,26 +213,27 @@ export const TransfersView: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={clearCompleted}
-                className="h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                className="h-9 sm:h-8 gap-1.5 border-zinc-800 bg-zinc-900/60 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>Clear Completed</span>
+                <span>Clear Done</span>
               </Button>
             )}
           </div>
         </div>
 
         {/* Bottom Row: Type Filters + Status Tabs + Search Bar */}
-        <div className="flex items-center justify-between gap-4 pt-1">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 lg:gap-4 pt-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
             {/* Type Tabs (All / Downloads / Uploads) */}
-            <div className="flex items-center gap-1 bg-zinc-900/70 p-0.5 rounded-md border border-zinc-800/80">
+            <div className="flex items-center gap-1 bg-zinc-900/70 p-0.5 rounded-[4px] border border-zinc-800/80 self-start overflow-x-auto no-scrollbar max-w-full">
               {TYPE_TABS.map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setTypeFilter(tab.id)}
                   className={cn(
-                    "px-2.5 py-1 rounded-sm text-xs font-medium transition-colors",
+                    "px-2.5 py-1.5 sm:py-1 rounded-[3px] text-xs font-medium transition-colors whitespace-nowrap",
                     typeFilter === tab.id
                       ? "bg-zinc-800 text-zinc-100 shadow-sm font-semibold"
                       : "text-zinc-400 hover:text-zinc-200"
@@ -233,15 +245,16 @@ export const TransfersView: React.FC = () => {
             </div>
 
             {/* Status Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar touch-pan-x pb-0.5 sm:pb-0">
               {STATUS_TABS.map((tab) => {
                 const count = statusTabCounts[tab.id];
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setStatusFilter(tab.id)}
                     className={cn(
-                      "px-2.5 py-1 rounded-sm text-xs font-medium transition-colors flex items-center gap-1.5",
+                      "px-2.5 py-1.5 sm:py-1 rounded-[3px] text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
                       statusFilter === tab.id
                         ? "bg-zinc-800/90 text-zinc-100 border border-zinc-700/60 shadow-sm"
                         : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-300"
@@ -256,24 +269,24 @@ export const TransfersView: React.FC = () => {
           </div>
 
           {/* Search Input */}
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+          <div className="relative w-full lg:w-64 shrink-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
             <Input
               type="text"
               placeholder="Search transfers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-8 pr-3 text-xs bg-zinc-900/90 border-zinc-800 rounded-md placeholder:text-zinc-500 focus:border-zinc-700"
+              className="h-10 sm:h-8 pl-8 pr-3 text-base sm:text-xs bg-zinc-900/90 border-zinc-800 rounded-[4px] placeholder:text-zinc-500 focus:border-zinc-700"
             />
           </div>
         </div>
       </div>
 
       {/* Task List Canvas */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-2.5">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 pb-24 md:pb-6 space-y-2.5">
         {filteredTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900/50 text-zinc-500 mb-3">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center px-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[5px] border border-zinc-800 bg-zinc-900/50 text-zinc-500 mb-3">
               <ArrowUpDown className="h-6 w-6 stroke-[1.25px]" />
             </div>
             <h3 className="text-sm font-medium text-zinc-300">No transfers found</h3>
@@ -291,10 +304,10 @@ export const TransfersView: React.FC = () => {
             return (
               <div
                 key={task.id}
-                className="group flex items-center justify-between gap-4 rounded-md border border-zinc-800/60 bg-zinc-900/30 p-3.5 hover:bg-zinc-900/60 hover:border-zinc-800 transition-all"
+                className="group flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 rounded-[5px] border border-zinc-800/60 bg-zinc-900/30 p-3 sm:p-3.5 hover:bg-zinc-900/60 hover:border-zinc-800 transition-all"
               >
                 {/* Left: Direction + Icon & File Meta */}
-                <div className="flex items-center gap-3 min-w-0 max-w-md">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 md:max-w-md">
                   {/* Direction Badge */}
                   <div
                     className={cn(
@@ -317,44 +330,44 @@ export const TransfersView: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-zinc-950 border border-zinc-800 text-zinc-300">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-zinc-950 border border-zinc-800 text-zinc-300">
                     <Icon className="h-4 w-4 stroke-[1.5px]" />
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span className="truncate text-xs font-medium text-zinc-100" title={task.fileName}>
                         {task.fileName}
                       </span>
                       {task.channelTitle && (
-                        <span className="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-[2px] bg-zinc-900 border border-zinc-800/80 text-zinc-400">
+                        <span className="hidden sm:inline-block shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded-[2px] bg-zinc-900 border border-zinc-800/80 text-zinc-400">
                           {task.channelTitle}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500 mt-0.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-mono text-zinc-500 mt-0.5">
                       <span>{formatBytes(task.fileSize)}</span>
                       <span>•</span>
                       <span>{new Date(task.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      {task.channelTitle && (
+                        <span className="sm:hidden text-zinc-400 truncate max-w-[120px]">· {task.channelTitle}</span>
+                      )}
                       {task.error && (
-                        <>
-                          <span>•</span>
-                          <span className="text-rose-400 truncate max-w-[200px]" title={task.error}>
-                            {task.error}
-                          </span>
-                        </>
+                        <span className="text-rose-400 truncate max-w-full sm:max-w-[200px]" title={task.error}>
+                          • {task.error}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {/* Center: Progress & Live Metrics */}
-                <div className="flex flex-1 max-w-md flex-col gap-1.5 px-4">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                <div className="flex w-full md:flex-1 md:max-w-md flex-col gap-1.5 md:px-4">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 tabular-nums">
                     <span>
                       {formatBytes(task.bytesTransferred)} / {formatBytes(task.fileSize)}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {task.status === "ACTIVE" && (
                         <>
                           <span className="text-zinc-200">{task.speed}</span>
@@ -386,10 +399,10 @@ export const TransfersView: React.FC = () => {
                 </div>
 
                 {/* Right: Status Pill & Action Buttons */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-1 md:pt-0 border-t border-white/[0.04] md:border-0">
                   <span
                     className={cn(
-                      "font-mono text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wider",
+                      "font-mono text-[10px] px-2 py-0.5 rounded-[3px] uppercase tracking-wider",
                       task.status === "ACTIVE"
                         ? "border border-zinc-700 bg-zinc-800 text-zinc-100 animate-pulse"
                         : task.status === "PAUSED"
@@ -405,7 +418,7 @@ export const TransfersView: React.FC = () => {
                   </span>
 
                   {/* Actions according to status */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 sm:gap-1">
                     {task.status === "ACTIVE" && (
                       <>
                         <Button
@@ -413,18 +426,18 @@ export const TransfersView: React.FC = () => {
                           size="icon"
                           onClick={() => pauseTask(task.id)}
                           title="Pause Transfer"
-                          className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
                         >
-                          <Pause className="h-3.5 w-3.5" />
+                          <Pause className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => cancelTask(task.id)}
                           title="Cancel Transfer"
-                          className="h-7 w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                       </>
                     )}
@@ -436,18 +449,18 @@ export const TransfersView: React.FC = () => {
                           size="icon"
                           onClick={() => resumeTask(task.id)}
                           title="Resume Transfer"
-                          className="h-7 w-7 text-amber-400 hover:text-amber-300 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-amber-400 hover:text-amber-300 hover:bg-zinc-800"
                         >
-                          <Play className="h-3.5 w-3.5" />
+                          <Play className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => cancelTask(task.id)}
                           title="Cancel Transfer"
-                          className="h-7 w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                       </>
                     )}
@@ -459,18 +472,18 @@ export const TransfersView: React.FC = () => {
                           size="icon"
                           onClick={() => retryTask(task.id)}
                           title="Retry Transfer"
-                          className="h-7 w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
                         >
-                          <RotateCw className="h-3.5 w-3.5" />
+                          <RotateCw className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => removeTask(task.id)}
                           title="Dismiss from Ledger"
-                          className="h-7 w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                       </>
                     )}
@@ -483,7 +496,7 @@ export const TransfersView: React.FC = () => {
                             size="sm"
                             onClick={() => handleRedownload(task)}
                             title="Re-download File"
-                            className="h-7 text-xs font-mono text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 px-2"
+                            className="h-9 sm:h-7 text-xs font-mono text-zinc-300 sm:text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 px-2.5 sm:px-2"
                           >
                             Save Again
                           </Button>
@@ -493,9 +506,9 @@ export const TransfersView: React.FC = () => {
                           size="icon"
                           onClick={() => removeTask(task.id)}
                           title="Remove from Ledger"
-                          className="h-7 w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
+                          className="h-9 w-9 sm:h-7 sm:w-7 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                       </>
                     )}

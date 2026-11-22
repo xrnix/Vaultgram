@@ -58,7 +58,7 @@ export const ChannelWizard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-4 bg-[#09090b] selection:bg-white/10">
+    <div className="flex min-h-[100dvh] w-full items-center justify-center px-3.5 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-4 bg-[#09090b] selection:bg-white/10">
       {/* Background vignette */}
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
 
@@ -66,7 +66,7 @@ export const ChannelWizard: React.FC = () => {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-[480px] rounded-[6px] border border-white/[0.1] bg-[#121215]/95 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden"
+        className="relative z-10 flex flex-col w-full max-w-[480px] max-h-[92dvh] rounded-[6px] border border-white/[0.1] bg-[#121215]/95 p-4 sm:p-6 shadow-[0_20px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden"
       >
         {/* Top Hairline Sheen */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
@@ -111,16 +111,16 @@ export const ChannelWizard: React.FC = () => {
         )}
 
         {/* Search Bar & Counter */}
-        <div className="space-y-2 pb-2">
+        <div className="space-y-2 pb-2 shrink-0">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 stroke-[1.5px]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-500 stroke-[1.5px]" />
             <Input
               type="text"
               placeholder="Search chats and channels..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isLoading}
-              className="h-8.5 pl-8 text-xs bg-white/[0.03] border-white/[0.1] rounded-[4px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+              className="h-10 sm:h-9 pl-9 text-base sm:text-xs bg-white/[0.03] border-white/[0.1] rounded-[4px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
             />
           </div>
 
@@ -131,7 +131,7 @@ export const ChannelWizard: React.FC = () => {
                 type="button"
                 onClick={selectAll}
                 disabled={isLoading || availableChannels.length === 0}
-                className="hover:text-white transition-colors disabled:opacity-40"
+                className="min-h-[32px] sm:min-h-0 flex items-center hover:text-white transition-colors disabled:opacity-40"
               >
                 Select All
               </button>
@@ -140,21 +140,21 @@ export const ChannelWizard: React.FC = () => {
                 type="button"
                 onClick={deselectAll}
                 disabled={isLoading || availableChannels.length === 0}
-                className="hover:text-white transition-colors disabled:opacity-40"
+                className="min-h-[32px] sm:min-h-0 flex items-center hover:text-white transition-colors disabled:opacity-40"
               >
                 Deselect All
               </button>
             </div>
 
             <span className="text-zinc-400 font-medium">
-              <span className="text-white font-semibold">{selectedCount}</span> of{" "}
-              {availableChannels.length} selected
+              <span className="text-white font-semibold">{selectedCount}</span> /{" "}
+              {availableChannels.length}
             </span>
           </div>
         </div>
 
         {/* Scrollable Channel List Container */}
-        <div className="w-full max-h-[340px] overflow-y-auto no-scrollbar p-1 space-y-1.5 border border-white/[0.08] bg-[#09090b]/80 rounded-[4px]">
+        <div className="w-full flex-1 min-h-[200px] max-h-[50dvh] sm:max-h-[340px] overflow-y-auto no-scrollbar p-1 space-y-1.5 border border-white/[0.08] bg-[#09090b]/80 rounded-[4px]">
           {isLoading ? (
             /* Sleek Skeleton Loading Rows */
             <div className="space-y-1.5 p-0.5">
@@ -248,21 +248,21 @@ export const ChannelWizard: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2 shrink-0">
           <button
             type="button"
             onClick={() => fetchChannels()}
             disabled={isLoading}
-            className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-40"
+            className="min-h-[40px] sm:min-h-0 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
-            <span>Refresh list</span>
+            <RefreshCw className={`h-3.5 w-3.5 sm:h-3 sm:w-3 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
           </button>
 
           <Button
             onClick={handleContinue}
             disabled={isContinueDisabled}
-            className="gap-2 rounded-[4px] h-8.5 px-4 font-medium text-xs bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] hover:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all disabled:opacity-40"
+            className="gap-2 rounded-[4px] h-10 sm:h-9 px-4 font-medium text-xs bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] hover:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.98] transition-all disabled:opacity-40"
           >
             <span>{isSaving ? "Saving..." : "Continue to Drive"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />

@@ -131,14 +131,14 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 8 }}
           transition={{ type: "spring", stiffness: 450, damping: 32 }}
-          className="relative z-10 flex flex-col w-full max-w-2xl max-h-[88vh] bg-[#121215] border border-white/[0.12] rounded-[8px] shadow-[0_30px_90px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-full max-w-2xl max-h-[92dvh] bg-[#121215] border border-white/[0.12] rounded-[6px] shadow-[0_30px_90px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.08] bg-[#121215]/95">
-            <div className="flex items-center gap-2.5 min-w-0 mr-3">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 mr-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
                 <FileText className="h-4 w-4 stroke-[1.5px]" />
               </div>
@@ -146,7 +146,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                 <h2 className="text-sm font-medium font-sans text-white truncate" title={file.name}>
                   {file.name}
                 </h2>
-                <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1.5 mt-0.5">
+                <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1.5 mt-0.5 truncate">
                   <span>File Inspector &amp; MTProto Metadata</span>
                 </div>
               </div>
@@ -154,15 +154,16 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+              className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors shrink-0"
               title="Close (Esc)"
+              aria-label="Close details"
             >
               <X className="w-4 h-4 stroke-[1.5px]" />
             </button>
           </div>
 
           {/* Content Deck */}
-          <div className="p-5 sm:p-6 overflow-y-auto no-scrollbar space-y-4 text-xs font-sans bg-[#09090b]">
+          <div className="p-4 sm:p-6 overflow-y-auto no-scrollbar space-y-4 text-xs font-sans bg-[#09090b] flex-1">
             {/* Overview Metric Deck */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="p-3 rounded-[5px] border border-white/[0.08] bg-white/[0.02] space-y-1">
@@ -215,57 +216,57 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
               <div className="divide-y divide-white/[0.04] font-mono text-[11px]">
                 {/* Message ID */}
-                <div className="px-3 py-2 flex items-center justify-between">
-                  <span className="text-zinc-500">Telegram Message ID</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-200">#{file.messageId}</span>
+                <div className="px-3 py-2 flex items-center justify-between gap-2">
+                  <span className="text-zinc-500 shrink-0">Message ID</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-zinc-200 truncate">#{file.messageId}</span>
                     <button
                       onClick={() => handleCopy(String(file.messageId), "Message ID")}
-                      className="p-1 text-zinc-500 hover:text-white transition-colors"
+                      className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center text-zinc-500 hover:text-white transition-colors shrink-0"
                       title="Copy Message ID"
                     >
                       {copiedField === "Message ID" ? (
-                        <Check className="w-3 h-3 text-white" />
+                        <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-white" />
                       ) : (
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                       )}
                     </button>
                   </div>
                 </div>
 
                 {/* Channel ID */}
-                <div className="px-3 py-2 flex items-center justify-between">
-                  <span className="text-zinc-500">Channel / Drive</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-200 truncate max-w-[200px]">{file.channelTitle} ({file.channelId})</span>
+                <div className="px-3 py-2 flex items-center justify-between gap-2">
+                  <span className="text-zinc-500 shrink-0">Channel / Drive</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-zinc-200 truncate">{file.channelTitle} ({file.channelId})</span>
                     <button
                       onClick={() => handleCopy(file.channelId, "Channel ID")}
-                      className="p-1 text-zinc-500 hover:text-white transition-colors"
+                      className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center text-zinc-500 hover:text-white transition-colors shrink-0"
                       title="Copy Channel ID"
                     >
                       {copiedField === "Channel ID" ? (
-                        <Check className="w-3 h-3 text-white" />
+                        <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-white" />
                       ) : (
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                       )}
                     </button>
                   </div>
                 </div>
 
                 {/* Local Stream Bridge Route */}
-                <div className="px-3 py-2 flex items-center justify-between">
-                  <span className="text-zinc-500">Stream Bridge URI</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-300">/stream/{file.id}</span>
+                <div className="px-3 py-2 flex items-center justify-between gap-2">
+                  <span className="text-zinc-500 shrink-0">Stream URI</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-zinc-300 truncate">/stream/{file.id}</span>
                     <button
                       onClick={() => handleCopy(`/stream/${file.id}`, "Stream URI")}
-                      className="p-1 text-zinc-500 hover:text-white transition-colors"
+                      className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center text-zinc-500 hover:text-white transition-colors shrink-0"
                       title="Copy Stream Route"
                     >
                       {copiedField === "Stream URI" ? (
-                        <Check className="w-3 h-3 text-white" />
+                        <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-white" />
                       ) : (
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                       )}
                     </button>
                   </div>
@@ -275,9 +276,9 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
             {/* SHA-256 Cryptographic Verification Box */}
             <div className="rounded-[4px] border border-white/[0.08] bg-white/[0.02] p-3 space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                   <span>Cryptographic Integrity (SHA-256)</span>
                 </div>
 
@@ -287,7 +288,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                     variant="outline"
                     onClick={handleCalculateChecksum}
                     disabled={isHashing}
-                    className="h-6 text-[10px] font-mono bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] rounded-[3px]"
+                    className="h-8 sm:h-6 px-2.5 text-[10px] font-mono bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] rounded-[3px]"
                   >
                     {isHashing ? (
                       <>
@@ -306,7 +307,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                   <span>{checksum}</span>
                   <button
                     onClick={() => handleCopy(checksum, "SHA-256 Checksum")}
-                    className="p-1 text-zinc-400 hover:text-white shrink-0 ml-2"
+                    className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center text-zinc-400 hover:text-white shrink-0 ml-2"
                   >
                     {copiedField === "SHA-256 Checksum" ? (
                       <Check className="w-3.5 h-3.5 text-white" />
@@ -323,12 +324,12 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
             </div>
 
             {/* Quick External Links & Shortcuts */}
-            <div className="flex items-center justify-between pt-1 text-[11px] font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 text-[11px] font-mono">
               <a
                 href={telegramWebLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
+                className="text-zinc-400 hover:text-white flex items-center gap-1 transition-colors min-h-[36px] sm:min-h-0"
               >
                 <span>View Message in Telegram</span>
                 <ExternalLink className="w-3 h-3" />
@@ -337,10 +338,10 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => togglePin(file.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-[3px] border transition-colors ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 h-9 sm:h-7 px-3 sm:px-2.5 rounded-[4px] border transition-colors ${
                     isPinned
                       ? "bg-white/[0.1] text-white border-white/[0.2]"
-                      : "text-zinc-400 hover:text-white border-white/[0.06] hover:bg-white/[0.04]"
+                      : "text-zinc-400 hover:text-white border-white/[0.08] hover:bg-white/[0.04]"
                   }`}
                 >
                   <Pin className="w-3 h-3" />
@@ -349,10 +350,10 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
                 <button
                   onClick={() => toggleFavorite(file.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-[3px] border transition-colors ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 h-9 sm:h-7 px-3 sm:px-2.5 rounded-[4px] border transition-colors ${
                     isFavorite
                       ? "bg-[#c49b56]/15 text-[#e6cfa3] border-[#c49b56]/30"
-                      : "text-zinc-400 hover:text-white border-white/[0.06] hover:bg-white/[0.04]"
+                      : "text-zinc-400 hover:text-white border-white/[0.08] hover:bg-white/[0.04]"
                   }`}
                 >
                   <Star className="w-3 h-3" />
@@ -363,7 +364,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.08] bg-[#121215]/95">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-white/[0.08] bg-[#121215]/95 shrink-0">
             <div className="flex items-center gap-2">
               {onPreview && (
                 <Button
@@ -373,7 +374,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                     onClose();
                     onPreview(file);
                   }}
-                  className="h-8 px-3 text-xs rounded-[4px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5"
+                  className="h-9 sm:h-8 px-3 text-xs rounded-[4px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5"
                 >
                   <Eye className="w-3.5 h-3.5 stroke-[1.5px]" />
                   <span>Preview</span>
@@ -388,7 +389,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                     onClose();
                     onShare(file);
                   }}
-                  className="h-8 px-3 text-xs rounded-[4px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5"
+                  className="h-9 sm:h-8 px-3 text-xs rounded-[4px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.1] gap-1.5"
                 >
                   <Share2 className="w-3.5 h-3.5 stroke-[1.5px]" />
                   <span>Share</span>
@@ -402,10 +403,10 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                 enqueueDownload(file);
                 onClose();
               }}
-              className="h-8 px-3.5 text-xs rounded-[4px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.16] gap-1.5 font-medium"
+              className="h-9 sm:h-8 px-3.5 text-xs rounded-[4px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.16] gap-1.5 font-medium ml-auto"
             >
               <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
-              <span>Download File</span>
+              <span>Download</span>
             </Button>
           </div>
         </motion.div>

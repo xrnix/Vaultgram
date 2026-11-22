@@ -112,6 +112,9 @@ interface DriveStoreState {
   isMobileSidebarOpen: boolean;
   setMobileSidebarOpen: (open: boolean) => void;
 
+  isCommandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
+
   // Actions
   initDrive: () => Promise<void>;
   setActiveChannel: (channelId: string) => Promise<void>;
@@ -222,6 +225,9 @@ export const useDriveStore = create<DriveStoreState>((set, get) => ({
 
   isMobileSidebarOpen: false,
   setMobileSidebarOpen: (open: boolean) => set({ isMobileSidebarOpen: open }),
+
+  isCommandPaletteOpen: false,
+  setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
 
   initDrive: async () => {
     const channels = await getSavedSelectedChannels();

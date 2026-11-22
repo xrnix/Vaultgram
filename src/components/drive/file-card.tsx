@@ -46,6 +46,7 @@ export const FileCard = React.memo<FileCardProps>(
     const isPinned = useDriveStore((s) => s.pinnedFileIds.has(file.id));
     const isFavorite = useDriveStore((s) => s.favoriteFileIds.has(file.id));
     const isSelected = useDriveStore((s) => s.selectedFileIds.has(file.id));
+    const hasSelection = useDriveStore((s) => s.selectedFileIds.size > 0);
     const toggleSelectFile = useDriveStore((s) => s.toggleSelectFile);
     const togglePin = useDriveStore((s) => s.togglePin);
     const toggleFavorite = useDriveStore((s) => s.toggleFavorite);
@@ -70,17 +71,17 @@ export const FileCard = React.memo<FileCardProps>(
     const getFileIcon = () => {
       switch (file.category) {
         case "IMAGE":
-          return <Image className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+          return <Image className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "VIDEO":
-          return <Video className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+          return <Video className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "DOC":
-          return <FileText className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+          return <FileText className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "ARCHIVE":
-          return <Archive className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+          return <Archive className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "AUDIO":
-          return <Music className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
+          return <Music className="h-4 w-4 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
         default:
-          return <File className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+          return <File className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
       }
     };
 
@@ -92,7 +93,7 @@ export const FileCard = React.memo<FileCardProps>(
     };
 
     const handleClick = (e: React.MouseEvent) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
         e.preventDefault();
         toggleSelectFile(file.id);
       } else {
@@ -120,7 +121,7 @@ export const FileCard = React.memo<FileCardProps>(
             {/* Top: Machined Pocket + Specimen Extension Stamp + Options */}
             <div className="flex items-start justify-between gap-1.5">
               <div className="flex items-center gap-2">
-                <div className="specimen-inset flex h-8 w-8 sm:h-8.5 sm:w-8.5 items-center justify-center rounded-[4px] shrink-0">
+                <div className="specimen-inset flex h-8 w-8 items-center justify-center rounded-[4px] shrink-0">
                   {getFileIcon()}
                 </div>
                 {isSelected && (
@@ -161,21 +162,33 @@ export const FileCard = React.memo<FileCardProps>(
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
+                      type="button"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 hover:text-white hover:bg-white/[0.08] sm:opacity-60 group-hover:opacity-100 transition-opacity"
+                      className="flex h-9 w-9 -mr-2 -mt-1.5 sm:h-6 sm:w-6 sm:m-0 items-center justify-center rounded-[4px] sm:rounded-[3px] text-zinc-400 sm:text-zinc-500 hover:text-white hover:bg-white/[0.08] sm:opacity-60 group-hover:opacity-100 transition-opacity"
                       aria-label="File options"
                     >
-                      <MoreVertical className="h-3.5 w-3.5 stroke-[1.5px]" />
+                      <MoreVertical className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px]" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52 bg-[#121215] border-white/[0.1] text-zinc-300">
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
+                        toggleSelectFile(file.id);
+                      }}
+                      className="gap-2 py-2 sm:py-1.5 text-xs hover:bg-white/[0.06] hover:text-white"
+                    >
+                      <Check className="h-3.5 w-3.5 stroke-[1.75px]" />
+                      <span>{isSelected ? "Deselect Item" : "Select Item"}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (isCodeOrText) setTextViewerFile(file);
                         else setPreviewFile(file);
                       }}
-                      className="gap-2 text-xs hover:bg-white/[0.06] hover:text-white"
+                      className="gap-2 py-2 sm:py-1.5 text-xs hover:bg-white/[0.06] hover:text-white"
                     >
                       <Eye className="h-3.5 w-3.5 stroke-[1.5px]" />
                       <span>{isCodeOrText ? "View Code / Text" : "Quick Preview"}</span>

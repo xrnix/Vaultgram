@@ -10,6 +10,7 @@ import {
   getTgConfigSync,
   setSavedSession,
   setSavedUserProfile,
+  clearSavedSession,
   saveAccount,
   TelegramUserProfile,
   ChannelMeta,
@@ -188,6 +189,35 @@ export class TgStreamClient {
   }
 
   private initPromise: Promise<boolean> | null = null;
+  private qrLoginRunId = 0;
+
+  private isAuthInvalidError(err: unknown): boolean {
+    const anyErr = err as { errorMessage?: string; message?: string; code?: number } | null;
+    const msg = String(anyErr?.errorMessage || anyErr?.message || err || "").toUpperCase();
+    return (
+      anyErr?.code === 401 ||
+      msg.includes("AUTH_KEY_UNREGISTERED") ||
+      msg.includes("SESSION_REVOKED") ||
+      msg.includes("AUTH_KEY_INVALID") ||
+      msg.includes("SESSION_EXPIRED") ||
+      msg.includes("USER_DEACTIVATED") ||
+      msg.includes("AUTH_KEY_PERM_EMPTY")
+    );
+  }
+
+  private async disposeClient(target?: any) {
+    const clientToDispose = target || this.client;
+    if (!clientToDispose) return;
+    if (!target || target === this.client) {
+      this.client = null;
+    }
+    try {
+      await clientToDispose.disconnect();
+    } catch {}
+    try {
+      await clientToDispose.destroy();
+    } catch {}
+  }
 
   async init(): Promise<boolean> {
     if (this.client && this.isConnected && this.client.connected) return true;
@@ -216,12 +246,7 @@ export class TgStreamClient {
         this.isConnecting = true;
         this.notifyStatus();
 
-        if (this.client) {
-          try {
-            await this.client.disconnect();
-          } catch {}
-          this.client = null;
-        }
+        await this.disposeClient();
 
         this.client = this.createClient(sessionStr);
 
@@ -232,7 +257,24 @@ export class TgStreamClient {
 
         await Promise.race([connectPromise, timeoutPromise]);
 
-        if (await this.client.isUserAuthorized()) {
+        let authorized = false;
+        try {
+          authorized = await this.client.isUserAuthorized();
+        } catch (authCheckErr: unknown) {
+          if (this.isAuthInvalidError(authCheckErr)) {
+            console.warn("[TgStreamClient] Saved session authorization key is no longer valid. Clearing session.");
+            await this.disposeClient();
+            await clearSavedSession();
+            this.user = null;
+            this.isConnected = false;
+            this.isConnecting = false;
+            this.notifyStatus();
+            return false;
+          }
+          throw authCheckErr;
+        }
+
+        if (authorized) {
           const me = await this.client.getMe();
           this.user = {
             id: String(me.id || ""),
@@ -264,13 +306,24 @@ export class TgStreamClient {
           this.notifyStatus();
           return true;
         } else {
+          console.warn("[TgStreamClient] Saved session is unauthorized. Clearing stale session.");
+          await this.disposeClient();
+          await clearSavedSession();
+          this.user = null;
           this.isConnected = false;
           this.isConnecting = false;
           this.notifyStatus();
           return false;
         }
-      } catch (err: any) {
-        console.error("[TgStreamClient] Failed to connect TelegramClient:", err);
+      } catch (err: unknown) {
+        if (this.isAuthInvalidError(err)) {
+          console.warn("[TgStreamClient] MTProto session expired or unregistered. Resetting to login screen.");
+          await clearSavedSession();
+          this.user = null;
+        } else {
+          console.warn("[TgStreamClient] Could not restore TelegramClient session:", err);
+        }
+        await this.disposeClient();
         this.isConnected = false;
         this.isConnecting = false;
         this.notifyStatus();
@@ -288,8 +341,14 @@ export class TgStreamClient {
     onQrUrl: (url: string) => void,
     onNeeds2FA: (hint?: string) => Promise<string>
   ): Promise<{ session: string; user: TelegramUserProfile }> {
+    const runId = ++this.qrLoginRunId;
     const config = await getTgConfig();
-    this.client = this.createClient("");
+    await this.disposeClient();
+    if (runId !== this.qrLoginRunId) {
+      throw new Error("QR_LOGIN_CANCELLED");
+    }
+    const qrClient = this.createClient("");
+    this.client = qrClient;
 
     const connectPromise = this.client.connect();
     const timeoutPromise = new Promise((_, reject) =>
@@ -452,8 +511,10 @@ export class TgStreamClient {
 
   // 2. Send Login Code via Phone Number
   async sendCode(phoneNumber: string) {
+    this.qrLoginRunId++;
     const config = await getTgConfig();
     this.phoneNumber = phoneNumber.trim();
+    await this.disposeClient();
     this.client = this.createClient("");
     await this.client.connect();
 

@@ -151,11 +151,12 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
           </label>
           <Input
             type="text"
+            inputMode="numeric"
             placeholder="24581903"
             value={apiId}
             onChange={(e) => setApiId(e.target.value)}
             disabled={isSaving}
-            className="h-8.5 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+            className="h-11 sm:h-9 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
           />
         </div>
 
@@ -170,7 +171,7 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
             value={apiHash}
             onChange={(e) => setApiHash(e.target.value)}
             disabled={isSaving}
-            className="h-8.5 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
+            className="h-11 sm:h-9 bg-white/[0.03] border-white/[0.1] rounded-[4px] text-base sm:text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:border-white/30"
           />
         </div>
 
@@ -178,7 +179,7 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
           <Button
             type="submit"
             disabled={isSaving}
-            className="w-full h-8.5 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] transition-all flex items-center justify-center gap-1.5"
+            className="w-full h-11 sm:h-9 text-xs font-medium bg-white/[0.09] hover:bg-white/[0.16] text-white border border-white/[0.18] rounded-[4px] transition-all flex items-center justify-center gap-1.5"
           >
             <span>{isSaving ? "Saving..." : "Save Credentials & Proceed"}</span>
             <ArrowRight className="h-3.5 w-3.5 stroke-[1.75px]" />
@@ -189,12 +190,12 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
             <button
               type="button"
               onClick={() => setShowDemoConfirm(true)}
-              className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 text-center transition-colors pt-1"
+              className="min-h-[36px] sm:min-h-0 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 text-center transition-colors py-1"
             >
               Or proceed with Telegram Public Test Keys (Rate Limited) →
             </button>
           ) : (
-            <div className="rounded-[4px] border border-amber-500/20 bg-amber-500/5 p-2 text-[10px] text-amber-300 space-y-1.5">
+            <div className="rounded-[4px] border border-amber-500/20 bg-amber-500/5 p-2.5 text-[10px] text-amber-300 space-y-2">
               <div className="flex items-center gap-1 font-medium">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
                 <span>Notice: Telegram Flood Wait Risk</span>
@@ -206,14 +207,14 @@ export const ApiCredentialsCard: React.FC<ApiCredentialsCardProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowDemoConfirm(false)}
-                  className="px-2 py-0.5 text-zinc-400 hover:text-white transition-colors"
+                  className="h-8 sm:h-6 px-2.5 text-zinc-400 hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleUseDemo}
-                  className="px-2 py-0.5 rounded-[3px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 transition-colors font-mono"
+                  className="h-8 sm:h-6 px-2.5 rounded-[3px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 transition-colors font-mono"
                 >
                   Proceed Anyway
                 </button>

@@ -16,13 +16,15 @@ export const QrLoginTab: React.FC = () => {
 
   const { setUser } = useAuthStore();
 
+  const mountedRef = useRef(true);
+
   const handleStartQr = useCallback(async () => {
     setIsLoading(true);
 
     try {
       const result = await tgStreamClient.startQrLogin(
         (url) => {
-          if (canvasRef.current) {
+          if (mountedRef.current && canvasRef.current) {
             QRCode.toCanvas(canvasRef.current, url, {
               width: 180,
               margin: 1,
@@ -43,17 +45,23 @@ export const QrLoginTab: React.FC = () => {
         }
       );
 
+      if (!mountedRef.current) return;
       toast.success(`Connected as ${result.user.firstName || "Telegram User"}`);
       setUser(result.user);
     } catch (err: any) {
-      console.error("QR Login failed:", err);
+      if (!mountedRef.current || err?.message === "QR_LOGIN_CANCELLED") return;
+      console.warn("QR Login failed:", err);
       setIsLoading(false);
       toast.error(err.message || "Failed to establish Telegram connection.");
     }
   }, [setUser]);
 
   useEffect(() => {
+    mountedRef.current = true;
     handleStartQr();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [handleStartQr]);
 
   const handleTwoFaSubmit = (pass: string) => {
@@ -99,12 +107,12 @@ export const QrLoginTab: React.FC = () => {
       </div>
 
       {/* Archival Step Telemetry */}
-      <div className="w-full rounded-[4px] border border-white/[0.07] bg-white/[0.02] p-2.5 space-y-2 text-left">
+      <div className="w-full rounded-[4px] border border-white/[0.07] bg-white/[0.02] p-3 sm:p-2.5 space-y-2 text-left">
         <div className="flex items-center gap-1.5 text-xs font-medium text-white pb-0.5">
           <Smartphone className="h-3.5 w-3.5 text-zinc-300 stroke-[1.5px]" />
           <span>Scan with Telegram Mobile</span>
         </div>
-        <div className="space-y-1.5 font-sans text-[11px] text-zinc-400">
+        <div className="space-y-1.5 font-sans text-xs sm:text-[11px] text-zinc-400">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[9px] text-zinc-300 bg-white/[0.05] border border-white/[0.08] px-1 rounded-[2px]">01</span>
             <span>Open <strong className="text-zinc-200 font-medium">Telegram</strong> on your phone</span>
@@ -124,9 +132,9 @@ export const QrLoginTab: React.FC = () => {
         variant="ghost"
         size="sm"
         onClick={handleStartQr}
-        className="h-7 gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white rounded-[3px] border border-transparent hover:border-white/[0.08] hover:bg-white/[0.04] active:scale-[0.98] transition-all"
+        className="h-10 sm:h-7 px-3 gap-1.5 text-xs sm:text-[11px] font-mono text-zinc-400 hover:text-white rounded-[4px] sm:rounded-[3px] border border-white/[0.08] sm:border-transparent hover:border-white/[0.08] hover:bg-white/[0.04] active:scale-[0.98] transition-all"
       >
-        <RefreshCw className="h-3 w-3 stroke-[1.5px]" />
+        <RefreshCw className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[1.5px]" />
         Regenerate QR
       </Button>
 

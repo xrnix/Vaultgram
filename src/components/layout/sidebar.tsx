@@ -148,21 +148,22 @@ export const Sidebar: React.FC = () => {
     <div className="flex h-full flex-col bg-[#121215] select-none text-zinc-300">
       {/* Mobile Drawer Header */}
       {isMobile && (
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#121215]/95 backdrop-blur-md">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#121215]/95 backdrop-blur-md pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-[3px] bg-white/[0.06] border border-white/[0.1] text-zinc-100 shadow-sm">
+            <div className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/[0.06] border border-white/[0.1] text-zinc-100 shadow-sm">
               <HardDrive className="h-3.5 w-3.5 stroke-[1.5px]" />
             </div>
             <span className="font-semibold text-xs tracking-tight text-white font-sans">
               Vaultgram
             </span>
-            <span className="font-mono text-[9px] text-zinc-500 uppercase px-1.5 py-0.2 rounded-[2px] bg-white/[0.04] border border-white/[0.06]">
+            <span className="font-mono text-[9px] text-zinc-500 uppercase px-1.5 py-0.5 rounded-[2px] bg-white/[0.04] border border-white/[0.06]">
               MTProto
             </span>
           </div>
           <button
+            type="button"
             onClick={() => setMobileSidebarOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-[4px] text-zinc-400 hover:text-white hover:bg-white/[0.08] active:scale-95 transition-all"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4 stroke-[1.5px]" />
@@ -184,11 +185,17 @@ export const Sidebar: React.FC = () => {
             </span>
             <button
               type="button"
-              onClick={() => setCreateVaultOpen(true)}
-              className="p-1 rounded-[3px] bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors"
+              onClick={() => {
+                if (isMobile) setMobileSidebarOpen(false);
+                setCreateVaultOpen(true);
+              }}
+              className={cn(
+                "flex items-center justify-center rounded-[3px] bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors",
+                isMobile ? "h-8 w-8" : "p-1"
+              )}
               title="Create new private storage vault"
             >
-              <Plus className="h-3 w-3 text-[#c49b56]" />
+              <Plus className="h-3.5 w-3.5 sm:h-3 sm:w-3 text-[#c49b56]" />
             </button>
           </div>
         </div>
@@ -199,9 +206,15 @@ export const Sidebar: React.FC = () => {
             {/* Create New Storage Vault Tile */}
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={() => setCreateVaultOpen(true)}
+              onClick={() => {
+                if (isMobile) setMobileSidebarOpen(false);
+                setCreateVaultOpen(true);
+              }}
               title="Create new private storage vault"
-              className="relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2 py-1.5 text-xs bg-white/[0.02] text-zinc-400 border border-dashed border-white/[0.12] hover:text-white hover:border-white/[0.25] hover:bg-white/[0.05] transition-all"
+              className={cn(
+                "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs bg-white/[0.02] text-zinc-400 border border-dashed border-white/[0.12] hover:text-white hover:border-white/[0.25] hover:bg-white/[0.05] transition-all",
+                isMobile ? "h-9" : "py-1.5"
+              )}
             >
               <Plus className="h-3 w-3 stroke-[2px] text-[#c49b56]" />
               <span className="font-sans text-[11px]">New</span>
@@ -210,9 +223,13 @@ export const Sidebar: React.FC = () => {
             {/* Unified View Tile */}
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={() => setActiveChannel("UNIFIED")}
+              onClick={() => {
+                setActiveChannel("UNIFIED");
+                if (isMobile) setMobileSidebarOpen(false);
+              }}
               className={cn(
-                "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 py-1.5 text-xs transition-colors",
+                "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs transition-colors",
+                isMobile ? "h-9" : "py-1.5",
                 activeChannelId === "UNIFIED"
                   ? "text-white font-medium"
                   : "bg-white/[0.03] text-zinc-400 border border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.06]"
@@ -236,10 +253,14 @@ export const Sidebar: React.FC = () => {
                 <motion.button
                   key={ch.id}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setActiveChannel(ch.id)}
+                  onClick={() => {
+                    setActiveChannel(ch.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
                   title={ch.title}
                   className={cn(
-                    "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2 py-1.5 text-xs transition-colors",
+                    "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs transition-colors",
+                    isMobile ? "h-9" : "py-1.5",
                     isAct
                       ? "text-white font-medium"
                       : "bg-white/[0.03] text-zinc-400 border border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.06]"
@@ -288,9 +309,13 @@ export const Sidebar: React.FC = () => {
                   animate={isMobile ? { opacity: 1, x: 0, filter: "blur(0px)" } : false}
                   transition={isMobile ? { duration: 0.25, delay: 0.03 + idx * 0.025 } : undefined}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveFilter(item.id)}
+                  onClick={() => {
+                    setActiveFilter(item.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
                   className={cn(
-                    "relative flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    "relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    isMobile ? "h-10" : "h-8",
                     isAct
                       ? "text-white font-medium"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
@@ -333,9 +358,13 @@ export const Sidebar: React.FC = () => {
                   animate={isMobile ? { opacity: 1, x: 0, filter: "blur(0px)" } : false}
                   transition={isMobile ? { duration: 0.25, delay: 0.18 + idx * 0.025 } : undefined}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveFilter(item.id)}
+                  onClick={() => {
+                    setActiveFilter(item.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
                   className={cn(
-                    "relative flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    "relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    isMobile ? "h-10" : "h-8",
                     isAct
                       ? "text-white font-medium"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
@@ -358,7 +387,7 @@ export const Sidebar: React.FC = () => {
                       className={cn(
                         "relative z-10 font-mono text-[10px] tabular-nums",
                         item.isBadge
-                          ? "px-1.5 py-0.2 rounded-full bg-white/[0.08] text-white border border-white/[0.16]"
+                          ? "px-1.5 py-0.5 rounded-[3px] bg-white/[0.08] text-white border border-white/[0.16]"
                           : "text-zinc-500"
                       )}
                     >
@@ -398,7 +427,8 @@ export const Sidebar: React.FC = () => {
                   <div
                     key={folder.id}
                     className={cn(
-                      "group relative flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                      "group relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                      isMobile ? "h-10" : "h-8",
                       isAct
                         ? "text-white font-medium"
                         : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
@@ -408,8 +438,11 @@ export const Sidebar: React.FC = () => {
                       <div className="absolute inset-0 rounded-[4px] bg-white/[0.08] border border-white/[0.14] -z-0" />
                     )}
                     <button
-                      onClick={() => setActiveFilter(folder.id)}
-                      className="relative z-10 flex flex-1 items-center gap-2 text-left truncate"
+                      onClick={() => {
+                        setActiveFilter(folder.id);
+                        if (isMobile) setMobileSidebarOpen(false);
+                      }}
+                      className="relative z-10 flex flex-1 items-center gap-2 text-left truncate h-full"
                     >
                       <Folder className="h-3.5 w-3.5 shrink-0 stroke-[1.5px] text-zinc-400" />
                       <span className="truncate">{folder.name}</span>
@@ -419,9 +452,10 @@ export const Sidebar: React.FC = () => {
                         e.stopPropagation();
                         deleteCustomFolder(folder.id);
                       }}
-                      className="relative z-10 opacity-0 group-hover:opacity-100 hover:text-rose-400 transition-opacity p-0.5"
+                      className="relative z-10 opacity-75 md:opacity-0 md:group-hover:opacity-100 hover:text-rose-400 transition-opacity p-1.5"
+                      aria-label={`Delete folder ${folder.name}`}
                     >
-                      <Trash2 className="h-3 w-3 stroke-[1.5px]" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[1.5px]" />
                     </button>
                   </div>
                 );
@@ -435,12 +469,15 @@ export const Sidebar: React.FC = () => {
       <div className="border-t border-white/[0.07] p-3 bg-[#121215]/95 space-y-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Active Account Deck */}
         <div
-          onClick={() => setIsAccountSwitcherOpen(true)}
-          className="group flex items-center justify-between p-2 rounded-[4px] border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.14] transition-all cursor-pointer"
+          onClick={() => {
+            if (isMobile) setMobileSidebarOpen(false);
+            setIsAccountSwitcherOpen(true);
+          }}
+          className="group flex items-center justify-between p-2.5 sm:p-2 rounded-[4px] border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.14] transition-all cursor-pointer"
           title="Switch Account / Manage Profiles"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.15] text-white text-[10px] font-mono font-medium">
+            <div className="flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.15] text-white text-[10px] font-mono font-medium">
               {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
             </div>
             <div className="min-w-0">
@@ -491,8 +528,11 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center justify-between pt-0.5">
           <button
             type="button"
-            onClick={() => setNetworkMonitorOpen(true)}
-            className="flex items-center gap-1.5 text-xs text-zinc-300 font-medium hover:text-white transition-colors group cursor-pointer"
+            onClick={() => {
+              if (isMobile) setMobileSidebarOpen(false);
+              setNetworkMonitorOpen(true);
+            }}
+            className="flex items-center gap-1.5 min-h-[36px] text-xs text-zinc-300 font-medium hover:text-white transition-colors group cursor-pointer"
             title="View MTProto Network & DC Latency Telemetry"
           >
             <span className="relative flex h-2 w-2">
@@ -509,7 +549,10 @@ export const Sidebar: React.FC = () => {
               if (isMobile) setMobileSidebarOpen(false);
               setSettingsOpen(true);
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors text-xs font-mono"
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors text-xs font-mono",
+              isMobile ? "h-9" : "py-1"
+            )}
             title="Settings & Preferences"
           >
             <Settings className="h-3.5 w-3.5 stroke-[1.5px]" />
@@ -523,7 +566,7 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex h-screen w-72 flex-col border-r border-white/[0.07] bg-[#121215] select-none shrink-0 z-30">
+      <aside className="hidden md:flex h-[100dvh] w-72 flex-col border-r border-white/[0.07] bg-[#121215] select-none shrink-0 z-30">
         {renderContent(false)}
       </aside>
 
@@ -571,7 +614,7 @@ export const Sidebar: React.FC = () => {
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               autoFocus
-              className="bg-white/[0.03] border-white/[0.1] text-xs text-zinc-100 placeholder:text-zinc-500 rounded-[4px]"
+              className="h-10 sm:h-9 bg-white/[0.03] border-white/[0.1] text-base sm:text-xs text-zinc-100 placeholder:text-zinc-500 rounded-[4px]"
             />
             <div className="flex justify-end gap-2">
               <Button

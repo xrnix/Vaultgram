@@ -342,30 +342,30 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 10 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-5xl h-[92vh] sm:h-[88vh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-full max-w-5xl h-[94dvh] sm:h-[88dvh] bg-[#121215] border border-white/[0.1] rounded-[6px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
-            <div className="flex items-center gap-3 min-w-0 mr-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
-                <Archive className="h-4.5 w-4.5 stroke-[1.5px]" />
+          <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 border-b border-white/[0.08] bg-[#121215]/95 shrink-0 gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
+                <Archive className="h-4 w-4 stroke-[1.5px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-medium font-sans text-white truncate">
+                  <h2 className="text-xs sm:text-sm font-medium font-sans text-white truncate">
                     {file.name}
                   </h2>
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 border border-[#c49b56]/30 px-2 py-0.5 rounded-[3px] shrink-0">
+                  <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 border border-[#c49b56]/30 px-2 py-0.5 rounded-[3px] shrink-0">
                     Archive Explorer
                   </span>
                 </div>
-                <div className="text-[11px] text-zinc-500 font-mono truncate flex items-center gap-2 mt-0.5">
-                  <span>Compressed: {formatBytes(file.size)}</span>
-                  <span>•</span>
-                  <span>Uncompressed: {formatBytes(totalUncompressed)}</span>
+                <div className="text-[10px] sm:text-[11px] text-zinc-500 font-mono truncate flex items-center gap-1.5 sm:gap-2 mt-0.5">
+                  <span>{formatBytes(file.size)}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">Uncompressed: {formatBytes(totalUncompressed)}</span>
                   <span>•</span>
                   <span>{entries.length} items</span>
                 </div>
@@ -373,20 +373,21 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Button
                 size="sm"
                 onClick={() => onDownloadFullArchive(file)}
-                className="h-8 px-3.5 text-xs rounded-[6px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] gap-2 active:scale-[0.98] transition-all"
+                className="h-9 w-9 sm:h-8 sm:w-auto p-0 sm:px-3.5 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] gap-2 active:scale-[0.98] transition-all"
               >
-                <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
+                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5 stroke-[1.5px]" />
                 <span className="hidden sm:inline">Download Archive</span>
               </Button>
 
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors ml-1"
+                className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
                 title="Close (Esc)"
+                aria-label="Close archive viewer"
               >
                 <X className="w-4 h-4 stroke-[1.5px]" />
               </button>
@@ -394,15 +395,15 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
           </div>
 
           {/* Sub-toolbar: Search within Archive */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-2.5 border-b border-white/[0.06] bg-[#0d0d10] text-xs shrink-0">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+          <div className="flex items-center justify-between px-3.5 sm:px-6 py-2.5 border-b border-white/[0.06] bg-[#0d0d10] text-xs shrink-0 gap-3">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
               <input
                 type="text"
                 placeholder="Search files inside archive..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 font-mono text-xs bg-white/[0.03] border border-white/[0.08] rounded-[6px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
+                className="w-full h-10 sm:h-9 pl-9 pr-3 font-mono text-base sm:text-xs bg-white/[0.03] border border-white/[0.08] rounded-[5px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
               />
             </div>
 
@@ -490,8 +491,9 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
                           <span className="tabular-nums text-zinc-400">{formatBytes(entry.size)}</span>
                           <button
                             onClick={(e) => handleExtractSingle(e, entry)}
-                            className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                             title={`Extract ${entry.name}`}
+                            aria-label={`Extract ${entry.name}`}
                           >
                             <Download className="w-3.5 h-3.5 stroke-[1.5px]" />
                           </button>
@@ -504,30 +506,30 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
               )}
             </div>
 
-            {/* In-Modal File Preview Drawer (for text/images inside the archive) */}
+            {/* In-Modal File Preview Drawer (Full overlay on mobile, split pane on desktop) */}
             {previewEntry && (
-              <div className="w-full sm:w-1/2 border-l border-white/[0.08] bg-[#0c0c0f] flex flex-col z-10 shrink-0">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08] bg-[#121215]">
-                  <div className="flex items-center gap-2 min-w-0">
+              <div className="absolute inset-0 z-20 sm:static sm:w-1/2 border-l border-white/[0.08] bg-[#0c0c0f] flex flex-col shrink-0">
+                <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 border-b border-white/[0.08] bg-[#121215]">
+                  <div className="flex items-center gap-2 min-w-0 mr-2">
                     <FileText className="w-4 h-4 text-[#e6cfa3] shrink-0" />
                     <span className="text-xs font-mono text-white truncate font-medium">
                       {previewEntry.entry.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => handleExtractSingle(e, previewEntry.entry)}
-                      className="p-1.5 text-zinc-400 hover:text-white rounded-[4px] hover:bg-white/[0.06] transition-colors"
+                      className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center text-zinc-400 hover:text-white rounded-[4px] hover:bg-white/[0.06] transition-colors"
                       title="Extract file"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <button
                       onClick={() => setPreviewEntry(null)}
-                      className="p-1.5 text-zinc-400 hover:text-white rounded-[4px] hover:bg-white/[0.06] transition-colors"
+                      className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center text-zinc-400 hover:text-white rounded-[4px] hover:bg-white/[0.06] transition-colors"
                       title="Close preview"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -543,7 +545,7 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
                       <img
                         src={previewEntry.blobUrl}
                         alt={previewEntry.entry.name}
-                        className="max-h-[50vh] object-contain rounded-[3px] shadow-lg border border-white/[0.08]"
+                        className="max-h-[55dvh] object-contain rounded-[3px] shadow-lg border border-white/[0.08]"
                       />
                     </div>
                   ) : previewEntry.text !== undefined ? (
@@ -557,7 +559,7 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
           </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[10px] sm:text-[11px] font-mono text-zinc-500 shrink-0">
             <button
               onClick={copyReference}
               className="hover:text-zinc-300 flex items-center gap-1.5 transition-colors"
@@ -568,9 +570,9 @@ export const ArchiveViewerModal: React.FC<ArchiveViewerModalProps> = ({
             </button>
 
             <div className="flex items-center gap-2">
-              <span>Client-Side JSZip Extraction</span>
-              <span>•</span>
-              <span>Zero Server Decompression</span>
+              <span>Client-Side JSZip</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">Zero Server Decompression</span>
             </div>
           </div>
         </motion.div>

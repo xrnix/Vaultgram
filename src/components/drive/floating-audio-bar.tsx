@@ -29,7 +29,7 @@ export const FloatingAudioBar: React.FC = () => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
-        className="specimen-card hairline-sheen fixed bottom-3 sm:bottom-4 left-2.5 right-2.5 sm:left-auto sm:right-4 z-40 flex items-center gap-2.5 sm:gap-3 p-2 pr-3 rounded-[6px] text-zinc-200 sm:max-w-md select-none"
+        className="specimen-card hairline-sheen fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4 left-2.5 right-2.5 md:left-auto md:right-4 z-40 flex items-center gap-2.5 sm:gap-3 p-2 pr-2.5 sm:pr-3 rounded-[6px] text-zinc-200 md:max-w-md select-none"
       >
         {/* Progress Bar Top Sheen */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-white/[0.08] overflow-hidden rounded-t-[6px]">
@@ -56,13 +56,13 @@ export const FloatingAudioBar: React.FC = () => {
           onClick={openModal}
           className="min-w-0 flex-1 cursor-pointer hover:opacity-90 transition-opacity"
         >
-          <div className="text-xs font-medium text-white truncate max-w-[160px] sm:max-w-[200px] font-sans">
+          <div className="text-xs font-medium text-white truncate font-sans">
             {currentTrack.name}
           </div>
           <div className="text-[10px] font-mono text-zinc-500 truncate flex items-center gap-1.5">
-            <span>{currentTrack.channelTitle}</span>
+            <span className="truncate">{currentTrack.channelTitle}</span>
             {isPlaying && (
-              <span className="flex items-end gap-[2px] h-3 text-[#c49b56] ml-1">
+              <span className="flex items-end gap-[2px] h-3 text-[#c49b56] ml-1 shrink-0">
                 <span className="w-0.5 bg-[#c49b56] rounded-full animate-equalize-1" />
                 <span className="w-0.5 bg-[#e6cfa3] rounded-full animate-equalize-2" />
                 <span className="w-0.5 bg-[#c49b56] rounded-full animate-equalize-3" />
@@ -77,7 +77,7 @@ export const FloatingAudioBar: React.FC = () => {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={togglePlay}
-            className="h-7 w-7 rounded-full bg-white/[0.1] hover:bg-white/[0.2] border border-white/[0.12] text-white flex items-center justify-center transition-all shadow-sm"
+            className="h-9 w-9 sm:h-7 sm:w-7 rounded-full bg-white/[0.1] hover:bg-white/[0.2] border border-white/[0.12] text-white flex items-center justify-center transition-all shadow-sm"
             title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
@@ -91,17 +91,17 @@ export const FloatingAudioBar: React.FC = () => {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={nextTrack}
-              className="h-7 w-7 rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
+              className="h-9 w-9 sm:h-7 sm:w-7 rounded-[4px] sm:rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
               title="Next Track"
             >
-              <SkipForward className="w-3.5 h-3.5" />
+              <SkipForward className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             </motion.button>
           )}
 
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={openModal}
-            className="h-7 w-7 rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
+            className="hidden sm:flex h-7 w-7 rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] items-center justify-center transition-colors"
             title="Expand Full Player"
           >
             <Maximize2 className="w-3 h-3 stroke-[1.5px]" />
@@ -110,10 +110,10 @@ export const FloatingAudioBar: React.FC = () => {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={stop}
-            className="h-7 w-7 rounded-[3px] text-zinc-500 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
+            className="h-9 w-9 sm:h-7 sm:w-7 rounded-[4px] sm:rounded-[3px] text-zinc-500 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
             title="Stop & Close"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
           </motion.button>
         </div>
       </motion.div>

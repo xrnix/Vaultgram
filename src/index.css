@@ -40,11 +40,26 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html,
+  body {
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-white/10 selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Hide scrollbars cleanly for mobile horizontal pill strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Micro scrollbar */

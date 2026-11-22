@@ -44,6 +44,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [activeSection, setActiveSection] = useState<SettingsSection>("general");
   const [isPurgingCache, setIsPurgingCache] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const {
     channels,
@@ -69,17 +71,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const activeTransfers = tasks.filter((t) => t.status === "ACTIVE" || t.status === "QUEUED").length;
 
   const handlePurgeCache = async () => {
-    if (!window.confirm("Purge local IndexedDB cache? Vaultgram will re-index your Telegram channels on next load.")) {
+    if (!confirmPurge) {
+      setConfirmPurge(true);
+      setTimeout(() => setConfirmPurge(false), 5000);
       return;
     }
+    setConfirmPurge(false);
     setIsPurgingCache(true);
     try {
       await clearAllChannelFilesFromDb();
       toast.success("Local catalog cache purged. Re-indexing channels...");
       onClose();
       await refreshIndex();
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to purge cache");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to purge cache";
+      toast.error(msg);
     } finally {
       setIsPurgingCache(false);
     }
@@ -104,22 +110,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="relative z-10 flex flex-col w-full max-w-2xl max-h-[90vh] bg-[#121215] border border-white/[0.1] rounded-[8px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
+          className="relative z-10 flex flex-col w-full max-w-2xl max-h-[92dvh] bg-[#121215] border border-white/[0.1] rounded-[6px] shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden backdrop-blur-2xl"
         >
           {/* Top Hairline Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/[0.08] bg-[#121215]/95 shrink-0">
             <div className="flex items-center gap-3 min-w-0 mr-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
-                <Settings className="h-4.5 w-4.5 stroke-[1.5px]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] text-[#e6cfa3] shrink-0">
+                <Settings className="h-4 w-4 stroke-[1.5px]" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-medium font-sans text-white truncate">
-                  Vaultgram Preferences &amp; Settings
+                  Vaultgram Preferences
                 </h2>
-                <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                <div className="text-[11px] text-zinc-500 font-mono mt-0.5 truncate">
                   Decentralized Telegram Cloud Management
                 </div>
               </div>
@@ -127,19 +133,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors"
+              className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-[4px] transition-colors shrink-0"
               title="Close (Esc)"
+              aria-label="Close settings"
             >
               <X className="w-4 h-4 stroke-[1.5px]" />
             </button>
           </div>
 
           {/* Navigation Sub-Tabs (Scrollable horizontally on mobile with Spring Underline) */}
-          <div className="flex items-center border-b border-white/[0.06] bg-[#0d0d10] px-4 sm:px-6 gap-1 overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center border-b border-white/[0.06] bg-[#0d0d10] px-3 sm:px-6 gap-1 overflow-x-auto no-scrollbar shrink-0">
             {[
               { id: "general", label: "General" },
-              { id: "transfers", label: "Downloads & Queue" },
-              { id: "storage", label: "Storage & Vaults" },
+              { id: "transfers", label: "Downloads" },
+              { id: "storage", label: "Storage" },
               { id: "account", label: "Account" },
               { id: "diagnostics", label: "Diagnostics" },
             ].map((tab) => {
@@ -149,7 +156,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   key={tab.id}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => setActiveSection(tab.id as SettingsSection)}
-                  className={`relative py-2.5 px-3 text-xs font-mono font-medium transition-colors whitespace-nowrap ${
+                  className={`relative min-h-[42px] sm:min-h-0 py-2.5 px-3 text-xs font-mono font-medium transition-colors whitespace-nowrap ${
                     isAct ? "text-[#e6cfa3]" : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
@@ -167,7 +174,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Body Content with AnimatePresence */}
-          <div className="p-5 sm:p-7 overflow-y-auto no-scrollbar space-y-6 text-xs font-sans bg-[#09090b] flex-1">
+          <div className="p-4 sm:p-6 overflow-y-auto no-scrollbar space-y-4 sm:space-y-6 text-xs font-sans bg-[#09090b] flex-1">
             <AnimatePresence mode="wait">
               {/* 1. GENERAL TAB */}
               {activeSection === "general" && (
@@ -177,11 +184,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="space-y-4"
+                  className="space-y-3.5 sm:space-y-4"
                 >
                   {/* View Mode Selection */}
                   <div className="specimen-card hairline-sheen rounded-[6px] p-4 space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <span className="text-xs font-medium text-white block">Default View Layout</span>
                         <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
@@ -189,12 +196,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex items-center rounded-[5px] border border-white/[0.08] bg-white/[0.03] p-0.5">
+                      <div className="flex items-center rounded-[5px] border border-white/[0.08] bg-white/[0.03] p-0.5 w-full sm:w-auto">
                         <motion.button
                           whileTap={{ scale: 0.96 }}
                           onClick={() => setViewMode("grid")}
                           className={cn(
-                            "relative flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-mono transition-colors",
+                            "relative flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:px-2.5 sm:py-1 rounded-[4px] text-xs font-mono transition-colors",
                             viewMode === "grid" ? "text-white font-medium" : "text-zinc-400 hover:text-zinc-200"
                           )}
                         >
@@ -212,7 +219,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           whileTap={{ scale: 0.96 }}
                           onClick={() => setViewMode("list")}
                           className={cn(
-                            "relative flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-mono transition-colors",
+                            "relative flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:px-2.5 sm:py-1 rounded-[4px] text-xs font-mono transition-colors",
                             viewMode === "list" ? "text-white font-medium" : "text-zinc-400 hover:text-zinc-200"
                           )}
                         >
@@ -231,14 +238,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
 
                   {/* Keyboard Shortcuts */}
-                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <span className="text-xs font-medium text-white block">Keyboard Shortcuts Reference</span>
                       <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                         View hotkeys for rapid navigation, cinema player, and batch management.
                       </span>
                     </div>
-                    <motion.div whileTap={{ scale: 0.96 }}>
+                    <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
@@ -246,7 +253,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClose();
                           setShortcutsOpen(true);
                         }}
-                        className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                        className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                       >
                         <Keyboard className="w-3.5 h-3.5" />
                         <span>View Hotkeys</span>
@@ -268,16 +275,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 {/* Removable Download Bar / Transfer Dock Toggle */}
                 <div className="specimen-card hairline-sheen rounded-[6px] p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <span className="text-xs font-medium text-white">Floating Download &amp; Transfer Queue</span>
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 px-1.5 py-0.2 rounded-[2px] border border-[#c49b56]/30">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/15 px-1.5 py-0.5 rounded-[2px] border border-[#c49b56]/30">
                           Toggle
                         </span>
                       </div>
                       <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                        Show the bottom-right real-time upload and download progress widget. You can turn this off anytime to keep your canvas completely distraction-free.
+                        Show the real-time upload and download progress widget. Turn this off anytime to keep your canvas distraction-free.
                       </p>
                     </div>
 
@@ -293,7 +300,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         toast.success(next ? "Download dock enabled" : "Download dock hidden");
                       }}
                       className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full p-[2px] transition-colors duration-200 ease-in-out focus:outline-none",
+                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full p-[2px] transition-colors duration-200 ease-in-out focus:outline-none mt-0.5 sm:mt-0",
                         showTransferDock ? "bg-[#c49b56] shadow-[0_0_12px_rgba(196,155,86,0.4)]" : "bg-white/[0.1]"
                       )}
                     >
@@ -315,21 +322,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Full-Page Transfers Manager View */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Dedicated Transfers Page</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Switch main canvas to the full Transfer Manager to inspect speed, pause, or resume all tasks.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       onClick={() => {
                         onClose();
                         setActiveFilter("TRANSFERS");
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.14] gap-1.5 shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.14] gap-1.5 shrink-0"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Open Transfers</span>
@@ -338,14 +345,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Clear Finished Tasks */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Clear Finished Transfers</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Remove completed transfers from the history cache.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -353,7 +360,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         clearCompleted();
                         toast.success("Completed transfers cleared from queue");
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border-white/[0.08] shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border-white/[0.08] shrink-0"
                     >
                       Clear Completed
                     </Button>
@@ -370,24 +377,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="space-y-4"
+                className="space-y-3.5 sm:space-y-4"
               >
                 {/* Vault Provisioning */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Provision New Storage Vault</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Create an encrypted private Telegram channel for dedicated file hosting.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       onClick={() => {
                         onClose();
                         setCreateVaultOpen(true);
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-[#c49b56] hover:bg-[#d8ae69] text-black font-semibold gap-1.5 shrink-0 shadow-sm"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-[#c49b56] hover:bg-[#d8ae69] text-black font-semibold gap-1.5 shrink-0 shadow-sm"
                     >
                       <FolderPlus className="w-3.5 h-3.5" />
                       <span>Create Vault</span>
@@ -396,14 +403,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Storage Analytics */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Storage Intelligence &amp; Analytics</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Breakdown by video, image, document, archive, and channel quota.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -411,7 +418,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClose();
                         setAnalyticsOpen(true);
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                     >
                       <PieChart className="w-3.5 h-3.5" />
                       <span>View Analytics</span>
@@ -420,14 +427,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Channel Setup Wizard Re-run */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Reconfigure Vault Channels</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Rerun the onboarding wizard to add or remove Telegram channels from your drive.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -435,7 +442,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClose();
                         resetWizard();
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       <span>Reconfigure</span>
@@ -450,7 +457,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className="divide-y divide-white/[0.04]">
                     {channels.map((c) => (
-                      <div key={c.id} className="py-1.5 flex items-center justify-between">
+                      <div key={c.id} className="py-2 sm:py-1.5 flex items-center justify-between gap-2">
                         <span className="text-zinc-200 truncate">{c.title}</span>
                         <span className="text-zinc-500 text-[10px] shrink-0">{c.isSelf ? "Saved Messages" : `ID: ${c.id}`}</span>
                       </div>
@@ -468,41 +475,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="space-y-4"
+                className="space-y-3.5 sm:space-y-4"
               >
                 {/* Profile Card */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="specimen-inset flex h-10 w-10 items-center justify-center rounded-[5px] text-sm font-semibold text-white">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="specimen-inset flex h-10 w-10 items-center justify-center rounded-[5px] text-sm font-semibold text-white shrink-0">
                       {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-white font-sans flex items-center gap-1.5">
-                        <span>{user?.firstName || "Telegram User"}</span>
-                        {user?.lastName && <span className="text-zinc-400">{user.lastName}</span>}
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-white font-sans flex items-center gap-1.5 truncate">
+                        <span className="truncate">{user?.firstName || "Telegram User"}</span>
+                        {user?.lastName && <span className="text-zinc-400 truncate">{user.lastName}</span>}
                       </div>
-                      <div className="text-[11px] font-mono text-zinc-500 mt-0.5">
+                      <div className="text-[11px] font-mono text-zinc-500 mt-0.5 truncate">
                         {user?.username ? `@${user.username}` : `ID: ${user?.id || "MTProto"}`}
                         {user?.phone && ` · ${user.phone}`}
                       </div>
                     </div>
                   </div>
 
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[3px]">
+                  <span className="self-start sm:self-center font-mono text-[9px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[3px] shrink-0">
                     Authenticated
                   </span>
                 </div>
 
                 {/* Account Switcher */}
                 {onOpenAccountSwitcher && (
-                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <span className="text-xs font-medium text-white block">Multi-Account Switcher</span>
                       <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                         Switch between multiple logged-in Telegram accounts on this device.
                       </span>
                     </div>
-                    <motion.div whileTap={{ scale: 0.96 }}>
+                    <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
@@ -510,7 +517,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClose();
                           onOpenAccountSwitcher();
                         }}
-                        className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                        className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                       >
                         <Users className="w-3.5 h-3.5" />
                         <span>Switch Account</span>
@@ -521,14 +528,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* GramJS Session Export */}
                 {onOpenExport && (
-                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                  <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <span className="text-xs font-medium text-white block">Export Session String (GramJS)</span>
                       <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                         Export your encrypted MTProto authorization string for CLI or headless backups.
                       </span>
                     </div>
-                    <motion.div whileTap={{ scale: 0.96 }}>
+                    <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
@@ -536,7 +543,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClose();
                           onOpenExport();
                         }}
-                        className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                        className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                       >
                         <KeyRound className="w-3.5 h-3.5" />
                         <span>Export Session</span>
@@ -546,26 +553,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
 
                 {/* Logout Button */}
-                <div className="rounded-[6px] border border-rose-500/20 bg-rose-500/[0.03] p-4 flex items-center justify-between">
+                <div className="rounded-[6px] border border-rose-500/20 bg-rose-500/[0.03] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-rose-200 block">Log Out of Telegram</span>
                     <span className="text-[11px] text-rose-400/70 font-sans block mt-0.5">
                       Disconnect this browser session and clear stored session tokens.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        if (window.confirm("Are you sure you want to log out of Vaultgram?")) {
-                          logout();
+                        if (!confirmLogout) {
+                          setConfirmLogout(true);
+                          setTimeout(() => setConfirmLogout(false), 5000);
+                          return;
                         }
+                        setConfirmLogout(false);
+                        logout();
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30 gap-1.5 shrink-0 transition-colors"
+                      className={cn(
+                        "h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] gap-1.5 shrink-0 transition-colors",
+                        confirmLogout
+                          ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-400 font-medium"
+                          : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30"
+                      )}
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Log Out</span>
+                      <span>{confirmLogout ? "Confirm Log Out" : "Log Out"}</span>
                     </Button>
                   </motion.div>
                 </div>
@@ -580,17 +596,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="space-y-4"
+                className="space-y-3.5 sm:space-y-4"
               >
                 {/* MTProto Network & DC Diagnostics */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Network &amp; DC Diagnostics</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       View real-time MTProto WebSocket tunnels, data center latency, and connection health.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -598,7 +614,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClose();
                         setNetworkMonitorOpen(true);
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                     >
                       <Activity className="w-3.5 h-3.5" />
                       <span>Run Ping Diagnostics</span>
@@ -607,14 +623,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Force Channel Resync */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-white block">Sync Channel Index</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Check for new messages and files posted across your Telegram storage channels.
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -622,7 +638,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         toast.info("Syncing channel catalog...");
                         await refreshIndex();
                       }}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
+                      className="h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border-white/[0.1] gap-1.5 shrink-0"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       <span>Sync Index</span>
@@ -631,23 +647,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Purge Local IndexedDB Cache */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex items-center justify-between">
+                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-medium text-zinc-200 block">Purge Local IndexedDB Cache</span>
                     <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
                       Clear cached file metadata stored in your browser ({files.length} indexed records).
                     </span>
                   </div>
-                  <motion.div whileTap={{ scale: 0.96 }}>
+                  <motion.div whileTap={{ scale: 0.96 }} className="w-full sm:w-auto shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={isPurgingCache}
                       onClick={handlePurgeCache}
-                      className="h-8 px-3 text-xs rounded-[5px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border-white/[0.1] gap-1.5 shrink-0"
+                      className={cn(
+                        "h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] gap-1.5 shrink-0 transition-colors",
+                        confirmPurge
+                          ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-500/40"
+                          : "bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border-white/[0.1]"
+                      )}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>{isPurgingCache ? "Purging..." : "Purge Cache"}</span>
+                      <span>
+                        {isPurgingCache ? "Purging..." : confirmPurge ? "Tap Again to Purge" : "Purge Cache"}
+                      </span>
                     </Button>
                   </motion.div>
                 </div>
@@ -657,16 +680,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
-            <div className="flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5 text-[#c49b56]" />
-              <span>Vaultgram v2.0 · Zero Third-Party Proxies</span>
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Shield className="w-3.5 h-3.5 text-[#c49b56] shrink-0" />
+              <span className="truncate">Vaultgram v2.0 · Zero Proxies</span>
             </div>
 
             <Button
               size="sm"
               onClick={onClose}
-              className="h-8 px-4 text-xs rounded-[6px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] transition-all"
+              className="h-9 sm:h-8 px-4 text-xs rounded-[5px] bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.12] transition-all shrink-0"
             >
               Done
             </Button>
