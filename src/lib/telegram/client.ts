@@ -74,6 +74,7 @@ export class TgStreamClient {
 
     const client = new TelegramClient(stringSession, Number(config.apiId), String(config.apiHash), {
       transport: new WebSocketTransport(),
+      timeout: 25, // Generous dial/handshake timeout for high-latency transatlantic DCs (e.g. Pluto DC 1)
       connectionRetries: 5,
       downloadPool: {
         idleTimeoutMs: 300_000, // 5 minutes idle timeout so media DC connections stay warm
@@ -87,51 +88,108 @@ export class TgStreamClient {
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // FIX: Extend Teleproto Session watchdog timer for high-latency DCs
+    // FIX: Extend Teleproto Session watchdog timers & initial online grace period
     //
-    // By default, Teleproto's Session watchdog sets `readDisconnect = rtt * 3.5 = 7.0s`
-    // when online. On high-latency transatlantic DCs like Pluto DC 1 (Miami, ~300ms RTT),
-    // downloading a 512 KiB chunk across the ocean routinely takes 6-10s.
-    // Teleproto's 7.0s watchdog prematurely killed the WebSocket connection with:
-    // `Connection to dc 1 closed (lost: Error: Read timeout of 7.0s expired)`
-    // By giving at least 45 seconds before considering a read timed out,
-    // large chunks from Pluto finish streaming smoothly without socket drops!
+    // By default, Teleproto's Session watchdog sets:
+    //   - readDisconnect = rtt * 3.5 (~7.0s)
+    //   - setOnline() pulls lastPongAt and readMark back so BOTH pingDisconnect
+    //     and readDisconnect expire in just `timers.rtt` (2.0s!).
+    // On high-latency transatlantic DCs like Pluto DC 1 (Miami), WebSocket
+    // handshake + ImportAuthorization + 512 KiB chunk transfers easily exceed
+    // 2.0s–7.0s, causing premature socket drops and stale-bytes AUTH_BYTES_INVALID
+    // retries. Extending read/ping disconnect floors to 60s and giving non-main
+    // media senders a 15s initial RTT grace window eliminates spurious disconnects.
     // ─────────────────────────────────────────────────────────────────────────
     try {
-      const tempSender = (client as any)._makeSender(1, () => {});
+      const tempSender = (client as any)._makeSender(0, () => {});
+      (client as any)._dcenters?.states?.delete(0);
       const SessionProto = Object.getPrototypeOf(tempSender);
       if (SessionProto && typeof SessionProto.timers === "function" && !SessionProto.__vg_patched) {
         SessionProto.__vg_patched = true;
         const origTimers = SessionProto.timers;
         SessionProto.timers = function (now: number) {
           const res = origTimers.call(this, now);
-          if (res && typeof res.readDisconnect === "number") {
-            res.readDisconnect = Math.max(res.readDisconnect, 45);
+          if (res) {
+            if (typeof res.readDisconnect === "number") {
+              res.readDisconnect = Math.max(res.readDisconnect, 60);
+            }
+            if (typeof res.pingDisconnect === "number") {
+              res.pingDisconnect = Math.max(res.pingDisconnect, 60);
+            }
+            if (!this.isMain && typeof res.rtt === "number") {
+              res.rtt = Math.max(res.rtt, 15);
+            }
+            if (!this.isMain && typeof res.pingMust === "number") {
+              res.pingMust = Math.max(res.pingMust, 15);
+            }
           }
           return res;
         };
+
+        if (typeof SessionProto.setOnline === "function") {
+          const origSetOnline = SessionProto.setOnline;
+          SessionProto.setOnline = function (link: any, online: boolean, now: number) {
+            origSetOnline.call(this, link, online, now);
+            const timers = this.timers(now);
+            const minGraceMs = (this.isMain ? 12 : 20) * 1000;
+            const minPongAt = now - (timers.pingDisconnect * 1000 - minGraceMs);
+            const minReadAt = now - (timers.readDisconnect * 1000 - minGraceMs);
+            if (link.lastPongAt < minPongAt) {
+              link.lastPongAt = minPongAt;
+            }
+            if (typeof link.markRead === "function" && link.readMark < minReadAt) {
+              link.markRead(minReadAt);
+            }
+          };
+        }
       }
     } catch (_) {}
 
-    (client as any).invalidateDcAuthKey = (dcId: number) => {
+    (client as any).invalidateDcAuthKey = async (dcId: number) => {
       try {
+        // Never wipe the home DC auth key (that would log out the user session)
+        if (dcId === client.session.dcId) {
+          return;
+        }
         if (typeof window !== "undefined") {
           localStorage.removeItem(`vg_dc_${dcId}_auth_key`);
         }
         stringSession.setAuthKey(undefined, dcId);
-        (client as any)._network?.removeSession(dcId);
-        (client as any)._dcenters?.get(dcId)?.unauthorize();
+        const dcState = (client as any)._dcenters?.get(dcId);
+        if (dcState) {
+          dcState.unauthorize();
+          if (dcState.authKey && typeof dcState.authKey.setKey === "function") {
+            await dcState.authKey.setKey(undefined).catch(() => {});
+          }
+        }
+        // Purge ALL pooled slots (bare + shifted media/download/upload slots) for this DC
+        const pool = (client as any)._network;
+        if (pool?.slots instanceof Map) {
+          for (const shiftedKey of Array.from(pool.slots.keys()) as number[]) {
+            if (shiftedKey % 10000 === dcId) {
+              pool.removeSession(shiftedKey);
+            }
+          }
+        } else if (typeof pool?.removeSession === "function") {
+          pool.removeSession(dcId);
+        }
       } catch (_) {}
     };
 
     // ─────────────────────────────────────────────────────────────────────────
-    // FIX: Graceful authorization handling for Telegram Media DCs
+    // FIX: Reliable Cross-DC Authorization & Media Cluster Routing
     //
-    // Telegram media servers (like Pluto DC 1 or Venus DC 2) serve upload.getFile
-    // solely using the DH authKey + file_reference + access_hash.
-    // If auth.ExportAuthorization / ImportAuthorization returns AUTH_BYTES_INVALID,
-    // AUTH_KEY_UNREGISTERED, or DC_ID_INVALID, we must NOT destroy the sender or abort,
-    // as the DH key is fully valid for media downloads!
+    // 1. Telegram upload.getFile on a foreign DC (e.g. Pluto DC 1 when home DC
+    //    is Venus DC 2) STRICTLY requires auth.exportAuthorization ->
+    //    auth.importAuthorization to succeed on that DC's auth key. Swallowing
+    //    errors returns an unauthorized sender that immediately fails with
+    //    401 AUTH_KEY_UNREGISTERED.
+    // 2. Only route to the dedicated `-1` media cluster (e.g. pluto-1.web.telegram.org)
+    //    after the DC's auth key is BOTH created AND authorized; initial DH +
+    //    ImportAuthorization always runs against the primary DC WebSocket host
+    //    (pluto.web.telegram.org), with automatic fallback if `-1` fails.
+    // 3. Retry Export/ImportAuthorization with fresh single-use bytes on
+    //    transient failures / AUTH_BYTES_INVALID.
     // ─────────────────────────────────────────────────────────────────────────
     (client as any)._connectSender = async function (
       sender: any,
@@ -139,6 +197,15 @@ export class TgStreamClient {
       connection?: any,
       mediaCluster = false
     ) {
+      const connectToDc = async (useMediaCluster: boolean) => {
+        const conn =
+          connection ??
+          (client as any)._createConnection(
+            await client.getDC(dcId, useMediaCluster && !!sender.authKey.getKey())
+          );
+        await sender.connect(conn);
+      };
+
       try {
         if (!connection && (client as any)._addresses.isCdn(dcId)) {
           await (client as any)._ensureCdnKeys();
@@ -147,38 +214,61 @@ export class TgStreamClient {
           await sender.connect((client as any)._createConnection(address));
           return sender;
         }
-        connection ??= (client as any)._createConnection(
-          await client.getDC(dcId, mediaCluster && !!sender.authKey.getKey())
-        );
-        await sender.connect(connection);
-        if (dcId !== client.session.dcId) {
-          try {
-            await (client as any)._dcenters.get(dcId).authorize(async () => {
-              const auth: any = await client.invoke(new Api.auth.ExportAuthorization({ dcId }));
-              await sender.send(
-                new Api.auth.ImportAuthorization({
-                  id: auth.id,
-                  bytes: auth.bytes,
-                })
-              );
-            });
-          } catch (authErr: any) {
-            const msg = String(authErr?.errorMessage || authErr?.message || authErr);
+
+        const dcState = (client as any)._dcenters.get(dcId);
+        const isAlreadyAuthorized = dcId === client.session.dcId || !!dcState?.authorized;
+        const wantMediaCluster = mediaCluster && !!sender.authKey.getKey() && isAlreadyAuthorized;
+
+        try {
+          await connectToDc(wantMediaCluster);
+        } catch (connectErr) {
+          if (wantMediaCluster && !connection) {
             console.warn(
-              `[TgStreamClient] DC ${dcId} authorization export/import warning: ${msg}. Proceeding with DH key for media.`
+              `[TgStreamClient] Media cluster connection for DC ${dcId} failed; falling back to primary DC ${dcId} gateway:`,
+              connectErr
             );
+            await connectToDc(false);
+          } else {
+            throw connectErr;
           }
+        }
+
+        if (dcId !== client.session.dcId) {
+          await dcState.authorize(async () => {
+            let lastAuthErr: unknown;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const auth: any = await client.invoke(new Api.auth.ExportAuthorization({ dcId }));
+                const authBytes = Buffer.isBuffer(auth.bytes)
+                  ? auth.bytes
+                  : Buffer.from(auth.bytes);
+                await sender.send(
+                  new Api.auth.ImportAuthorization({
+                    id: auth.id,
+                    bytes: authBytes,
+                  })
+                );
+                return;
+              } catch (authErr: any) {
+                lastAuthErr = authErr;
+                const msg = String(authErr?.errorMessage || authErr?.message || authErr);
+                if (msg.includes("DC_ID_INVALID")) {
+                  return;
+                }
+                console.warn(
+                  `[TgStreamClient] DC ${dcId} Export/ImportAuthorization attempt ${attempt}/3 failed: ${msg}`
+                );
+                if (attempt < 3) {
+                  await new Promise((r) => setTimeout(r, 400 * attempt));
+                }
+              }
+            }
+            throw lastAuthErr;
+          });
         }
         return sender;
       } catch (error: any) {
         if (error?.errorMessage === "DC_ID_INVALID") return sender;
-        const msg = String(error?.errorMessage || error?.message || error);
-        if (msg.includes("AUTH_BYTES_INVALID")) {
-          console.warn(
-            `[TgStreamClient] DC ${dcId} AUTH_BYTES_INVALID ignored; sender ready for upload.getFile.`
-          );
-          return sender;
-        }
         (client as any)._addresses.fail(dcId, mediaCluster);
         await sender.disconnect().catch(() => {});
         throw error;

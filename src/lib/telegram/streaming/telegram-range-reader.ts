@@ -3,6 +3,7 @@ import bigInt from "big-integer";
 import { DriveFile } from "../indexer";
 import { rehydrateFileLocation } from "../utils/rehydrate-media";
 import { refreshFileLocation } from "../media-refresher";
+import { useDriveStore } from "../../stores/drive-store";
 
 export interface RangeChunk {
   offset: number;
@@ -22,6 +23,9 @@ export type RangeReaderTelemetryListener = (stats: RangeReaderTelemetry) => void
 
 // Telegram MTProto Standard Fixed Chunk Size (512 KiB)
 export const TELEGRAM_CHUNK_SIZE = 512 * 1024; // 524,288 Bytes
+const MAX_CACHE_CHUNKS = 48; // 24 MiB in-memory LRU chunk cache
+const PREFETCH_AHEAD_CHUNKS = 2; // 1 MiB proactive lookahead for high-latency DCs (e.g. Pluto DC 1)
+const CHUNK_TIMEOUT_MS = 55_000; // Generous timeout for transatlantic DH + auth import + 512 KiB transfer
 
 export interface TelegramSubRequest {
   alignedOffset: number;
@@ -78,6 +82,13 @@ export const DC_NAMES: Record<number, string> = {
   5: "Flora (Singapore)",
 };
 
+interface InFlightChunkEntry {
+  promise: Promise<Uint8Array>;
+  controller: AbortController;
+  waiters: number;
+  isPrefetchOnly: boolean;
+}
+
 export class TelegramRangeReader {
   private client: TelegramClient;
   private file: DriveFile;
@@ -93,9 +104,9 @@ export class TelegramRangeReader {
 
   private isDestroyed = false;
   private abortControllers = new Set<AbortController>();
-  private activeSenders = new Map<number, any>();
   private chunkCache = new Map<number, Uint8Array>();
-  private inFlightPrefetches = new Set<number>();
+  private inFlightChunks = new Map<number, InFlightChunkEntry>();
+  private refreshPromise: Promise<void> | null = null;
 
   constructor(
     client: TelegramClient,
@@ -106,16 +117,17 @@ export class TelegramRangeReader {
     this.client = client;
     this.file = file;
     this.fileSize = file.size;
-    this.dcId = file.dcId || 2;
+    this.dcId = file.dcId || client.session?.dcId || 2;
     this.telemetryListener = onTelemetry;
 
     try {
       this.location = initialLocation || rehydrateFileLocation(file);
     } catch {
       const fallbackId = (file.location as any)?.id || (file as any).docId || file.messageId;
-      const safeId = typeof fallbackId === "number" || /^\d+$/.test(String(fallbackId))
-        ? bigInt(String(fallbackId))
-        : bigInt(file.messageId);
+      const safeId =
+        typeof fallbackId === "number" || /^\d+$/.test(String(fallbackId))
+          ? bigInt(String(fallbackId))
+          : bigInt(file.messageId);
       this.location = new Api.InputDocumentFileLocation({
         id: safeId,
         accessHash: bigInt(String(file.accessHash || "0").replace(/\D/g, "") || "0"),
@@ -139,6 +151,16 @@ export class TelegramRangeReader {
 
   public getFileSize(): number {
     return this.fileSize;
+  }
+
+  public updateFileMetadata(file: DriveFile) {
+    this.file = file;
+    if (file.size > 0) {
+      this.fileSize = file.size;
+    }
+    if (file.dcId && file.dcId !== this.dcId) {
+      this.dcId = file.dcId;
+    }
   }
 
   private notifyTelemetry(latencyMs = 0, newBytes = 0) {
@@ -166,78 +188,57 @@ export class TelegramRangeReader {
     });
   }
 
-  /**
-   * Purges any dead or hung MTProto sender for the target DC from both this reader and GramJS client.
-   */
-  private async purgeDcSender(dcId: number, _isAuthError = false): Promise<void> {
-    this.activeSenders.delete(dcId);
-    if (typeof (this.client as any).invalidateDcAuthKey === "function") {
-      (this.client as any).invalidateDcAuthKey(dcId);
-    }
-    try {
-      if (typeof (this.client as any)._network?.removeSession === "function") {
-        (this.client as any)._network.removeSession(dcId);
-      }
-      if ((this.client as any)._dcenters?.get(dcId)) {
-        (this.client as any)._dcenters.get(dcId).unauthorize();
-      }
-    } catch (_) {}
-  }
-
-  /**
-   * Retrieves or re-establishes a live pooled MTProto sender for the target media DC.
-   */
-  private async getSender(forceFresh = false, signal?: AbortSignal): Promise<any> {
-    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
-
-    let sender = this.activeSenders.get(this.dcId);
-    if (
-      !forceFresh &&
-      sender &&
-      typeof sender.isConnected === "function" &&
-      sender.isConnected() &&
-      !sender.userDisconnected
-    ) {
-      return sender;
-    }
-
-    if (forceFresh) {
-      await this.purgeDcSender(this.dcId);
-    }
-
-    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
-
-    // Ensure main client connection is healthy
+  private async ensureClientConnected(): Promise<void> {
     if (!this.client.connected && typeof this.client.connect === "function") {
       try {
         await this.client.connect();
       } catch (_) {}
     }
-
-    if (this.isDestroyed || signal?.aborted) throw new Error("ABORTED");
-
-    sender = await this.client.getSender(this.dcId);
-    this.activeSenders.set(this.dcId, sender);
-    return sender;
   }
 
   /**
-   * Refreshes the file reference and sender if a 400 FILE_REFERENCE_EXPIRED error occurs.
+   * Invalidates ONLY a foreign DC's auth key & pooled slots when the server explicitly rejects
+   * authorization (401 AUTH_KEY_UNREGISTERED / SESSION_REVOKED). Never destroys the home DC session.
+   */
+  private async resetForeignDcAuth(dcId: number): Promise<void> {
+    if (dcId === this.client.session?.dcId) return;
+    if (typeof (this.client as any).invalidateDcAuthKey === "function") {
+      await (this.client as any).invalidateDcAuthKey(dcId);
+    }
+  }
+
+  /**
+   * Single-flight file_reference refresh when MTProto returns FILE_REFERENCE_EXPIRED/EMPTY.
+   * Crucially does NOT tear down live DC connections or wipe auth keys.
    */
   private async refreshLocation(): Promise<void> {
-    console.warn(`[TelegramRangeReader] Refreshing expired token for "${this.file.name}"...`);
-    const refreshed = await refreshFileLocation(this.client, this.file);
-    this.location = refreshed.location;
-    if (refreshed.dcId) {
-      this.dcId = refreshed.dcId;
+    if (this.refreshPromise) {
+      return this.refreshPromise;
     }
-    await this.purgeDcSender(this.dcId);
-    this.chunkCache.clear();
+
+    this.refreshPromise = (async () => {
+      console.warn(`[TelegramRangeReader] Refreshing expired file reference for "${this.file.name}"...`);
+      const refreshed = await refreshFileLocation(this.client, this.file);
+      this.location = refreshed.location;
+      if (refreshed.dcId && refreshed.dcId !== this.dcId) {
+        console.info(
+          `[TelegramRangeReader] Refreshed metadata moved "${this.file.name}" from DC ${this.dcId} -> DC ${refreshed.dcId}`
+        );
+        this.dcId = refreshed.dcId;
+      }
+      if (refreshed.fileSize && refreshed.fileSize > 0) {
+        this.fileSize = refreshed.fileSize;
+      }
+    })().finally(() => {
+      this.refreshPromise = null;
+    });
+
+    return this.refreshPromise;
   }
 
   /**
    * Reads an arbitrary byte range [offset, offset + length - 1] from Telegram MTProto directly in the browser.
-   * Decomposes the range into strictly valid 1 MiB-block boundary sub-requests and reassembles in order.
+   * Decomposes the range into strictly valid 512 KiB-aligned sub-requests and reassembles in order.
    */
   public async readRange(
     offset: number,
@@ -248,13 +249,20 @@ export class TelegramRangeReader {
       throw new Error("ABORTED");
     }
 
+    // If cached file size was missing/0, refresh metadata before slicing
+    if (this.fileSize <= 0) {
+      await this.refreshLocation();
+      if (this.fileSize <= 0) {
+        return new Uint8Array(0);
+      }
+    }
+
     const effectiveEnd = Math.min(this.fileSize - 1, offset + length - 1);
     const exactRequestedLength = effectiveEnd - offset + 1;
     if (exactRequestedLength <= 0) {
       return new Uint8Array(0);
     }
 
-    // Split logical range into strictly legal Telegram MTProto sub-requests
     const subRequests = splitTelegramRange(offset, exactRequestedLength, this.fileSize);
     if (subRequests.length === 0) {
       return new Uint8Array(0);
@@ -268,7 +276,7 @@ export class TelegramRangeReader {
 
     const onParentAbort = () => abortController.abort();
     if (signal) {
-      signal.addEventListener("abort", onParentAbort);
+      signal.addEventListener("abort", onParentAbort, { once: true });
     }
 
     try {
@@ -280,10 +288,11 @@ export class TelegramRangeReader {
           throw new Error("ABORTED");
         }
 
-        const chunkData = await this.fetchSingleAlignedChunk(
+        const chunkData = await this.getOrFetchAlignedChunk(
           sub.alignedOffset,
           sub.limit,
-          abortController.signal
+          abortController.signal,
+          false
         );
 
         if (!chunkData || chunkData.length === 0) {
@@ -310,9 +319,12 @@ export class TelegramRangeReader {
         }
       }
 
-      if (bytesWritten > 0 && subRequests.length > 0) {
+      // Proactively prefetch the next 2 aligned chunks in parallel across the DC's media pool
+      if (bytesWritten > 0 && subRequests.length > 0 && !this.isDestroyed) {
         const lastAligned = subRequests[subRequests.length - 1].alignedOffset;
-        this.triggerPrefetch(lastAligned + TELEGRAM_CHUNK_SIZE);
+        for (let i = 1; i <= PREFETCH_AHEAD_CHUNKS; i++) {
+          this.triggerPrefetch(lastAligned + i * TELEGRAM_CHUNK_SIZE);
+        }
       }
 
       return resultBuffer.subarray(0, bytesWritten);
@@ -327,34 +339,187 @@ export class TelegramRangeReader {
   }
 
   /**
-   * Proactively prefetches the next consecutive MTProto chunk into the in-memory LRU cache
-   * so high-latency DCs (like Pluto DC 1) have chunks ready before playback runs dry.
+   * Proactively prefetches an aligned 512 KiB chunk into the in-memory LRU cache.
+   * Deduplicated via `inFlightChunks`, so an upcoming browser Range request seamlessly joins it.
    */
   private triggerPrefetch(offset: number) {
     if (this.isDestroyed || offset >= this.fileSize) return;
     const alignedOffset = Math.floor(offset / TELEGRAM_CHUNK_SIZE) * TELEGRAM_CHUNK_SIZE;
     if (alignedOffset >= this.fileSize) return;
 
-    if (this.chunkCache.has(alignedOffset) || this.inFlightPrefetches.has(alignedOffset)) {
+    if (this.chunkCache.has(alignedOffset) || this.inFlightChunks.has(alignedOffset)) {
       return;
     }
 
-    this.inFlightPrefetches.add(alignedOffset);
-
-    // Run in background without awaiting
     const prefetchController = new AbortController();
     this.abortControllers.add(prefetchController);
 
-    this.fetchSingleAlignedChunk(alignedOffset, TELEGRAM_CHUNK_SIZE, prefetchController.signal)
+    this.getOrFetchAlignedChunk(alignedOffset, TELEGRAM_CHUNK_SIZE, prefetchController.signal, true)
       .catch(() => {})
       .finally(() => {
-        this.inFlightPrefetches.delete(alignedOffset);
         this.abortControllers.delete(prefetchController);
       });
   }
 
   /**
-   * Fetches a single aligned chunk that strictly obeys Telegram 1 MiB boundary constraints with auto-reconnect.
+   * Deduplicates concurrent requests for the exact same 512 KiB aligned chunk (e.g. prefetch + playback
+   * or overlapping browser range probes). Cancels the underlying MTProto RPC only if all waiters abort.
+   */
+  private async getOrFetchAlignedChunk(
+    alignedOffset: number,
+    limit: number,
+    signal: AbortSignal,
+    isPrefetch: boolean
+  ): Promise<Uint8Array> {
+    if (this.isDestroyed || signal.aborted) {
+      throw new Error("ABORTED");
+    }
+
+    // Fast-path: LRU cache hit (refresh recency)
+    const cached = this.chunkCache.get(alignedOffset);
+    if (cached) {
+      this.chunkCache.delete(alignedOffset);
+      this.chunkCache.set(alignedOffset, cached);
+      return cached;
+    }
+
+    let entry = this.inFlightChunks.get(alignedOffset);
+    if (!entry) {
+      const fetchController = new AbortController();
+      const promise = this.fetchSingleAlignedChunk(alignedOffset, limit, fetchController.signal)
+        .finally(() => {
+          if (this.inFlightChunks.get(alignedOffset) === entry) {
+            this.inFlightChunks.delete(alignedOffset);
+          }
+        });
+
+      entry = {
+        promise,
+        controller: fetchController,
+        waiters: 0,
+        isPrefetchOnly: isPrefetch,
+      };
+      this.inFlightChunks.set(alignedOffset, entry);
+    } else if (!isPrefetch) {
+      // Promote an in-flight prefetch to an active demand fetch
+      entry.isPrefetchOnly = false;
+    }
+
+    const activeEntry = entry;
+    activeEntry.waiters++;
+
+    return await new Promise<Uint8Array>((resolve, reject) => {
+      let settled = false;
+
+      const onAbort = () => {
+        if (settled) return;
+        settled = true;
+        activeEntry.waiters = Math.max(0, activeEntry.waiters - 1);
+        // Only cancel the underlying MTProto request if NO waiters remain
+        if (activeEntry.waiters === 0) {
+          try {
+            activeEntry.controller.abort();
+          } catch {}
+        }
+        reject(new Error("ABORTED"));
+      };
+
+      if (signal.aborted || this.isDestroyed) {
+        onAbort();
+        return;
+      }
+
+      signal.addEventListener("abort", onAbort, { once: true });
+
+      activeEntry.promise.then(
+        (data) => {
+          if (settled) return;
+          settled = true;
+          signal.removeEventListener("abort", onAbort);
+          activeEntry.waiters = Math.max(0, activeEntry.waiters - 1);
+          resolve(data);
+        },
+        (err) => {
+          if (settled) return;
+          settled = true;
+          signal.removeEventListener("abort", onAbort);
+          activeEntry.waiters = Math.max(0, activeEntry.waiters - 1);
+          reject(err);
+        }
+      );
+    });
+  }
+
+  /**
+   * Executes a single upload.GetFile RPC using teleproto's native multi-DC FileTransfers download pool
+   * (`client._files.run`), which provides:
+   *  - 2 parallel media sessions per DC (primary gateway for DH + ImportAuth, `-1` media cluster once authorized)
+   *  - Proper SessionSlot leasing (prevents idle disconnects mid-stream)
+   *  - True MTProto request cancellation (`RpcDropAnswer`) when browser aborts on seek
+   *  - Built-in SlotRemovedError, FLOOD_WAIT, and 5xx server recovery
+   */
+  private async executeGetFileRpc(
+    alignedOffset: number,
+    limit: number,
+    signal: AbortSignal
+  ): Promise<any> {
+    await this.ensureClientConnected();
+
+    const requestController = new AbortController();
+    let timedOut = false;
+
+    const onAbort = () => requestController.abort();
+    if (signal.aborted || this.isDestroyed) {
+      throw new Error("ABORTED");
+    }
+    signal.addEventListener("abort", onAbort, { once: true });
+
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      requestController.abort();
+    }, CHUNK_TIMEOUT_MS);
+
+    const buildRequest = () =>
+      new Api.upload.GetFile({
+        location: this.location,
+        offset: bigInt(alignedOffset),
+        limit,
+        precise: true,
+        cdnSupported: false,
+      });
+
+    try {
+      const filesEngine = (this.client as any)._files;
+      if (filesEngine && typeof filesEngine.run === "function") {
+        return await filesEngine.run(
+          "download",
+          this.dcId,
+          buildRequest,
+          requestController.signal
+        );
+      }
+
+      // Fallback to direct leased invoke on target DC if _files engine is unavailable
+      return await (this.client as any).invoke(buildRequest(), this.dcId, {
+        signal: requestController.signal,
+      });
+    } catch (err) {
+      if (timedOut) {
+        throw new Error("MTPROTO_CHUNK_TIMEOUT");
+      }
+      if (signal.aborted || this.isDestroyed) {
+        throw new Error("ABORTED");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+      signal.removeEventListener("abort", onAbort);
+    }
+  }
+
+  /**
+   * Fetches a single 512 KiB aligned chunk with structured recovery for FILE_MIGRATE_X,
+   * FILE_REFERENCE_EXPIRED, foreign-DC 401 re-authorization, FLOOD_WAIT, and transient disconnects.
    */
   private async fetchSingleAlignedChunk(
     alignedOffset: number,
@@ -366,7 +531,6 @@ export class TelegramRangeReader {
       throw new Error("ABORTED");
     }
 
-    // Fast-path: Check in-memory chunk cache
     const cached = this.chunkCache.get(alignedOffset);
     if (cached) {
       return cached;
@@ -375,43 +539,22 @@ export class TelegramRangeReader {
     const startTime = Date.now();
 
     try {
-      const sender = await this.getSender(false, signal);
-      const request = new Api.upload.GetFile({
-        location: this.location,
-        offset: bigInt(alignedOffset),
-        limit: limit,
-        precise: true,
-        cdnSupported: false,
-      });
-
-      // Abort immediately when signal aborts or reader is destroyed
-      const abortPromise = new Promise<never>((_, reject) => {
-        if (signal.aborted || this.isDestroyed) return reject(new Error("ABORTED"));
-        signal.addEventListener("abort", () => reject(new Error("ABORTED")), { once: true });
-      });
-
-      // 45-second timeout gives ample runway for high-latency transatlantic links (e.g. Pluto DC 1 Miami)
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("MTPROTO_CHUNK_TIMEOUT")), 45000)
-      );
-
-      const response: any = await Promise.race([
-        this.client.invokeWithSender(request, sender),
-        timeoutPromise,
-        abortPromise,
-      ]);
+      const response = await this.executeGetFileRpc(alignedOffset, limit, signal);
       const latency = Date.now() - startTime;
 
       let bytes: Uint8Array;
       if (response && response.bytes) {
-        bytes = response.bytes instanceof Uint8Array ? response.bytes : new Uint8Array(response.bytes);
+        bytes =
+          response.bytes instanceof Uint8Array
+            ? response.bytes
+            : new Uint8Array(response.bytes);
       } else {
         bytes = new Uint8Array(0);
       }
 
-      // Populate LRU cache (limit to 32 chunks = 16 MiB)
+      // Populate LRU cache (limit to 48 chunks = 24 MiB)
       if (bytes.length > 0) {
-        if (this.chunkCache.size >= 32) {
+        if (this.chunkCache.size >= MAX_CACHE_CHUNKS) {
           const oldestKey = this.chunkCache.keys().next().value;
           if (oldestKey !== undefined) {
             this.chunkCache.delete(oldestKey);
@@ -429,98 +572,104 @@ export class TelegramRangeReader {
         throw new Error("ABORTED");
       }
 
-      // Handle Chunk Timeout: only reconnect if sender connection is dead, avoid abrupt auth churn
-      if (errMsg.includes("MTPROTO_CHUNK_TIMEOUT") && retryCount < 3) {
-        console.warn(`[TelegramRangeReader] Chunk timeout at offset ${alignedOffset} on DC ${this.dcId}. Retrying chunk request... (attempt ${retryCount + 1}/3)`);
-        const sender = this.activeSenders.get(this.dcId);
-        if (!sender || typeof sender.isConnected !== "function" || !sender.isConnected() || sender.userDisconnected) {
-          await this.purgeDcSender(this.dcId);
-          await this.getSender(true, signal);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 800));
+      // 1. Handle Telegram File Migration (e.g. FILE_MIGRATE_1, FILE_MIGRATE_5)
+      const migrateMatch = errMsg.match(/FILE_MIGRATE_(\d+)/i);
+      const newDc =
+        (err as any)?.newDc || (migrateMatch ? parseInt(migrateMatch[1], 10) : null);
+      if (newDc && newDc !== this.dcId && retryCount < 4) {
+        console.info(
+          `[TelegramRangeReader] File "${this.file.name}" lives in DC ${newDc} [${DC_NAMES[newDc] || "DC"}]. Switching from DC ${this.dcId}...`
+        );
+        this.dcId = newDc;
+        try {
+          useDriveStore.getState().updateFile(this.file.id, { dcId: newDc });
+        } catch {}
+        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
+      }
+
+      // 2. Handle Expired / Empty File Reference (without destroying live DC connections)
+      if (
+        (errMsg.includes("FILE_REFERENCE_EXPIRED") ||
+          errMsg.includes("FILE_REFERENCE_EMPTY") ||
+          errMsg.includes("FILEREF_UPGRADE_NEEDED") ||
+          errMsg.includes("FILE_ID_INVALID")) &&
+        retryCount < 3
+      ) {
+        await this.refreshLocation();
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
-      // Handle Telegram File Migration (e.g. FILE_MIGRATE_1, FILE_MIGRATE_5)
-      const migrateMatch = errMsg.match(/FILE_MIGRATE_(\d+)/i);
-      const newDc = (err as any)?.newDc || (migrateMatch ? parseInt(migrateMatch[1], 10) : null);
-      if (newDc && retryCount < 3) {
-        console.info(`[TelegramRangeReader] File lives in DC ${newDc}. Switching sender from DC ${this.dcId}...`);
-        await this.purgeDcSender(this.dcId);
-        this.dcId = newDc;
-        await this.getSender(true, signal);
-        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
-      }
-
-      // Handle Telegram Token Expiration / Upgrade Needed
-      if (
-        (errMsg.includes("FILE_REFERENCE_EXPIRED") ||
-          errMsg.includes("FILE_REFERENCE_EMPTY") ||
-          errMsg.includes("FILEREF_UPGRADE_NEEDED")) &&
-        retryCount < 3
-      ) {
-        await this.refreshLocation();
-        return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
-      }
-
-      // Handle Offset Invalid (at or beyond EOF)
-      if (errMsg.includes("OFFSET_INVALID")) {
-        console.warn(`[TelegramRangeReader] OFFSET_INVALID at offset ${alignedOffset} - reached file boundary.`);
+      // 3. Handle Offset Invalid (at or beyond EOF)
+      if (errMsg.includes("OFFSET_INVALID") || errMsg.includes("LIMIT_INVALID")) {
+        console.warn(
+          `[TelegramRangeReader] ${errMsg} at offset ${alignedOffset} on DC ${this.dcId} — reached file boundary.`
+        );
         return new Uint8Array(0);
       }
 
-      // Handle Flood Wait
-      if (errMsg.includes("FLOOD_WAIT_") || errMsg.includes("FLOOD_WAIT")) {
-        const seconds = parseInt(errMsg.replace(/\D/g, "") || "5", 10);
-        console.warn(`[TelegramRangeReader] FLOOD_WAIT_${seconds} on chunk offset ${alignedOffset}. Cooldown...`);
+      // 4. Handle Flood Wait
+      if (errMsg.includes("FLOOD_WAIT_") || errMsg.includes("FLOOD_PREMIUM_WAIT_")) {
+        const seconds = Math.min(30, parseInt(errMsg.replace(/\D/g, "") || "3", 10));
+        console.warn(
+          `[TelegramRangeReader] ${errMsg} on DC ${this.dcId} chunk ${alignedOffset}. Waiting ${seconds}s...`
+        );
         await new Promise((resolve) => setTimeout(resolve, (seconds + 1) * 1000));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
-      // Handle Broken Auth Key / Invalid Auth Bytes (specifically on secondary DCs like Pluto DC 1 or Venus DC 2)
+      // 5. Handle Foreign-DC Authorization Errors (AUTH_KEY_UNREGISTERED / AUTH_BYTES_INVALID / 401)
       const isAuthError =
         errMsg.includes("AUTH_KEY_UNREGISTERED") ||
         errMsg.includes("authorization key is not registered") ||
         errMsg.includes("PFS temporary key has expired") ||
         errMsg.includes("AUTH_BYTES_INVALID") ||
+        errMsg.includes("AUTH_KEY_INVALID") ||
         errMsg.includes("SESSION_REVOKED") ||
         errMsg.includes("SESSION_EXPIRED") ||
+        errMsg.includes("Authorization for dc") ||
         (err as any)?.code === 401;
 
       if (isAuthError && retryCount < 3) {
         console.warn(
-          `[TelegramRangeReader] DC ${this.dcId} authorization issue (${errMsg}). Purging DC ${this.dcId} session key & re-authenticating... (attempt ${retryCount + 1}/3)`
+          `[TelegramRangeReader] DC ${this.dcId} auth error (${errMsg}). Resetting DC ${this.dcId} key & re-exporting auth... (attempt ${retryCount + 1}/3)`
         );
-        await this.purgeDcSender(this.dcId, true);
-        await this.getSender(true, signal);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await this.resetForeignDcAuth(this.dcId);
+        await new Promise((resolve) => setTimeout(resolve, 400 * (retryCount + 1)));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
-      // Handle Connection drops / Disconnects / Transport retries
-      const isConnectionError =
-        errMsg.toLowerCase().includes("disconnect") ||
-        errMsg.toLowerCase().includes("not connected") ||
-        errMsg.toLowerCase().includes("connection closed") ||
-        errMsg.toLowerCase().includes("timeout") ||
-        errMsg.toLowerCase().includes("rpc_call_fail") ||
-        errMsg.toLowerCase().includes("socket") ||
-        errMsg.toLowerCase().includes("network");
+      // 6. Handle Chunk Timeout & Transient Transport/Slot Errors
+      const lowerMsg = errMsg.toLowerCase();
+      const isRetryableTransport =
+        errMsg.includes("MTPROTO_CHUNK_TIMEOUT") ||
+        lowerMsg.includes("disconnect") ||
+        lowerMsg.includes("not connected") ||
+        lowerMsg.includes("connection closed") ||
+        lowerMsg.includes("connection to") ||
+        lowerMsg.includes("timeout") ||
+        lowerMsg.includes("timed out") ||
+        lowerMsg.includes("slot removed") ||
+        lowerMsg.includes("rpc_call_fail") ||
+        lowerMsg.includes("worker_busy") ||
+        lowerMsg.includes("socket") ||
+        lowerMsg.includes("network");
 
-      if (isConnectionError && retryCount < 5) {
-        console.warn(`[TelegramRangeReader] Socket disconnected (${errMsg}). Force-reconnecting sender for DC ${this.dcId}... (attempt ${retryCount + 1}/5)`);
-        await this.purgeDcSender(this.dcId);
-        await this.getSender(true, signal);
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
+      if (isRetryableTransport && retryCount < 4) {
+        console.warn(
+          `[TelegramRangeReader] DC ${this.dcId} transient transport error at offset ${alignedOffset} (${errMsg}). Retrying... (${retryCount + 1}/4)`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500 * (retryCount + 1)));
         if (signal.aborted || this.isDestroyed) throw new Error("ABORTED");
         return this.fetchSingleAlignedChunk(alignedOffset, limit, signal, retryCount + 1);
       }
 
-      console.error(`[TelegramRangeReader] Fatal chunk fetch error at ${alignedOffset} (limit ${limit}):`, err);
+      console.error(
+        `[TelegramRangeReader] Fatal chunk fetch error on DC ${this.dcId} at ${alignedOffset} (limit ${limit}):`,
+        err
+      );
       throw err;
     }
   }
@@ -529,6 +678,13 @@ export class TelegramRangeReader {
    * Aborts all active in-flight MTProto range requests.
    */
   public abortAll() {
+    for (const entry of this.inFlightChunks.values()) {
+      try {
+        entry.controller.abort();
+      } catch {}
+    }
+    this.inFlightChunks.clear();
+
     for (const controller of this.abortControllers) {
       try {
         controller.abort();
@@ -545,8 +701,6 @@ export class TelegramRangeReader {
   public destroy() {
     this.isDestroyed = true;
     this.abortAll();
-    this.inFlightPrefetches.clear();
     this.chunkCache.clear();
-    this.activeSenders.clear();
   }
 }

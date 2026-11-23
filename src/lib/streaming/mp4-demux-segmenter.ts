@@ -86,12 +86,18 @@ export class Mp4DemuxSegmenter {
         }
       }
 
-      // Generate initialization segments
-      const initSegments = this.mp4boxfile.initializeSegmentation();
+      // Generate per-track initialization segments (mp4box v2+ defaults to combined object unless "per-track" is passed)
+      const rawInitSegments = this.mp4boxfile.initializeSegmentation("per-track");
+      const initSegments: Array<{ id: number; buffer: ArrayBuffer }> = Array.isArray(rawInitSegments)
+        ? rawInitSegments
+        : [];
 
       if (info.videoTracks && info.videoTracks.length > 0) {
         const vTrack = info.videoTracks[0];
-        const vInit = initSegments.find((s: any) => s.id === vTrack.id)?.buffer || new ArrayBuffer(0);
+        const vInit =
+          initSegments.find((s) => s.id === vTrack.id)?.buffer ||
+          (!Array.isArray(rawInitSegments) ? rawInitSegments?.buffer : undefined) ||
+          new ArrayBuffer(0);
         videoMeta = {
           id: vTrack.id,
           codec: vTrack.codec,
@@ -104,7 +110,9 @@ export class Mp4DemuxSegmenter {
 
       if (info.audioTracks && info.audioTracks.length > 0) {
         const aTrack = info.audioTracks[0];
-        const aInit = initSegments.find((s: any) => s.id === aTrack.id)?.buffer || new ArrayBuffer(0);
+        const aInit =
+          initSegments.find((s) => s.id === aTrack.id)?.buffer ||
+          new ArrayBuffer(0);
         audioMeta = {
           id: aTrack.id,
           codec: aTrack.codec,

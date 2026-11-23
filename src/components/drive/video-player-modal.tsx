@@ -67,6 +67,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState<number>(0);
   const [hasError, setHasError] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string>("");
   const [retryCount, setRetryCount] = useState(0);
   const [engine, setEngine] = useState<"native" | "mse">("native");
   const mseControllerRef = useRef<MseStreamController | null>(null);
@@ -100,6 +101,12 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     };
   }, [isOpen, activeFile?.id]);
 
+  // Keep StreamBridge metadata synced if dcId / fileReference refreshes mid-stream without tearing down reader
+  useEffect(() => {
+    if (!isOpen || !activeFile) return;
+    registerActiveStreamFile(activeFile);
+  }, [isOpen, activeFile]);
+
   // Cinema playback lifecycle: manage engines & player stream
   useEffect(() => {
     if (!isOpen || !activeFile) {
@@ -112,6 +119,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
     setIsBuffering(true);
     setHasError(false);
+    setErrorDetail("");
     setCurrentTime(0);
     setDuration(activeFile.duration && activeFile.duration < 86400 * 7 ? activeFile.duration : 0);
     setBufferedEnd(0);
@@ -127,9 +135,15 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           mseControllerRef.current = null;
         }
 
-        // Wait briefly for ServiceWorker registration to prime
-        await ensureStreamBridgeReady().catch(() => {});
+        // Wait for ServiceWorker registration to control this window; if unavailable, route directly to MSE
+        const swReady = await ensureStreamBridgeReady().catch(() => false);
         if (isCancelled) return;
+
+        if (!swReady && tgStreamClient.client) {
+          console.warn("[VideoPlayer] ServiceWorker controller unavailable; switching directly to MSE engine.");
+          setEngine("mse");
+          return;
+        }
 
         const streamUrl = `/stream/${encodeURIComponent(activeFile.id)}${retryCount > 0 ? `?r=${retryCount}` : ""}`;
         if (videoRef.current) {
@@ -145,6 +159,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
         const client = tgStreamClient.client;
         if (!client) {
+          setErrorDetail("Telegram MTProto client is disconnected.");
           setHasError(true);
           setIsBuffering(false);
           return;
@@ -166,6 +181,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 setDuration(stats.duration);
               }
               if (stats.status === "ERROR" || stats.status === "UNSUPPORTED") {
+                setErrorDetail(stats.error || stats.statusMessage || "MSE stream playback failed.");
                 setHasError(true);
                 setIsBuffering(false);
               } else if (stats.status === "PLAYING") {
@@ -176,9 +192,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           );
           mseControllerRef.current = controller;
           await controller.init();
-        } catch (mseErr) {
+        } catch (mseErr: any) {
           console.error("[VideoPlayer] MSE init failed:", mseErr);
           if (!isCancelled) {
+            setErrorDetail(mseErr?.message || "Failed to initialize MSE stream.");
             setHasError(true);
             setIsBuffering(false);
           }
@@ -550,8 +567,12 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                     ? "DC 1 (Pluto)"
                     : activeFile.dcId === 2
                     ? "DC 2 (Venus)"
+                    : activeFile.dcId === 3
+                    ? "DC 3 (Aurora)"
                     : activeFile.dcId === 4
                     ? "DC 4 (Vesta)"
+                    : activeFile.dcId === 5
+                    ? "DC 5 (Flora)"
                     : `DC ${activeFile.dcId}`}
                 </span>
               )}
@@ -622,7 +643,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               </div>
               <span className="text-sm font-semibold text-zinc-100">Stream Playback Error</span>
               <p className="text-xs text-zinc-400 max-w-md font-mono bg-zinc-900/80 p-2.5 rounded-[4px] border border-zinc-800">
-                Failed to stream video directly from Telegram servers.
+                {errorDetail || "Failed to stream video directly from Telegram servers."}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 <button
@@ -632,13 +653,13 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Retry Native</span>
                 </button>
-                {engine === "native" && tgStreamClient.client && (
+                {tgStreamClient.client && (
                   <button
                     onClick={() => retryStream("mse")}
                     className="px-3.5 py-1.5 text-xs font-medium bg-white/[0.08] hover:bg-white/[0.15] text-[#e6cfa3] rounded-[4px] flex items-center gap-1.5 transition-colors border border-white/[0.12]"
                   >
                     <VideoIcon className="w-3.5 h-3.5" />
-                    <span>Try MSE Demuxer</span>
+                    <span>{engine === "mse" ? "Retry MSE" : "Try MSE Demuxer"}</span>
                   </button>
                 )}
                 <button
@@ -664,13 +685,24 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             }}
             onPause={() => setIsPlaying(false)}
             onEnded={handleVideoEnded}
-            onError={() => {
+            onError={(e) => {
+              const mediaErr = e.currentTarget.error;
+              // Ignore benign MEDIA_ERR_ABORTED (code 1) triggered during unmount/src reset
+              if (mediaErr && mediaErr.code === MediaError.MEDIA_ERR_ABORTED) {
+                return;
+              }
+              const errSummary = mediaErr
+                ? `MediaError(${mediaErr.code}): ${mediaErr.message || "Stream fetch or decode failed"}`
+                : "Native range stream failed.";
               if (engine === "native" && tgStreamClient.client) {
-                console.warn("[VideoPlayer] Native range request failed on video element, auto-trying MSE demuxer...");
+                console.warn(
+                  `[VideoPlayer] Native range request failed (${errSummary}), auto-trying MSE demuxer...`
+                );
                 setEngine("mse");
                 setIsBuffering(true);
                 setHasError(false);
               } else {
+                setErrorDetail(errSummary);
                 setIsBuffering(false);
                 setHasError(true);
               }

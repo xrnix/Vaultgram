@@ -1,13 +1,23 @@
 import { TelegramClient } from "teleproto";
 import { DriveFile } from "@/lib/telegram/indexer";
 import { TelegramRangeReader } from "@/lib/telegram/streaming/telegram-range-reader";
+import { refreshFileLocation } from "@/lib/telegram/media-refresher";
 
 const readerCache = new Map<string, TelegramRangeReader>();
 const activeStreamFiles = new Map<string, DriveFile>();
 
+// Cap every single HTTP 206 ServiceWorker response to keep TTFB fast and prevent
+// browser/SW timeouts on high-latency transatlantic DCs (e.g. Pluto DC 1).
+const OPEN_RANGE_BATCH_BYTES = 512 * 1024; // 512 KiB for open-ended / initial probe
+const MAX_EXPLICIT_RANGE_BYTES = 1024 * 1024; // 1 MiB ceiling even if browser requests 0-<huge>
+
 export function registerActiveStreamFile(file: DriveFile) {
   if (file && file.id) {
     activeStreamFiles.set(file.id, file);
+    const existingReader = readerCache.get(file.id);
+    if (existingReader) {
+      existingReader.updateFileMetadata(file);
+    }
   }
 }
 
@@ -40,16 +50,17 @@ export async function ensureStreamBridgeReady(): Promise<boolean> {
   try {
     const readyWithTimeout = Promise.race([
       navigator.serviceWorker.ready,
-      new Promise<null>((r) => setTimeout(() => r(null), 1000)),
+      new Promise<null>((r) => setTimeout(() => r(null), 1500)),
     ]);
     await readyWithTimeout;
     if (navigator.serviceWorker.controller) return true;
 
-    // Wait up to 800ms for clients.claim() controller change
+    // Wait up to 1000ms for clients.claim() controller change
     return await new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => {
+        navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
         resolve(!!navigator.serviceWorker.controller);
-      }, 800);
+      }, 1000);
 
       const onControllerChange = () => {
         clearTimeout(timer);
@@ -88,6 +99,13 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
       const port: MessagePort = event.ports[0];
       if (!port) return;
 
+      const rangeAbortController = new AbortController();
+      port.onmessage = (msgEvent) => {
+        if (msgEvent.data?.type === "ABORT") {
+          rangeAbortController.abort();
+        }
+      };
+
       try {
         const client = getClient();
         if (!client) {
@@ -97,16 +115,34 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
 
         // 1. Locate file metadata strictly from active stream files
         let file = activeStreamFiles.get(fileId);
-
         if (!file) {
-          // Attempt fuzzy match on messageId / channelId within active files
-          file = Array.from(activeStreamFiles.values()).find((f) => f.id.endsWith(fileId) || fileId.endsWith(f.id));
+          file = Array.from(activeStreamFiles.values()).find(
+            (f) => f.id.endsWith(fileId) || fileId.endsWith(f.id)
+          );
         }
 
-        // If file is no longer active (user closed player or switched video), immediately abort without querying MTProto
+        // If file is no longer active (user closed player or switched video), immediately abort
         if (!file) {
           port.postMessage({ error: "ABORTED" });
           return;
+        }
+
+        // If cached file size was 0 or missing, refresh metadata once from Telegram
+        if (!file.size || file.size <= 0) {
+          try {
+            const refreshed = await refreshFileLocation(client, file);
+            if (refreshed.fileSize && refreshed.fileSize > 0) {
+              file = {
+                ...file,
+                size: refreshed.fileSize,
+                dcId: refreshed.dcId ?? file.dcId,
+                mimeType: refreshed.mimeType ?? file.mimeType,
+              };
+              activeStreamFiles.set(file.id, file);
+            }
+          } catch (refreshErr) {
+            console.warn("[StreamBridge] Failed to refresh missing file size:", refreshErr);
+          }
         }
 
         let reader = readerCache.get(file.id);
@@ -115,33 +151,59 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
           readerCache.set(file.id, reader);
         }
 
-        const fileSize = file.size;
+        const fileSize = reader.getFileSize() || file.size;
+        if (!fileSize || fileSize <= 0) {
+          port.postMessage({ error: "File size is unavailable for streaming" });
+          return;
+        }
+
+        const isMediaStream =
+          file.category === "VIDEO" ||
+          file.category === "AUDIO" ||
+          file.mimeType?.startsWith("video/") ||
+          file.mimeType?.startsWith("audio/");
+
         let start = 0;
-        let end = fileSize - 1;
+        let end = !range && !isMediaStream && fileSize <= 25 * 1024 * 1024
+          ? fileSize - 1
+          : Math.min(fileSize - 1, OPEN_RANGE_BATCH_BYTES - 1);
+
         if (range) {
           // Case A: Suffix range request (e.g. Range: bytes=-524288 for moov atom at EOF)
           const suffixMatch = range.match(/bytes=-(\d+)/i);
           if (suffixMatch) {
-            const suffixLength = parseInt(suffixMatch[1], 10);
+            const suffixLength = Math.min(parseInt(suffixMatch[1], 10), MAX_EXPLICIT_RANGE_BYTES);
             start = Math.max(0, fileSize - suffixLength);
             end = fileSize - 1;
           } else {
-            // Case B: Standard range (e.g. Range: bytes=0- or bytes=0-1024 or bytes=1048576-)
+            // Case B: Standard range (e.g. Range: bytes=0-, bytes=0-1, bytes=0-50000000)
             const rangeMatch = range.match(/bytes=(\d+)-(\d+)?/i);
             if (rangeMatch) {
               start = parseInt(rangeMatch[1], 10);
               if (rangeMatch[2]) {
-                end = Math.min(fileSize - 1, parseInt(rangeMatch[2], 10));
+                const requestedEnd = Math.min(fileSize - 1, parseInt(rangeMatch[2], 10));
+                // Honor small explicit probes exactly (e.g. Safari bytes=0-1),
+                // but cap oversized explicit ranges so a single 206 never exceeds 1 MiB.
+                const cap = start === 0 && requestedEnd > OPEN_RANGE_BATCH_BYTES
+                  ? OPEN_RANGE_BATCH_BYTES
+                  : MAX_EXPLICIT_RANGE_BYTES;
+                end = Math.min(requestedEnd, start + cap - 1);
               } else {
-                // Open-ended range: 512 KiB per batch to guarantee rapid TTFB and prevent
-                // transatlantic 45s ServiceWorker timeouts on high-latency DCs (e.g. Pluto DC 1).
-                const targetBatchSize = 512 * 1024;
-                end = Math.min(fileSize - 1, start + targetBatchSize - 1);
+                end = Math.min(fileSize - 1, start + OPEN_RANGE_BATCH_BYTES - 1);
               }
             }
           }
-        } else {
-          end = Math.min(fileSize - 1, 512 * 1024 - 1);
+        }
+
+        if (start >= fileSize) {
+          port.postMessage({
+            status: 416,
+            headers: {
+              "Content-Range": `bytes */${fileSize}`,
+            },
+            body: new ArrayBuffer(0),
+          });
+          return;
         }
 
         const requestLength = Math.max(0, end - start + 1);
@@ -156,28 +218,26 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
           return;
         }
 
+        const activeDcId = reader.getDcId();
         const dcLabel =
-          file.dcId === 1
+          activeDcId === 1
             ? "Pluto (DC 1)"
-            : file.dcId === 2
+            : activeDcId === 2
             ? "Venus (DC 2)"
-            : file.dcId === 4
+            : activeDcId === 3
+            ? "Aurora (DC 3)"
+            : activeDcId === 4
             ? "Vesta (DC 4)"
-            : `DC ${file.dcId || "default"}`;
+            : activeDcId === 5
+            ? "Flora (DC 5)"
+            : `DC ${activeDcId || "default"}`;
         console.info(`[StreamBridge] Range fetch [${start}-${end}] for "${file.name}" on ${dcLabel}`);
 
-        // Perform MTProto range fetch with transparent jitter retry
+        // Perform MTProto range fetch with brief retry on transient hiccups
         let payload: Uint8Array | null = null;
-        let lastErr: any = null;
+        let lastErr: unknown = null;
 
-        const rangeAbortController = new AbortController();
-        port.onmessage = (event) => {
-          if (event.data?.type === "ABORT") {
-            rangeAbortController.abort();
-          }
-        };
-
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 2; attempt++) {
           try {
             if (!activeStreamFiles.has(file.id) || rangeAbortController.signal.aborted) {
               throw new Error("ABORTED");
@@ -191,24 +251,29 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
           } catch (err: any) {
             lastErr = err;
             const errMsg = String(err?.message || err);
-            // On ABORTED or when stream file is no longer registered, exit immediately without retries
-            if (errMsg.includes("ABORTED") || !activeStreamFiles.has(file.id) || rangeAbortController.signal.aborted) {
+            if (
+              errMsg.includes("ABORTED") ||
+              !activeStreamFiles.has(file.id) ||
+              rangeAbortController.signal.aborted
+            ) {
               port.postMessage({ error: "ABORTED" });
               return;
             }
             console.warn(
-              `[StreamBridge] Range fetch attempt ${attempt + 1}/3 failed for ${file.name} [${start}-${end}]:`,
+              `[StreamBridge] Range fetch attempt ${attempt + 1}/2 failed for ${file.name} [${start}-${end}] on ${dcLabel}:`,
               errMsg
             );
-            await new Promise((resolve) => setTimeout(resolve, 250));
+            if (attempt < 1) {
+              await new Promise((resolve) => setTimeout(resolve, 350));
+            }
           }
         }
 
-        if (!payload) {
-          throw lastErr || new Error("Failed to fetch range after 3 attempts");
+        if (!payload || payload.byteLength === 0) {
+          throw lastErr || new Error("Empty range payload received from Telegram");
         }
 
-        // Accurately extract sliced ArrayBuffer without offset mismatch
+        // Extract exact ArrayBuffer slice for zero-copy transfer to Service Worker
         const exactBuffer = payload.buffer.slice(
           payload.byteOffset,
           payload.byteOffset + payload.byteLength
@@ -216,12 +281,13 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
 
         const responseStart = start;
         const responseEnd = start + payload.byteLength - 1;
+        const isPartial = Boolean(range) || payload.byteLength < fileSize;
 
         port.postMessage(
           {
-            status: range ? 206 : 200,
+            status: isPartial ? 206 : 200,
             headers: {
-              "Content-Range": `bytes ${responseStart}-${responseEnd}/${fileSize}`,
+              ...(isPartial ? { "Content-Range": `bytes ${responseStart}-${responseEnd}/${fileSize}` } : {}),
               "Content-Length": String(payload.byteLength),
               "Content-Type": file.mimeType || "video/mp4",
               "Accept-Ranges": "bytes",
@@ -235,6 +301,8 @@ export function initStreamBridge(getClient: () => TelegramClient | null) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error("[StreamBridge] Error streaming range:", msg);
         port.postMessage({ error: msg });
+      } finally {
+        port.onmessage = null;
       }
     });
   } catch (bridgeErr) {
