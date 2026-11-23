@@ -77,13 +77,13 @@ export const FileTableRow = React.memo<FileTableRowProps>(
         case "IMAGE":
           return <Image className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
         case "VIDEO":
-          return <Video className="h-3.5 w-3.5 text-[#e8d5b5] group-hover:text-white stroke-[1.4px] transition-colors" />;
+          return <Video className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
         case "DOC":
           return <FileText className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
         case "ARCHIVE":
           return <Archive className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
         case "AUDIO":
-          return <Music className="h-3.5 w-3.5 text-[#e8d5b5] group-hover:text-white stroke-[1.4px] transition-colors" />;
+          return <Music className="h-3.5 w-3.5 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
         default:
           return <File className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
       }
@@ -103,7 +103,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
             onClick={handleClick}
             className={cn(
               "group flex h-full w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2.5 sm:px-3 active:bg-white/[0.05]",
-              isSelected && "bg-[#c5a059]/[0.05] border-[#c5a059]/30 text-white"
+              isSelected && "bg-white/[0.06] border-white/20"
             )}
           >
             {/* Name & Icon (2-line stacked metadata on mobile) */}
@@ -112,7 +112,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
                 {getFileIcon()}
               </div>
               {isSelected && (
-                <span className="flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded-[2px] bg-[#e8d5b5] text-[#08080a] shrink-0">
+                <span className="flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded-[2px] bg-white text-black shrink-0">
                   <Check className="h-2.5 w-2.5 stroke-[3px]" />
                 </span>
               )}

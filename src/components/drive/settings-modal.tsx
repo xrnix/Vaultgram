@@ -495,12 +495,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="self-start sm:self-center flex items-center gap-1.5 px-2 py-1 rounded-[4px] bg-white/[0.03] border border-white/[0.08] shrink-0">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/80 shadow-[0_0_6px_rgba(16,185,129,0.35)]" />
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-300">
-                      Authenticated
-                    </span>
-                  </div>
+                  <span className="self-start sm:self-center font-mono text-[9px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-[3px] shrink-0">
+                    Authenticated
+                  </span>
                 </div>
 
                 {/* Account Switcher */}
@@ -556,10 +553,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
 
                 {/* Logout Button */}
-                <div className="specimen-card hairline-sheen rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/[0.08]">
+                <div className="rounded-[6px] border border-rose-500/20 bg-rose-500/[0.03] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-medium text-zinc-200 block">Log Out of Telegram</span>
-                    <span className="text-[11px] text-zinc-500 font-sans block mt-0.5">
+                    <span className="text-xs font-medium text-rose-200 block">Log Out of Telegram</span>
+                    <span className="text-[11px] text-rose-400/70 font-sans block mt-0.5">
                       Disconnect this browser session and clear stored session tokens.
                     </span>
                   </div>
@@ -579,8 +576,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className={cn(
                         "h-10 sm:h-8 w-full sm:w-auto px-3 text-xs rounded-[5px] gap-1.5 shrink-0 transition-colors",
                         confirmLogout
-                          ? "bg-red-600 hover:bg-red-700 text-white border-red-500 font-medium"
-                          : "bg-red-500/[0.06] hover:bg-red-500/[0.12] text-red-300/90 border-red-500/25 hover:border-red-500/40"
+                          ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-400 font-medium"
+                          : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30"
                       )}
                     >
                       <LogOut className="w-3.5 h-3.5" />

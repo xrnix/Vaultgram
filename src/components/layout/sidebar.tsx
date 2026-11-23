@@ -239,7 +239,7 @@ export const Sidebar: React.FC = () => {
                 <motion.span
                   layoutId={isMobile ? "mobileActiveChannel" : "desktopActiveChannel"}
                   transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                  className="absolute inset-0 rounded-[4px] bg-[#c5a059]/10 border border-[#c5a059]/30 shadow-[0_0_12px_rgba(197,160,89,0.06)] -z-0"
+                  className="absolute inset-0 rounded-[4px] bg-white/[0.09] border border-white/[0.18] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
                 />
               )}
               <Layers className="relative z-10 h-3.5 w-3.5 shrink-0 stroke-[1.5px]" />
@@ -270,14 +270,14 @@ export const Sidebar: React.FC = () => {
                     <motion.span
                       layoutId={isMobile ? "mobileActiveChannel" : "desktopActiveChannel"}
                       transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                      className="absolute inset-0 rounded-[4px] bg-[#c5a059]/10 border border-[#c5a059]/30 shadow-[0_0_12px_rgba(197,160,89,0.06)] -z-0"
+                      className="absolute inset-0 rounded-[4px] bg-white/[0.09] border border-white/[0.18] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
                     />
                   )}
                   <div
                     className={cn(
                       "relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] text-[9px] font-mono",
                       isAct
-                        ? "bg-[#c5a059]/20 text-[#e8d5b5]"
+                        ? "bg-white/[0.15] text-white"
                         : "bg-white/[0.05] text-zinc-400"
                     )}
                   >

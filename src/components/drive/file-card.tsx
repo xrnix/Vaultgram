@@ -73,13 +73,13 @@ export const FileCard = React.memo<FileCardProps>(
         case "IMAGE":
           return <Image className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "VIDEO":
-          return <Video className="h-4 w-4 text-[#e8d5b5] group-hover:text-white stroke-[1.4px] transition-colors" />;
+          return <Video className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "DOC":
           return <FileText className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "ARCHIVE":
           return <Archive className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
         case "AUDIO":
-          return <Music className="h-4 w-4 text-[#e8d5b5] group-hover:text-white stroke-[1.4px] transition-colors" />;
+          return <Music className="h-4 w-4 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
         default:
           return <File className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
       }
@@ -114,8 +114,8 @@ export const FileCard = React.memo<FileCardProps>(
             onClick={handleClick}
             className={cn(
               "specimen-card hairline-sheen group relative flex flex-col justify-between rounded-[5px] p-3 transition-all duration-200 cursor-pointer select-none h-[140px] overflow-hidden",
-              isPinned && "border-[#c5a059]/30 bg-[#141418]",
-              isSelected && "border-[#c5a059]/60 bg-[#18181f] shadow-[inset_0_1px_0_rgba(232,213,181,0.25),0_0_24px_rgba(197,160,89,0.08)] ring-1 ring-[#c5a059]/40"
+              isPinned && "border-white/[0.2] bg-[#141418]",
+              isSelected && "border-white/50 bg-[#17171e] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_24px_rgba(255,255,255,0.05)]"
             )}
           >
             {/* Top: Machined Pocket + Specimen Extension Stamp + Options */}
@@ -129,7 +129,7 @@ export const FileCard = React.memo<FileCardProps>(
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className="flex h-4 w-4 items-center justify-center rounded-[2px] bg-[#e8d5b5] text-black shadow-sm"
+                    className="flex h-4 w-4 items-center justify-center rounded-[2px] bg-white text-black shadow-sm"
                   >
                     <Check className="h-2.5 w-2.5 stroke-[3px]" />
                   </motion.span>
@@ -138,7 +138,7 @@ export const FileCard = React.memo<FileCardProps>(
 
               <div className="flex items-center gap-1 sm:gap-1.5">
                 {/* Precision Archival Extension Stamp */}
-                <span className="font-mono text-[9px] font-semibold tracking-[0.16em] uppercase text-[#e8d5b5] bg-[#c5a059]/10 border border-[#c5a059]/25 px-1.5 py-0.5 rounded-[3px] group-hover:border-[#c5a059]/45 group-hover:bg-[#c5a059]/15 transition-colors">
+                <span className="font-mono text-[9px] font-semibold tracking-[0.16em] uppercase text-zinc-400 bg-white/[0.03] border border-white/[0.08] px-1.5 py-0.5 rounded-[3px] group-hover:border-white/[0.14] group-hover:text-zinc-200 transition-colors">
                   {getFileExtension()}
                 </span>
 
