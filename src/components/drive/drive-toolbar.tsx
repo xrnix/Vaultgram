@@ -283,7 +283,7 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
             <Button
               onClick={onTriggerUpload}
               size="sm"
-              className="hidden md:flex h-8 px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+              className="hidden md:flex h-8 px-3 gap-1.5 bg-[#e8d5b5] hover:bg-[#f0e2cd] text-[#08080a] font-semibold border-none shadow-[0_1px_10px_rgba(232,213,181,0.18)] text-xs rounded-[4px] active:scale-[0.97] transition-all"
               title="Upload File to Telegram"
             >
               <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
