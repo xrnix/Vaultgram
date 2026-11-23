@@ -34,6 +34,7 @@ import {
   Activity,
   Settings,
 } from "lucide-react";
+import { VaultgramLogo } from "@/components/ui/vaultgram-logo";
 import { AccountSwitcherDialog } from "@/components/drive/account-switcher-dialog";
 import { SessionExportModal } from "@/components/drive/session-export-modal";
 import { cn, formatBytes } from "@/lib/utils";
@@ -150,8 +151,8 @@ export const Sidebar: React.FC = () => {
       {isMobile && (
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#121215]/95 backdrop-blur-md pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/[0.06] border border-white/[0.1] text-zinc-100 shadow-sm">
-              <HardDrive className="h-3.5 w-3.5 stroke-[1.5px]" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.04] border border-white/[0.08] p-1 shadow-sm">
+              <VaultgramLogo className="h-4 w-4" />
             </div>
             <span className="font-semibold text-xs tracking-tight text-white font-sans">
               Vaultgram
@@ -539,6 +540,7 @@ export const Sidebar: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-white/90"></span>
             </span>
+            <VaultgramLogo className="h-3.5 w-3.5" />
             <span className="text-[11px] font-mono tracking-tight text-zinc-400 group-hover:text-white">Vaultgram</span>
             <Activity className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
           </button>

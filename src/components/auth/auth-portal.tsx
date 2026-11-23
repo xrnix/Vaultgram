@@ -11,7 +11,8 @@ import {
   TelegramConfig,
   DEFAULT_TELEGRAM_API_ID,
 } from "@/lib/telegram/session";
-import { HardDrive, QrCode, Phone, KeyRound, Settings2 } from "lucide-react";
+import { QrCode, Phone, KeyRound, Settings2 } from "lucide-react";
+import { VaultgramLogo } from "../ui/vaultgram-logo";
 
 export const AuthPortal: React.FC = () => {
   const [hasConfiguredKeys, setHasConfiguredKeys] = useState<boolean | null>(null);
@@ -42,8 +43,8 @@ export const AuthPortal: React.FC = () => {
       >
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2.5 pb-4">
-          <div className="specimen-inset flex h-10 w-10 items-center justify-center rounded-[5px] text-zinc-100">
-            <HardDrive className="h-5 w-5 stroke-[1.4px]" />
+          <div className="specimen-inset flex h-12 w-12 items-center justify-center rounded-[6px] p-2">
+            <VaultgramLogo className="h-7 w-7" />
           </div>
           <div>
             <span className="text-[9px] font-mono tracking-[0.25em] uppercase text-zinc-500 font-semibold block pb-0.5 select-none">

@@ -16,7 +16,6 @@ import {
   Trash2,
   LayoutGrid,
   List,
-  Shield,
 } from "lucide-react";
 import { useDriveStore } from "@/lib/stores/drive-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -26,6 +25,7 @@ import { clearAllChannelFilesFromDb } from "@/lib/telegram/session";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { VaultgramLogo } from "@/components/ui/vaultgram-logo";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -682,7 +682,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Footer Bar */}
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#121215]/95 text-[11px] font-mono text-zinc-500 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <Shield className="w-3.5 h-3.5 text-[#c49b56] shrink-0" />
+              <VaultgramLogo className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Vaultgram v2.0 · Zero Proxies</span>
             </div>
 

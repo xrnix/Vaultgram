@@ -10,7 +10,7 @@ import { DriveCanvas } from "@/components/drive/drive-canvas";
 import { TransferDock } from "@/components/drive/transfer-dock";
 import { initStreamBridge } from "@/lib/stream/stream-bridge";
 import { tgStreamClient } from "@/lib/telegram/client";
-import { HardDrive } from "lucide-react";
+import { VaultgramLogo } from "./components/ui/vaultgram-logo";
 import { Toaster } from "sonner";
 
 export const App: React.FC = () => {
@@ -94,8 +94,8 @@ export const App: React.FC = () => {
       {bootStatus === "BOOTING" ? (
         <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#09090b] relative z-10 px-4">
           <div className="relative flex flex-col items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-white/[0.05] border border-white/[0.1] text-zinc-100 shadow-sm animate-pulse">
-              <HardDrive className="h-5 w-5 stroke-[1.5px]" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] p-1.5 shadow-sm animate-pulse">
+              <VaultgramLogo className="h-6 w-6" />
             </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-white/80 animate-ping" />
