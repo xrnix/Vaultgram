@@ -404,6 +404,20 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     }
   };
 
+  const handleProgress = () => {
+    if (!videoRef.current || videoRef.current.buffered.length === 0) return;
+    const cur = videoRef.current.currentTime || 0;
+    // Show the end of the buffered range covering current playhead (or latest range)
+    let bestEnd = videoRef.current.buffered.end(videoRef.current.buffered.length - 1);
+    for (let i = 0; i < videoRef.current.buffered.length; i++) {
+      if (videoRef.current.buffered.start(i) <= cur + 0.5 && videoRef.current.buffered.end(i) >= cur) {
+        bestEnd = videoRef.current.buffered.end(i);
+        break;
+      }
+    }
+    setBufferedEnd(bestEnd);
+  };
+
   const handleLoadedMetadata = () => {
     if (!videoRef.current) return;
     const dur = videoRef.current.duration;
@@ -441,9 +455,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     const rect = scrubberRef.current.getBoundingClientRect();
     const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const target = pos * duration;
-    videoRef.current.currentTime = target;
-    setCurrentTime(target);
-    resetHideTimer();
+    seekAbsolute(target);
   };
 
   const handleScrubberMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -494,9 +506,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     const rect = scrubberRef.current.getBoundingClientRect();
     const pos = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
     const target = pos * duration;
-    videoRef.current.currentTime = target;
-    setCurrentTime(target);
-    resetHideTimer();
+    seekAbsolute(target);
   };
 
   const handleDownload = () => {
@@ -677,6 +687,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             ref={videoRef}
             className="w-full h-full object-contain cursor-pointer"
             onTimeUpdate={handleTimeUpdate}
+            onProgress={handleProgress}
             onLoadedMetadata={handleLoadedMetadata}
             onWaiting={() => setIsBuffering(true)}
             onPlaying={() => {

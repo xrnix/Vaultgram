@@ -78,6 +78,10 @@ export class TgStreamClient {
       connectionRetries: 5,
       downloadPool: {
         idleTimeoutMs: 300_000, // 5 minutes idle timeout so media DC connections stay warm
+        sessionStartupDelayMs: 100, // Fast ramp-up across parallel WebSockets on high-RTT DCs
+        download: {
+          sessions: 6, // 6 parallel media WebSocket sessions per DC (saturates transatlantic DC 1 Pluto BDP)
+        },
       },
       autoReconnect: true,
       deviceModel: "Vaultgram React Web",

@@ -14,9 +14,12 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+// Per-chunk inactivity timeout (60s covers transatlantic DC 1 initial handshake + chunk fetch).
+// Only armed while actively waiting for HEADERS or a PULL-requested CHUNK, so paused streams never time out.
+const CHUNK_INACTIVITY_TIMEOUT_MS = 60000;
+
 async function handleStreamRequest(event, url) {
   const request = event.request;
-  // Extract clean file ID without query parameters
   const rawId = url.pathname.replace(/^\/stream\//, "");
   const fileId = decodeURIComponent(rawId);
   const rangeHeader = request.headers.get("Range");
@@ -43,44 +46,77 @@ async function handleStreamRequest(event, url) {
   return new Promise((resolve) => {
     const channel = new MessageChannel();
     let isResolved = false;
+    let isClosed = false;
+    let streamController = null;
+    let inactivityTimer = null;
+    let pendingPulls = 0;
 
-    const cleanup = () => {
-      clearTimeout(timeoutTimer);
+    const clearWatchdog = () => {
+      if (inactivityTimer !== null) {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = null;
+      }
+    };
+
+    const closeChannel = (sendAbort) => {
+      if (isClosed) return;
+      isClosed = true;
+      clearWatchdog();
+      if (sendAbort) {
+        try {
+          channel.port1.postMessage({ type: "ABORT" });
+        } catch (_) {}
+      }
       try {
         channel.port1.onmessage = null;
         channel.port1.close();
       } catch (_) {}
     };
 
-    // 90-second safeguard covers worst-case initial transatlantic DH handshake + auth import + chunk fetch
-    const timeoutTimer = setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        try {
-          channel.port1.postMessage({ type: "ABORT" });
-        } catch (_) {}
-        cleanup();
-        resolve(
-          new Response("MTProto streaming request timed out", {
-            status: 504,
-            headers: { "Content-Type": "text/plain" },
-          })
-        );
-      }
-    }, 90000);
+    const armWatchdog = (reason) => {
+      clearWatchdog();
+      inactivityTimer = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          closeChannel(true);
+          resolve(
+            new Response(reason, {
+              status: 504,
+              headers: { "Content-Type": "text/plain" },
+            })
+          );
+        } else if (streamController && !isClosed) {
+          const ctrl = streamController;
+          streamController = null;
+          closeChannel(true);
+          try {
+            ctrl.error(new Error(reason));
+          } catch (_) {}
+        }
+      }, CHUNK_INACTIVITY_TIMEOUT_MS);
+    };
 
-    // Cancel / abort propagation if browser cancels the media request (e.g. seeking or closing)
+    // Arm watchdog while waiting for initial HEADERS + first chunk
+    armWatchdog("MTProto streaming request timed out");
+
+    // Propagate abort if browser cancels request before headers arrive
     if (request.signal) {
       request.signal.addEventListener(
         "abort",
         () => {
           if (!isResolved) {
             isResolved = true;
-            try {
-              channel.port1.postMessage({ type: "ABORT" });
-            } catch (_) {}
-            cleanup();
+            closeChannel(true);
             resolve(new Response(null, { status: 499, statusText: "Client Closed Request" }));
+          } else if (!isClosed) {
+            const ctrl = streamController;
+            streamController = null;
+            closeChannel(true);
+            if (ctrl) {
+              try {
+                ctrl.error(new Error("ABORTED"));
+              } catch (_) {}
+            }
           }
         },
         { once: true }
@@ -88,27 +124,47 @@ async function handleStreamRequest(event, url) {
     }
 
     channel.port1.onmessage = (msgEvent) => {
-      if (isResolved) return;
-      isResolved = true;
-      cleanup();
+      if (isClosed) return;
+      const data = msgEvent.data;
+      if (!data) return;
 
-      const { status, headers, body, error } = msgEvent.data;
-      if (error) {
-        if (error === "ABORTED") {
-          resolve(new Response(null, { status: 499, statusText: "Client Closed Request" }));
-          return;
+      // Support both structured streaming messages (type: HEADERS/CHUNK/ERROR) and legacy fallback
+      const msgType = data.type || (data.error ? "ERROR" : "LEGACY");
+
+      if (msgType === "ERROR") {
+        const errText = String(data.error || "Unknown streaming error");
+        if (!isResolved) {
+          isResolved = true;
+          closeChannel(false);
+          if (errText === "ABORTED") {
+            resolve(new Response(null, { status: 499, statusText: "Client Closed Request" }));
+          } else {
+            resolve(
+              new Response(errText, {
+                status: 500,
+                headers: { "Content-Type": "text/plain" },
+              })
+            );
+          }
+        } else {
+          const ctrl = streamController;
+          streamController = null;
+          closeChannel(false);
+          if (ctrl) {
+            try {
+              ctrl.error(new Error(errText));
+            } catch (_) {}
+          }
         }
-        resolve(
-          new Response(String(error), {
-            status: 500,
-            headers: { "Content-Type": "text/plain" },
-          })
-        );
         return;
       }
 
-      try {
-        const responseHeaders = new Headers(headers || {});
+      if (msgType === "HEADERS") {
+        if (isResolved) return;
+        isResolved = true;
+        clearWatchdog();
+
+        const responseHeaders = new Headers(data.headers || {});
         if (!responseHeaders.has("Accept-Ranges")) {
           responseHeaders.set("Accept-Ranges", "bytes");
         }
@@ -116,17 +172,102 @@ async function handleStreamRequest(event, url) {
           responseHeaders.set("Cache-Control", "no-cache");
         }
 
+        const status = data.status || (rangeHeader ? 206 : 200);
+
+        // Fast-path for 1-chunk responses (tiny probes, 416, or small ranges)
+        if (data.done) {
+          closeChannel(false);
+          resolve(
+            new Response(data.firstChunk || new ArrayBuffer(0), {
+              status,
+              headers: responseHeaders,
+            })
+          );
+          return;
+        }
+
+        // True streaming ReadableStream with 2-chunk IPC pipelining for multi-chunk HTTP 206 windows
+        const firstChunkBytes = data.firstChunk ? new Uint8Array(data.firstChunk) : null;
+        const stream = new ReadableStream(
+          {
+            start(controller) {
+              streamController = controller;
+              if (firstChunkBytes && firstChunkBytes.byteLength > 0) {
+                controller.enqueue(firstChunkBytes);
+              }
+            },
+            pull() {
+              if (isClosed) return;
+              pendingPulls++;
+              armWatchdog("MTProto chunk pull timed out");
+              try {
+                channel.port1.postMessage({ type: "PULL" });
+              } catch (_) {
+                closeChannel(false);
+              }
+            },
+            cancel() {
+              streamController = null;
+              closeChannel(true);
+            },
+          },
+          { highWaterMark: 2 }
+        );
+
         resolve(
-          new Response(body, {
-            status: status || (rangeHeader ? 206 : 200),
+          new Response(stream, {
+            status,
             headers: responseHeaders,
           })
         );
-      } catch (err) {
+        return;
+      }
+
+      if (msgType === "CHUNK") {
+        pendingPulls = Math.max(0, pendingPulls - 1);
+        if (pendingPulls === 0) {
+          clearWatchdog();
+        } else {
+          armWatchdog("MTProto chunk pull timed out");
+        }
+
+        const ctrl = streamController;
+        if (!ctrl) {
+          closeChannel(true);
+          return;
+        }
+
+        try {
+          if (data.body && data.body.byteLength > 0) {
+            ctrl.enqueue(new Uint8Array(data.body));
+          }
+          if (data.done) {
+            streamController = null;
+            closeChannel(false);
+            ctrl.close();
+          }
+        } catch (_) {
+          streamController = null;
+          closeChannel(true);
+        }
+        return;
+      }
+
+      // Legacy single-payload fallback
+      if (!isResolved) {
+        isResolved = true;
+        closeChannel(false);
+        const responseHeaders = new Headers(data.headers || {});
+        if (!responseHeaders.has("Accept-Ranges")) {
+          responseHeaders.set("Accept-Ranges", "bytes");
+        }
+        if (!responseHeaders.has("Cache-Control")) {
+          responseHeaders.set("Cache-Control", "no-cache");
+        }
         resolve(
-          new Response(`Failed to construct response: ${err}`, {
-            status: 500,
-            headers: { "Content-Type": "text/plain" },
+          new Response(data.body, {
+            status: data.status || (rangeHeader ? 206 : 200),
+            headers: responseHeaders,
           })
         );
       }
@@ -137,6 +278,7 @@ async function handleStreamRequest(event, url) {
         type: "VAULTGRAM_STREAM_REQUEST",
         fileId,
         range: rangeHeader,
+        streamProtocol: 2,
       },
       [channel.port2]
     );

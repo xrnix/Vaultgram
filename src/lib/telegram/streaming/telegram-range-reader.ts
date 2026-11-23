@@ -23,8 +23,17 @@ export type RangeReaderTelemetryListener = (stats: RangeReaderTelemetry) => void
 
 // Telegram MTProto Standard Fixed Chunk Size (512 KiB)
 export const TELEGRAM_CHUNK_SIZE = 512 * 1024; // 524,288 Bytes
-const MAX_CACHE_CHUNKS = 48; // 24 MiB in-memory LRU chunk cache
-const PREFETCH_AHEAD_CHUNKS = 2; // 1 MiB proactive lookahead for high-latency DCs (e.g. Pluto DC 1)
+const MAX_CACHE_CHUNKS = 96; // 48 MiB in-memory playhead-aware LRU cache
+
+// Sliding-window pipelining tuned for Bandwidth-Delay Product (BDP):
+// Foreign transatlantic DCs (e.g. Pluto DC 1 when home DC is Venus DC 2) have 200-350ms RTT
+// and need deeper concurrent pipelining across all 6 media WebSocket sessions to prevent stalls.
+const HOME_PREFETCH_AHEAD_CHUNKS = 6; // 3 MiB lookahead on low-RTT home DC
+const FOREIGN_PREFETCH_AHEAD_CHUNKS = 12; // 6 MiB lookahead on high-RTT foreign DCs
+const HOME_MAX_CONCURRENT_PREFETCH = 4;
+const FOREIGN_MAX_CONCURRENT_PREFETCH = 8;
+const INITIAL_PROBE_PREFETCH_CHUNKS = 2; // Conservative until sequential playback confirms non-EOF moov
+const JUMP_ABORT_THRESHOLD_CHUNKS = 4; // 2 MiB jump aborts obsolete prefetches immediately
 const CHUNK_TIMEOUT_MS = 55_000; // Generous timeout for transatlantic DH + auth import + 512 KiB transfer
 
 export interface TelegramSubRequest {
@@ -108,6 +117,11 @@ export class TelegramRangeReader {
   private inFlightChunks = new Map<number, InFlightChunkEntry>();
   private refreshPromise: Promise<void> | null = null;
 
+  // Playhead & adaptive pipelining state
+  private lastDemandAlignedOffset = -1;
+  private sequentialChunksServed = 0;
+  private floodThrottleUntil = 0;
+
   constructor(
     client: TelegramClient,
     file: DriveFile,
@@ -161,6 +175,158 @@ export class TelegramRangeReader {
     if (file.dcId && file.dcId !== this.dcId) {
       this.dcId = file.dcId;
     }
+  }
+
+  private isForeignDc(): boolean {
+    const homeDc = this.client.session?.dcId;
+    return Boolean(homeDc && this.dcId && this.dcId !== homeDc);
+  }
+
+  /**
+   * Returns true once the target DC has an authorized auth key so parallel download slots
+   * open concurrently instead of queuing serially behind SessionPool.keyCreation.
+   */
+  private isDcAuthorizedForParallel(): boolean {
+    if (!this.isForeignDc()) return true;
+    const dcState = (this.client as any)._dcenters?.get(this.dcId);
+    return Boolean(dcState?.authorized && dcState?.authKey?.getKey());
+  }
+
+  private getTargetLookaheadChunks(): number {
+    return this.isForeignDc() ? FOREIGN_PREFETCH_AHEAD_CHUNKS : HOME_PREFETCH_AHEAD_CHUNKS;
+  }
+
+  private getMaxConcurrentPrefetch(): number {
+    if (Date.now() < this.floodThrottleUntil) {
+      return 2;
+    }
+    return this.isForeignDc() ? FOREIGN_MAX_CONCURRENT_PREFETCH : HOME_MAX_CONCURRENT_PREFETCH;
+  }
+
+  /**
+   * Updates playhead tracking and immediately cancels stale prefetch-only RPCs
+   * when the browser jumps (e.g., seeking or fetching EOF moov atom).
+   */
+  private handleDemandAnchor(alignedOffset: number, requestedLength: number) {
+    // Ignore tiny metadata probes (e.g. Safari bytes=0-1) for jump/sequential state
+    if (requestedLength <= 4096) {
+      return;
+    }
+
+    if (this.lastDemandAlignedOffset >= 0) {
+      const delta = alignedOffset - this.lastDemandAlignedOffset;
+      if (Math.abs(delta) > JUMP_ABORT_THRESHOLD_CHUNKS * TELEGRAM_CHUNK_SIZE) {
+        // Browser jumped (seek or moov atom at EOF): abort out-of-window prefetches immediately
+        const windowEnd = alignedOffset + this.getTargetLookaheadChunks() * TELEGRAM_CHUNK_SIZE;
+        for (const [chunkOffset, entry] of this.inFlightChunks.entries()) {
+          if (entry.isPrefetchOnly && (chunkOffset < alignedOffset || chunkOffset > windowEnd)) {
+            try {
+              entry.controller.abort();
+            } catch {}
+          }
+        }
+        this.sequentialChunksServed = 0;
+      } else if (delta === TELEGRAM_CHUNK_SIZE || delta === 0) {
+        if (delta === TELEGRAM_CHUNK_SIZE) {
+          this.sequentialChunksServed++;
+        }
+      }
+    }
+
+    this.lastDemandAlignedOffset = alignedOffset;
+  }
+
+  /**
+   * Keeps the sliding lookahead window continuously saturated across the DC's parallel
+   * download WebSockets so transatlantic RTT never stalls playback.
+   */
+  private maintainPrefetchWindow(anchorAlignedOffset: number, allowFullWindow: boolean) {
+    if (this.isDestroyed || anchorAlignedOffset < 0 || this.fileSize <= 0) return;
+    if (!this.isDcAuthorizedForParallel()) return;
+
+    // Don't prefetch when probing the very tail of the file (EOF moov atom)
+    if (anchorAlignedOffset >= this.fileSize - TELEGRAM_CHUNK_SIZE) return;
+
+    const fullLookahead = this.getTargetLookaheadChunks();
+    const lookaheadChunks =
+      !allowFullWindow && anchorAlignedOffset === 0
+        ? Math.min(INITIAL_PROBE_PREFETCH_CHUNKS, fullLookahead)
+        : fullLookahead;
+
+    const maxConcurrent = this.getMaxConcurrentPrefetch();
+    let inFlightPrefetchCount = 0;
+    for (const entry of this.inFlightChunks.values()) {
+      if (entry.isPrefetchOnly) {
+        inFlightPrefetchCount++;
+      }
+    }
+
+    for (let i = 1; i <= lookaheadChunks; i++) {
+      if (inFlightPrefetchCount >= maxConcurrent) break;
+
+      const targetOffset = anchorAlignedOffset + i * TELEGRAM_CHUNK_SIZE;
+      if (targetOffset >= this.fileSize) break;
+      if (this.chunkCache.has(targetOffset) || this.inFlightChunks.has(targetOffset)) {
+        continue;
+      }
+
+      this.triggerPrefetch(targetOffset);
+      inFlightPrefetchCount++;
+    }
+  }
+
+  /**
+   * Stores a 512 KiB chunk in the playhead-aware cache. When full, evicts chunks
+   * behind the active playhead first so upcoming prefetched chunks are never discarded.
+   */
+  private cacheChunk(alignedOffset: number, bytes: Uint8Array) {
+    if (bytes.length === 0) return;
+
+    if (this.chunkCache.has(alignedOffset)) {
+      this.chunkCache.delete(alignedOffset);
+      this.chunkCache.set(alignedOffset, bytes);
+      return;
+    }
+
+    while (this.chunkCache.size >= MAX_CACHE_CHUNKS) {
+      let evictKey: number | undefined;
+      const playhead = this.lastDemandAlignedOffset;
+
+      if (playhead >= 0) {
+        const protectBehind = playhead - 2 * TELEGRAM_CHUNK_SIZE;
+        const protectAhead = playhead + (this.getTargetLookaheadChunks() + 2) * TELEGRAM_CHUNK_SIZE;
+
+        // 1. Prefer evicting the farthest-behind chunk outside the small behind-playhead cushion
+        for (const key of this.chunkCache.keys()) {
+          if (key < protectBehind) {
+            evictKey = key;
+            break;
+          }
+        }
+        // 2. Otherwise evict any chunk outside the active lookahead window
+        if (evictKey === undefined) {
+          for (const key of this.chunkCache.keys()) {
+            if (key < playhead || key > protectAhead) {
+              evictKey = key;
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. Fallback to oldest LRU entry
+      if (evictKey === undefined) {
+        evictKey = this.chunkCache.keys().next().value;
+      }
+
+      if (evictKey !== undefined) {
+        this.chunkCache.delete(evictKey);
+      } else {
+        break;
+      }
+    }
+
+    this.chunkCache.set(alignedOffset, bytes);
   }
 
   private notifyTelemetry(latencyMs = 0, newBytes = 0) {
@@ -237,8 +403,72 @@ export class TelegramRangeReader {
   }
 
   /**
+   * Reads a single 512 KiB-aligned sub-request slice for streaming ReadableStream HTTP 206 responses.
+   * Immediately pipelines the sliding lookahead window before and after serving the chunk.
+   */
+  public async readSubRequest(
+    sub: TelegramSubRequest,
+    signal?: AbortSignal,
+    totalStreamLength?: number
+  ): Promise<Uint8Array> {
+    if (this.isDestroyed || signal?.aborted) {
+      throw new Error("ABORTED");
+    }
+
+    const effectiveRequestLen = totalStreamLength ?? sub.logicalLength;
+    this.handleDemandAnchor(sub.alignedOffset, effectiveRequestLen);
+
+    const isStreamingRead = effectiveRequestLen > 4096;
+    const allowFullWindow = this.sequentialChunksServed >= 1 || sub.alignedOffset > 0;
+
+    if (isStreamingRead) {
+      this.maintainPrefetchWindow(sub.alignedOffset, allowFullWindow);
+    }
+
+    const abortController = new AbortController();
+    this.abortControllers.add(abortController);
+    const onParentAbort = () => abortController.abort();
+    if (signal) {
+      signal.addEventListener("abort", onParentAbort, { once: true });
+    }
+
+    try {
+      this.activeRequestsCount++;
+      this.notifyTelemetry();
+
+      const chunkData = await this.getOrFetchAlignedChunk(
+        sub.alignedOffset,
+        sub.limit,
+        abortController.signal,
+        false
+      );
+
+      // Re-run lookahead after chunk completes (catches the exact moment a brand-new foreign DC finishes auth)
+      if (isStreamingRead && chunkData.length > 0 && !this.isDestroyed) {
+        this.maintainPrefetchWindow(sub.alignedOffset, allowFullWindow);
+      }
+
+      if (!chunkData || chunkData.length === 0 || sub.leadingSkip >= chunkData.length) {
+        return new Uint8Array(0);
+      }
+
+      const usableBytes = chunkData.subarray(sub.leadingSkip);
+      const bytesToCopy = Math.min(sub.logicalLength, usableBytes.length);
+      return bytesToCopy > 0 ? usableBytes.subarray(0, bytesToCopy) : new Uint8Array(0);
+    } finally {
+      this.activeRequestsCount = Math.max(0, this.activeRequestsCount - 1);
+      this.abortControllers.delete(abortController);
+      if (signal) {
+        signal.removeEventListener("abort", onParentAbort);
+      }
+      this.notifyTelemetry();
+    }
+  }
+
+  /**
    * Reads an arbitrary byte range [offset, offset + length - 1] from Telegram MTProto directly in the browser.
-   * Decomposes the range into strictly valid 512 KiB-aligned sub-requests and reassembles in order.
+   * Decomposes the range into strictly valid 512 KiB-aligned sub-requests, fetches them in parallel,
+   * and reassembles them in exact order.
    */
   public async readRange(
     offset: number,
@@ -268,8 +498,16 @@ export class TelegramRangeReader {
       return new Uint8Array(0);
     }
 
-    const resultBuffer = new Uint8Array(exactRequestedLength);
-    let bytesWritten = 0;
+    const firstAligned = subRequests[0].alignedOffset;
+    const lastAligned = subRequests[subRequests.length - 1].alignedOffset;
+    const isStreamingRead = exactRequestedLength > 4096;
+
+    this.handleDemandAnchor(firstAligned, exactRequestedLength);
+    const allowFullWindow = this.sequentialChunksServed >= 1 || firstAligned > 0 || subRequests.length > 1;
+
+    if (isStreamingRead) {
+      this.maintainPrefetchWindow(lastAligned, allowFullWindow);
+    }
 
     const abortController = new AbortController();
     this.abortControllers.add(abortController);
@@ -283,22 +521,32 @@ export class TelegramRangeReader {
       this.activeRequestsCount++;
       this.notifyTelemetry();
 
-      for (const sub of subRequests) {
-        if (this.isDestroyed || abortController.signal.aborted || signal?.aborted) {
-          throw new Error("ABORTED");
-        }
+      // Fetch all required 512 KiB chunks concurrently across the DC's media pool
+      const chunkDatas = await Promise.all(
+        subRequests.map((sub) =>
+          this.getOrFetchAlignedChunk(
+            sub.alignedOffset,
+            sub.limit,
+            abortController.signal,
+            false
+          )
+        )
+      );
 
-        const chunkData = await this.getOrFetchAlignedChunk(
-          sub.alignedOffset,
-          sub.limit,
-          abortController.signal,
-          false
-        );
+      if (this.isDestroyed || abortController.signal.aborted || signal?.aborted) {
+        throw new Error("ABORTED");
+      }
+
+      const resultBuffer = new Uint8Array(exactRequestedLength);
+      let bytesWritten = 0;
+
+      for (let i = 0; i < subRequests.length; i++) {
+        const sub = subRequests[i];
+        const chunkData = chunkDatas[i];
 
         if (!chunkData || chunkData.length === 0) {
           break; // Reached EOF
         }
-
         if (sub.leadingSkip >= chunkData.length) {
           break;
         }
@@ -319,12 +567,9 @@ export class TelegramRangeReader {
         }
       }
 
-      // Proactively prefetch the next 2 aligned chunks in parallel across the DC's media pool
-      if (bytesWritten > 0 && subRequests.length > 0 && !this.isDestroyed) {
-        const lastAligned = subRequests[subRequests.length - 1].alignedOffset;
-        for (let i = 1; i <= PREFETCH_AHEAD_CHUNKS; i++) {
-          this.triggerPrefetch(lastAligned + i * TELEGRAM_CHUNK_SIZE);
-        }
+      if (bytesWritten > 0 && isStreamingRead && !this.isDestroyed) {
+        this.lastDemandAlignedOffset = lastAligned;
+        this.maintainPrefetchWindow(lastAligned, allowFullWindow);
       }
 
       return resultBuffer.subarray(0, bytesWritten);
@@ -339,7 +584,7 @@ export class TelegramRangeReader {
   }
 
   /**
-   * Proactively prefetches an aligned 512 KiB chunk into the in-memory LRU cache.
+   * Proactively prefetches an aligned 512 KiB chunk into the playhead-aware cache.
    * Deduplicated via `inFlightChunks`, so an upcoming browser Range request seamlessly joins it.
    */
   private triggerPrefetch(offset: number) {
@@ -355,6 +600,15 @@ export class TelegramRangeReader {
     this.abortControllers.add(prefetchController);
 
     this.getOrFetchAlignedChunk(alignedOffset, TELEGRAM_CHUNK_SIZE, prefetchController.signal, true)
+      .then((bytes) => {
+        // Keep the sliding pipeline saturated as soon as any prefetched chunk completes
+        if (!this.isDestroyed && bytes.length > 0 && this.lastDemandAlignedOffset >= 0) {
+          this.maintainPrefetchWindow(
+            this.lastDemandAlignedOffset,
+            this.sequentialChunksServed >= 1 || this.lastDemandAlignedOffset > 0
+          );
+        }
+      })
       .catch(() => {})
       .finally(() => {
         this.abortControllers.delete(prefetchController);
@@ -375,7 +629,7 @@ export class TelegramRangeReader {
       throw new Error("ABORTED");
     }
 
-    // Fast-path: LRU cache hit (refresh recency)
+    // Fast-path: cache hit (refresh recency)
     const cached = this.chunkCache.get(alignedOffset);
     if (cached) {
       this.chunkCache.delete(alignedOffset);
@@ -453,7 +707,7 @@ export class TelegramRangeReader {
   /**
    * Executes a single upload.GetFile RPC using teleproto's native multi-DC FileTransfers download pool
    * (`client._files.run`), which provides:
-   *  - 2 parallel media sessions per DC (primary gateway for DH + ImportAuth, `-1` media cluster once authorized)
+   *  - 6 parallel media sessions per DC (primary gateway for DH + ImportAuth, `-1` media cluster once authorized)
    *  - Proper SessionSlot leasing (prevents idle disconnects mid-stream)
    *  - True MTProto request cancellation (`RpcDropAnswer`) when browser aborts on seek
    *  - Built-in SlotRemovedError, FLOOD_WAIT, and 5xx server recovery
@@ -552,15 +806,8 @@ export class TelegramRangeReader {
         bytes = new Uint8Array(0);
       }
 
-      // Populate LRU cache (limit to 48 chunks = 24 MiB)
       if (bytes.length > 0) {
-        if (this.chunkCache.size >= MAX_CACHE_CHUNKS) {
-          const oldestKey = this.chunkCache.keys().next().value;
-          if (oldestKey !== undefined) {
-            this.chunkCache.delete(oldestKey);
-          }
-        }
-        this.chunkCache.set(alignedOffset, bytes);
+        this.cacheChunk(alignedOffset, bytes);
       }
 
       this.notifyTelemetry(latency, bytes.length);
@@ -608,8 +855,9 @@ export class TelegramRangeReader {
         return new Uint8Array(0);
       }
 
-      // 4. Handle Flood Wait
+      // 4. Handle Flood Wait (also dial down prefetch concurrency temporarily)
       if (errMsg.includes("FLOOD_WAIT_") || errMsg.includes("FLOOD_PREMIUM_WAIT_")) {
+        this.floodThrottleUntil = Date.now() + 30_000;
         const seconds = Math.min(30, parseInt(errMsg.replace(/\D/g, "") || "3", 10));
         console.warn(
           `[TelegramRangeReader] ${errMsg} on DC ${this.dcId} chunk ${alignedOffset}. Waiting ${seconds}s...`
