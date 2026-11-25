@@ -25,6 +25,8 @@ import { CommandPalette } from "./command-palette";
 import { AccountSwitcherDialog } from "./account-switcher-dialog";
 import { SessionExportModal } from "./session-export-modal";
 import { SettingsModal } from "./settings-modal";
+import { MediaGlyph } from "./media-glyph";
+import { isMediaCategory } from "@/lib/media-tokens";
 import { cn } from "@/lib/utils";
 
 interface DriveToolbarProps {
@@ -107,6 +109,8 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
     }
   };
 
+  const activeCategoryToken = isMediaCategory(activeFilter) ? activeFilter : null;
+
   return (
     <>
       {!hideHeader && (
@@ -131,10 +135,13 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
               </span>
               <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0 hidden sm:inline-block" />
               <span
-                className="font-mono sm:font-sans font-normal text-[10px] sm:text-xs text-zinc-400 truncate max-w-[140px] sm:max-w-[110px]"
+                className="flex items-center gap-1 min-w-0 font-mono sm:font-sans font-normal text-[10px] sm:text-xs text-zinc-400 truncate max-w-[140px] sm:max-w-[110px]"
                 title={getCategoryLabel()}
               >
-                {getCategoryLabel()}
+                {activeCategoryToken && (
+                  <MediaGlyph category={activeCategoryToken} className="h-3 w-3" strokeWidth={1.6} />
+                )}
+                <span className="truncate">{getCategoryLabel()}</span>
               </span>
             </div>
 
@@ -279,14 +286,14 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
               </button>
             </div>
 
-            {/* Desktop Upload Button (mobile uses MobileBottomNav primary Upload CTA) */}
+            {/* Desktop Upload CTA — primary auric anchor */}
             <Button
               onClick={onTriggerUpload}
               size="sm"
-              className="hidden md:flex h-8 px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+              className="hidden md:flex h-8 px-3 gap-1.5 rounded-[4px] border border-[#e8d5b5]/45 bg-[linear-gradient(180deg,#e6cd9d_0%,#c49b56_100%)] text-[#151009] font-semibold text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_1px_3px_rgba(0,0,0,0.7)] hover:bg-[linear-gradient(180deg,#f0dbb2_0%,#d3aa63_100%)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(196,155,86,0.35)] active:translate-y-px transition-all"
               title="Upload File to Telegram"
             >
-              <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
+              <Upload className="h-3.5 w-3.5 stroke-[2px]" />
               <span>Upload</span>
             </Button>
 

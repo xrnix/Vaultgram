@@ -75,15 +75,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <span className="text-[10px] font-mono tracking-tight">Search</span>
         </button>
 
-        {/* Upload CTA */}
+        {/* Upload CTA — primary auric anchor */}
         <div className="flex items-center justify-center h-full">
           <button
             type="button"
             onClick={onTriggerUpload}
             aria-label="Upload file"
-            className="flex h-10 w-12 items-center justify-center rounded-[5px] bg-white/[0.1] border border-white/[0.2] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] active:scale-95 transition-transform"
+            className="flex h-10 w-12 items-center justify-center rounded-[5px] border border-[#e8d5b5]/45 bg-[linear-gradient(180deg,#e6cd9d_0%,#c49b56_100%)] text-[#151009] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_1px_3px_rgba(0,0,0,0.7)] active:translate-y-px active:brightness-95 transition-transform"
           >
-            <Upload className="h-4 w-4 stroke-[1.8px]" />
+            <Upload className="h-4 w-4 stroke-[2.2px]" />
           </button>
         </div>
 

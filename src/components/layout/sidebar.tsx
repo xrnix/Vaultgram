@@ -33,11 +33,13 @@ import {
   Users,
   Activity,
   Settings,
+  type LucideIcon,
 } from "lucide-react";
 import { VaultgramLogo } from "@/components/ui/vaultgram-logo";
 import { AccountSwitcherDialog } from "@/components/drive/account-switcher-dialog";
 import { SessionExportModal } from "@/components/drive/session-export-modal";
 import { cn, formatBytes } from "@/lib/utils";
+import { ACCENT_TOKENS, MEDIA_TOKENS } from "@/lib/media-tokens";
 
 export const Sidebar: React.FC = () => {
   const {
@@ -122,18 +124,18 @@ export const Sidebar: React.FC = () => {
     return title.slice(0, 2).toUpperCase();
   };
 
-  const navItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count: number; colorClass: string }[] = [
-    { id: "ALL", indexStr: "01", label: "All Files", icon: Files, count: counts.ALL, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "IMAGE", indexStr: "02", label: "Images", icon: Image, count: counts.IMAGE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "VIDEO", indexStr: "03", label: "Videos", icon: Video, count: counts.VIDEO, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "DOC", indexStr: "04", label: "Documents", icon: FileText, count: counts.DOC, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "ARCHIVE", indexStr: "05", label: "Archives", icon: Archive, count: counts.ARCHIVE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "AUDIO", indexStr: "06", label: "Audio", icon: Music, count: counts.AUDIO, colorClass: "text-[#e6cfa3] group-hover:text-white" },
+  const navItems: { id: NavFilter; indexStr: string; label: string; icon: LucideIcon; count: number; hue: string }[] = [
+    { id: "ALL", indexStr: "01", label: "All Files", icon: Files, count: counts.ALL, hue: ACCENT_TOKENS.ALL },
+    { id: "IMAGE", indexStr: "02", label: "Images", icon: Image, count: counts.IMAGE, hue: MEDIA_TOKENS.IMAGE.hue },
+    { id: "VIDEO", indexStr: "03", label: "Videos", icon: Video, count: counts.VIDEO, hue: MEDIA_TOKENS.VIDEO.hue },
+    { id: "DOC", indexStr: "04", label: "Documents", icon: FileText, count: counts.DOC, hue: MEDIA_TOKENS.DOC.hue },
+    { id: "ARCHIVE", indexStr: "05", label: "Archives", icon: Archive, count: counts.ARCHIVE, hue: MEDIA_TOKENS.ARCHIVE.hue },
+    { id: "AUDIO", indexStr: "06", label: "Audio", icon: Music, count: counts.AUDIO, hue: MEDIA_TOKENS.AUDIO.hue },
   ];
 
-  const quickAccessItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count?: number; isBadge?: boolean; colorClass?: string }[] = [
-    { id: "PINNED", indexStr: "07", label: "Pinned Items", icon: Pin, count: counts.PINNED, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
-    { id: "FAVORITES", indexStr: "08", label: "Favorites", icon: Star, count: counts.FAVORITES, colorClass: "text-[#c49b56]" },
+  const quickAccessItems: { id: NavFilter; indexStr: string; label: string; icon: LucideIcon; count?: number; isBadge?: boolean; hue: string }[] = [
+    { id: "PINNED", indexStr: "07", label: "Pinned Items", icon: Pin, count: counts.PINNED, hue: ACCENT_TOKENS.PINNED },
+    { id: "FAVORITES", indexStr: "08", label: "Favorites", icon: Star, count: counts.FAVORITES, hue: ACCENT_TOKENS.FAVORITES },
     {
       id: "TRANSFERS",
       indexStr: "09",
@@ -141,7 +143,7 @@ export const Sidebar: React.FC = () => {
       icon: ArrowUpDown,
       count: activeTransfersCount > 0 ? activeTransfersCount : undefined,
       isBadge: activeTransfersCount > 0,
-      colorClass: "text-zinc-400 group-hover:text-zinc-100",
+      hue: ACCENT_TOKENS.TRANSFERS,
     },
   ];
 
@@ -331,7 +333,7 @@ export const Sidebar: React.FC = () => {
                   )}
                   <div className="relative z-10 flex items-center gap-2">
                     <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
-                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
+                    <Icon className="h-3.5 w-3.5 stroke-[1.5px]" style={{ color: item.hue }} />
                     <span className="font-sans">{item.label}</span>
                   </div>
                   <span className="relative z-10 font-mono text-[10px] text-zinc-500 tabular-nums">
@@ -380,7 +382,7 @@ export const Sidebar: React.FC = () => {
                   )}
                   <div className="relative z-10 flex items-center gap-2">
                     <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
-                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
+                    <Icon className="h-3.5 w-3.5 stroke-[1.5px]" style={{ color: item.hue }} />
                     <span className="font-sans">{item.label}</span>
                   </div>
                   {item.count !== undefined && (

@@ -1,8 +1,11 @@
 # Vaultgram — Current State & Active Milestone
 
 ## 1. Active Milestone
-**Milestone:** Pure Client-Side MTProto + MSE Streaming Pipeline (Zero Backend & Daemon Deprecation).
-**Active Focus:** Browser-native MP4Box demuxing, MediaSource segmenting, random keyframe seeking, and live stream telemetry.
+**Milestone:** Production Polish, Semantic Color Spectrum & Direct Storage Streaming.
+**Active Focus:**
+- Exploring File System Access API (`showSaveFilePicker` + `WritableStream`) for direct zero-RAM multi-gigabyte disk writes.
+- Semantic media spectrum shipped: a single `src/lib/media-tokens.ts` register now drives card wells, extension stamps, list-row spines, sidebar indices, breadcrumbs, and mobile category dots (emerald images, sapphire video, amber audio, slate-ice docs, tangerine archives).
+- Continuous Cloudflare Pages static edge verification.
 
 ---
 
@@ -10,43 +13,52 @@
 
 | Subsystem | Status | Key Components / Ownership |
 | :--- | :--- | :--- |
-| **Auth Portal (Stage 1)** | Verified | QR code instant login, Phone + OTP + SRP 2FA (`TwoFaDialog`), StringSession import, IndexedDB session caching (`session.ts`, `auth-store.ts`, `auth-portal.tsx`). |
+| **Official Brand Identity** | Verified | Monochrome stealth origami delta logo (`<VaultgramLogo />`), high-DPI transparent assets (`public/logo.png`, `public/logo-192.png`, `public/favicon.ico`, `public/favicon.svg`), brand headers in Auth Portal, App boot loader, and Sidebar. |
+| **MTProto Engine (`teleproto`)** | Verified | Active modern MTProto fork (`teleproto` `^1.233.0`) over WebSocket (`ConnectionWebSocketObfuscated`). Stable connection pooling across Telegram DCs (1 through 5). |
+| **Auth Portal (Stage 1)** | Verified | Instant QR login, Phone + SMS OTP, SRP 2FA password verification (`TwoFaDialog`), GramJS/Teleproto StringSession export & import, encrypted session caching in IndexedDB (`session.ts`, `auth-store.ts`, `auth-portal.tsx`). |
 | **Channel Wizard (Stage 2)** | Verified | Multi-channel selection, Saved Messages support, uniform channel rows, search filter, rate-limit recovery (`channel-wizard-store.ts`, `channel-wizard.tsx`). |
-| **Dual-Zone Drive (Stage 3)** | Verified | Zone A (Top 25% horizontal carousel + Unified View), Zone B (Bottom 75% categories, quick access, custom folders), Main Canvas (Grid/List views, context menu, preview lightbox) (`sidebar.tsx`, `drive-canvas.tsx`, `drive-toolbar.tsx`, `drive-store.ts`). |
-| **Deep Media Indexer** | Verified | Non-blocking iterative `offsetId` pagination loop (100 batch size), incremental top-sync (`minId`), 10k+ file windowing (`pageSize: 60`), IndexedDB file caching (`indexer.ts`). |
-| **Zero-Backend Cloud Sync** | Verified | Automatic discovery/creation of private Telegram config channel (`[VAULTGRAM_CONFIG_V1]`), singleton promise mutex, 3-step idempotent resolution, 3s debounced optimistic write (`syncStore.ts`). |
-| **Chunked Multi-Part Uploader** | Verified | Native browser `File` ingestion with 4 GramJS workers, sliding-window speed/ETA telemetry, full-window `DropzoneOverlay`, and `FLOOD_WAIT` countdown (`uploader.ts`, `dropzone-overlay.tsx`). |
-| **Parallel Chunk Downloader** | Verified | 4-worker bounded MTProto pool (`Api.upload.GetFile`, 512 KB chunks), index-based ordered chunk storage, accurate `link.click()` lifecycle completion, and 10s auto-revoking Blob cleanup (`downloader.ts`). |
-| **Pure-Browser MSE Video Player** | Verified | Direct browser-native streaming over WebSockets via `TelegramRangeReader`, progressive ISO-BMFF fragmentation via `Mp4DemuxSegmenter`, serialized SourceBuffer append queue via `MseStreamController`, and live diagnostic HUD (`video-player-modal.tsx`). |
-| **Transfer Queue Dock** | Verified | Floating dock with active task counters, aggregate progress bar, speed/ETA in Geist Mono, and per-task abort/cancel (`transfer-dock.tsx`, `transfer-store.ts`). |
+| **Dual-Zone Drive (Stage 3)** | Verified | Zone A (Top channel carousel + Unified multi-channel aggregation), Zone B (Categories, custom virtual folders), Main Canvas (Virtualized grid & dense list views, context menu, preview lightbox) (`sidebar.tsx`, `drive-canvas.tsx`, `drive-toolbar.tsx`, `drive-store.ts`). |
+| **Dual-Path Media Streaming** | Verified | **Path A:** ServiceWorker virtual HTTP range request bridge (`/stream/:channelId/:messageId`) translating standard `bytes=X-Y` requests into 512KB MTProto chunks. **Path B:** In-browser MP4Box demuxer and MSE SourceBuffer segmenter for non-FastStart MP4s. Real-time telemetry HUD with active DC tags (`video-player-modal.tsx`, `stream-bridge.ts`, `mse-stream-controller.ts`). |
+| **Cross-DC Auto-Healing** | Verified | Automatic cross-DC authorization transfer (`auth.exportAuthorization` / `auth.importAuthorization`) when media is hosted on non-primary DCs. Automatic `FILE_REFERENCE_EXPIRED` recovery querying parent message locations without interrupting playback (`media-refresher.ts`, `telegram-range-reader.ts`). |
+| **Multi-Worker Transfer Engine** | Verified | 4-worker chunked uploader with sliding 500ms speed/ETA telemetry and cancellation; 4-worker parallel chunk downloader with in-order Blob construction and auto-revoking memory URLs (`uploader.ts`, `downloader.ts`, `transfer-dock.tsx`). |
+| **Zero-Backend Cloud Sync** | Verified | Auto-discovery/creation of private Telegram config channel (`"Vaultgram Vault (Do Not Delete)"` tagged `[VAULTGRAM_CONFIG_V1]`), singleton promise mutex, 3-step idempotent resolution, 3s debounced optimistic write (`syncStore.ts`). |
+| **Physical Craftsmanship Design** | Verified | Dark anodized brushed obsidian gradients (`.specimen-card`), 1px micro-milled top bevel highlights, deep recessed insets (`.specimen-inset`), precision optical hardware status indicators (1.5px emerald LED pin-dots), high-contrast Auric Champagne primary upload CTA. |
+| **Media Inspection Suite** | Verified | In-browser PDF reader (`pdfjs-dist`), in-memory ZIP archive explorer (`jszip`), high-DPI image lightbox with prefetching, syntax-highlighted code/text previewer (`pdf-viewer-modal.tsx`, `archive-viewer-modal.tsx`, `text-viewer-modal.tsx`). |
+| **Universal Command Center** | Verified | Keyboard-first spotlight palette (`Cmd+K` / `Ctrl+K`), instant search (`/`), quick shortcuts sheet (`?`), real-time DC latency and socket telemetry (`command-palette.tsx`, `network-monitor-modal.tsx`). |
+| **Licensing & Documentation** | Verified | Official GNU Affero General Public License v3.0 ([`LICENSE`](file:///home/hussain/Vaultgram/LICENSE)) and comprehensive systems architecture documentation ([`README.md`](file:///home/hussain/Vaultgram/README.md)). |
 
 ---
 
 ## 3. Important Architectural Files
 
-- [`src/lib/telegram/client.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/client.ts): MTProto WebSocket client, DC connection gateways, QR/Phone auth state machine.
-- [`src/lib/telegram/session.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/session.ts): Typed IndexedDB persistence for sessions, config, channels, and batch file caches.
-- [`src/lib/telegram/indexer.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/indexer.ts): Iterative media indexer with non-blocking delays and `DriveFile` normalizer.
-- [`src/lib/telegram/syncStore.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/syncStore.ts): Zero-backend cloud config sync using private Telegram system channel.
-- [`src/lib/telegram/transfer/uploader.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/transfer/uploader.ts): 4-worker MTProto chunked file uploader with cancellation and live progress.
-- [`src/lib/telegram/transfer/downloader.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/transfer/downloader.ts): 4-worker parallel MTProto chunk downloader with ordered assembly.
-- [`src/lib/telegram/streaming/telegram-range-reader.ts`](file:///home/hussain/Frontend%20JEE/src/lib/telegram/streaming/telegram-range-reader.ts): 4KB-aligned MTProto range transport with multi-DC pooling and token auto-refresh.
-- [`src/lib/streaming/mp4-demux-segmenter.ts`](file:///home/hussain/Frontend%20JEE/src/lib/streaming/mp4-demux-segmenter.ts): In-browser ISO-BMFF box parser, moov header probe, and sample segmenter.
-- [`src/lib/streaming/mse-stream-controller.ts`](file:///home/hussain/Frontend%20JEE/src/lib/streaming/mse-stream-controller.ts): MediaSource/SourceBuffer controller with serialized appends and backpressure loop.
-- [`src/components/drive/video-player-modal.tsx`](file:///home/hussain/Frontend%20JEE/src/components/drive/video-player-modal.tsx): Pure-browser video preview modal with telemetry HUD, custom controls, and download fallback.
+- [`src/lib/telegram/client.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/client.ts): MTProto WebSocket client (`teleproto`), DC connection gateways, QR/Phone auth state machine.
+- [`src/lib/telegram/session.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/session.ts): Typed IndexedDB persistence for sessions, config, channels, and batch file caches.
+- [`src/lib/telegram/indexer.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/indexer.ts): Iterative media indexer with 60ms non-blocking yields and `DriveFile` normalizer.
+- [`src/lib/telegram/syncStore.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/syncStore.ts): Zero-backend cloud config sync using private Telegram system channel.
+- [`src/lib/telegram/transfer/uploader.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/transfer/uploader.ts): 4-worker MTProto chunked file uploader with cancellation and live progress.
+- [`src/lib/telegram/transfer/downloader.ts`](file:///home/hussain/Vaultgram/src/lib/telegram/transfer/downloader.ts): 4-worker parallel MTProto chunk downloader with ordered assembly.
+- [`src/lib/stream/stream-bridge.ts`](file:///home/hussain/Vaultgram/src/lib/stream/stream-bridge.ts): ServiceWorker message bridge for HTTP range request interception.
+- [`src/lib/streaming/mse-stream-controller.ts`](file:///home/hussain/Vaultgram/src/lib/streaming/mse-stream-controller.ts): MediaSource/SourceBuffer controller with serialized appends and backpressure loop.
+- [`src/lib/streaming/mp4-demux-segmenter.ts`](file:///home/hussain/Vaultgram/src/lib/streaming/mp4-demux-segmenter.ts): In-browser ISO-BMFF box parser, moov header probe, and sample segmenter.
+- [`src/components/ui/vaultgram-logo.tsx`](file:///home/hussain/Vaultgram/src/components/ui/vaultgram-logo.tsx): Reusable stealth origami delta brand component.
+- [`src/lib/media-tokens.ts`](file:///home/hussain/Vaultgram/src/lib/media-tokens.ts): Semantic media token register (hue / 10% wash / 26% hairline per file class) consumed by every file surface, plus `media-glyph.tsx` for the tinted category glyph.
+- [`src/components/drive/video-player-modal.tsx`](file:///home/hussain/Vaultgram/src/components/drive/video-player-modal.tsx): Pure-browser video player with telemetry HUD, DC indicators, and fallback controls.
 
 ---
 
 ## 4. Current Verification State
 
-- **Daemon Status:** Completely eliminated from runtime application. Zero backend dependencies.
 - **TypeScript Typecheck (`npx tsc --noEmit`):** Clean (0 errors, exit code 0).
 - **Production Build (`npm run build`):** Clean (Built in ~10.8s, output in `dist/`).
-- **Runtime Environment:** Dev server running on `http://localhost:5173/`.
+- **Remote Sync:** Main branch synchronized with `origin/main` on GitHub (`https://github.com/xrnix/Vaultgram.git`).
+- **Deployment Target:** Cloudflare Pages (Static SPA) connected to `main`.
+- **Local Dev Server:** Runs on `http://localhost:5173/`.
 
 ---
 
-## 5. Last Significant Changes
-1. **Pure-Browser MSE Streaming Engine:** Completely replaced the local Node.js daemon with in-browser `TelegramRangeReader`, `Mp4DemuxSegmenter`, and `MseStreamController`.
-2. **In-Flight Token Auto-Healing:** Added automatic `FILE_REFERENCE_EXPIRED` recovery directly inside the browser transport layer, seamlessly re-fetching message locations without interrupting the playback stream.
-3. **Live Stream Telemetry HUD:** Integrated real-time network throughput, forward buffer seconds, active MTProto requests, and MIME/codec indicators into the video preview modal.
+## 5. Recent Key Milestones
+1. **Official Monochrome Brand Identity:** Integrated the stealth delta logo across the Auth Portal, App boot loader, Sidebar, and generated multi-resolution web favicons (`favicon.ico`, `favicon.svg`, `logo-192.png`, `logo.png`).
+2. **Teleproto Migration:** Upgraded the core MTProto transport from archived GramJS to `teleproto` with enhanced WebSocket stability.
+3. **Physical Materiality UI:** Eliminated AI-style neon/pill badges in favor of precision optical LED hardware indicators, dark anodized brushed obsidian gradients with micro-milled bevel highlights, and high-contrast auric champagne action anchors.
+4. **Comprehensive Documentation & AGPLv3 Licensing:** Pushed full GNU AGPLv3 license and comprehensive architectural `README.md`.
+5. **Semantic Media Spectrum & Keyboard Access:** Introduced the media-token register, tinted category wells/stamps/spines across grid, list, sidebar, breadcrumbs and mobile strip; cards and rows became keyboard-focusable with composed accessible names, and the Upload CTA was restored to its documented auric primary anchor.

@@ -17,12 +17,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  Image,
-  Video,
-  FileText,
-  Archive,
-  Music,
-  File,
   Download,
   Eye,
   Pin,
@@ -34,6 +28,8 @@ import {
   Check,
 } from "lucide-react";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
+import { MEDIA_TOKENS } from "@/lib/media-tokens";
+import { MediaGlyph } from "./media-glyph";
 import { toast } from "sonner";
 
 interface FileCardProps {
@@ -60,29 +56,14 @@ export const FileCard = React.memo<FileCardProps>(
       file.category === "DOC" &&
       !!file.name.toLowerCase().match(/\.(txt|md|json|js|ts|tsx|jsx|html|css|py|rs|go|sh|yml|yaml|xml|csv|log|env)$/);
 
+    const token = MEDIA_TOKENS[file.category] ?? MEDIA_TOKENS.OTHER;
+
     const getFileExtension = () => {
       const parts = file.name.split(".");
       if (parts.length > 1) {
         return parts.pop()?.toUpperCase().slice(0, 4) || file.category;
       }
       return file.category;
-    };
-
-    const getFileIcon = () => {
-      switch (file.category) {
-        case "IMAGE":
-          return <Image className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
-        case "VIDEO":
-          return <Video className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
-        case "DOC":
-          return <FileText className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
-        case "ARCHIVE":
-          return <Archive className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
-        case "AUDIO":
-          return <Music className="h-4 w-4 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
-        default:
-          return <File className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
-      }
     };
 
     const copyTelegramReference = (e?: React.MouseEvent) => {
@@ -92,15 +73,30 @@ export const FileCard = React.memo<FileCardProps>(
       toast.success("Telegram message reference copied to clipboard");
     };
 
+    const openFile = () => {
+      if (isCodeOrText) {
+        setTextViewerFile(file);
+      } else {
+        setPreviewFile(file);
+      }
+    };
+
     const handleClick = (e: React.MouseEvent) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
         e.preventDefault();
         toggleSelectFile(file.id);
       } else {
-        if (isCodeOrText) {
-          setTextViewerFile(file);
+        openFile();
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        if (e.metaKey || e.ctrlKey || e.shiftKey) {
+          toggleSelectFile(file.id);
         } else {
-          setPreviewFile(file);
+          openFile();
         }
       }
     };
@@ -112,17 +108,39 @@ export const FileCard = React.memo<FileCardProps>(
             whileHover={{ y: -2, transition: { type: "spring", stiffness: 450, damping: 28 } }}
             whileTap={{ scale: 0.98 }}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label={`${file.name} — ${token.label}, ${formatBytes(file.size)}`}
+            data-selected={isSelected ? "true" : undefined}
             className={cn(
-              "specimen-card hairline-sheen group relative flex flex-col justify-between rounded-[5px] p-3 transition-all duration-200 cursor-pointer select-none h-[140px] overflow-hidden",
+              "specimen-card hairline-sheen group relative flex flex-col justify-between rounded-[5px] p-3 transition-all duration-200 cursor-pointer select-none h-[140px] overflow-hidden outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-inset",
               isPinned && "border-white/[0.2] bg-[#141418]",
               isSelected && "border-white/50 bg-[#17171e] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_24px_rgba(255,255,255,0.05)]"
             )}
           >
+            {/* Semantic category bloom — reveals the media class at a glance */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-80"
+              style={{ backgroundImage: token.bloom }}
+            />
+
+            {/* Machined optical spine keyed to the media class */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-3.5 left-0 w-[2px] rounded-r-[1px] opacity-50 transition-opacity duration-200 group-hover:opacity-90"
+              style={{ backgroundImage: `linear-gradient(180deg, ${token.hue}, transparent)` }}
+            />
+
             {/* Top: Machined Pocket + Specimen Extension Stamp + Options */}
-            <div className="flex items-start justify-between gap-1.5">
+            <div className="relative flex items-start justify-between gap-1.5">
               <div className="flex items-center gap-2">
-                <div className="specimen-inset flex h-8 w-8 items-center justify-center rounded-[4px] shrink-0">
-                  {getFileIcon()}
+                <div
+                  className="specimen-inset flex h-8 w-8 items-center justify-center rounded-[4px] shrink-0"
+                  style={{ backgroundColor: token.wash, borderColor: token.line }}
+                >
+                  <MediaGlyph category={file.category} className="h-4 w-4" />
                 </div>
                 {isSelected && (
                   <motion.span
@@ -138,7 +156,14 @@ export const FileCard = React.memo<FileCardProps>(
 
               <div className="flex items-center gap-1 sm:gap-1.5">
                 {/* Precision Archival Extension Stamp */}
-                <span className="font-mono text-[9px] font-semibold tracking-[0.16em] uppercase text-zinc-400 bg-white/[0.03] border border-white/[0.08] px-1.5 py-0.5 rounded-[3px] group-hover:border-white/[0.14] group-hover:text-zinc-200 transition-colors">
+                <span
+                  className="font-mono text-[9px] font-semibold tracking-[0.16em] uppercase px-1.5 py-0.5 rounded-[3px] border transition-colors"
+                  style={{
+                    color: token.hue,
+                    backgroundColor: token.wash,
+                    borderColor: token.line,
+                  }}
+                >
                   {getFileExtension()}
                 </span>
 
@@ -274,7 +299,7 @@ export const FileCard = React.memo<FileCardProps>(
             </div>
 
             {/* Middle: File Name */}
-            <div className="my-auto py-1">
+            <div className="relative my-auto py-1">
               <span
                 className="line-clamp-2 text-xs font-medium leading-snug text-zinc-200 group-hover:text-white break-words font-sans"
                 title={file.name}
@@ -284,7 +309,7 @@ export const FileCard = React.memo<FileCardProps>(
             </div>
 
             {/* Bottom: Meta Bar with Tabular Numerals */}
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-1.5 sm:pt-2 font-mono text-[10px] text-zinc-500 tabular-nums">
+            <div className="relative flex items-center justify-between border-t border-white/[0.06] pt-1.5 sm:pt-2 font-mono text-[10px] text-zinc-500 tabular-nums">
               <span>{formatBytes(file.size)}</span>
               <span className="truncate ml-1">{formatDate(file.date)}</span>
             </div>

@@ -29,6 +29,7 @@ import { TransfersView } from "./transfers-view";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { Inbox, Upload, FilterX } from "lucide-react";
 import { formatBytes, cn } from "@/lib/utils";
+import { isMediaCategory, MEDIA_TOKENS } from "@/lib/media-tokens";
 import { toast } from "sonner";
 
 export const DriveCanvas: React.FC = () => {
@@ -292,12 +293,22 @@ export const DriveCanvas: React.FC = () => {
                   type="button"
                   onClick={() => setActiveFilter(cat.id)}
                   className={cn(
-                    "shrink-0 h-8 px-3 rounded-[4px] text-[11px] font-mono transition-colors active:scale-95",
+                    "shrink-0 h-8 px-3 rounded-[4px] text-[11px] font-mono transition-colors active:scale-95 flex items-center gap-1.5",
                     isAct
                       ? "bg-white/[0.12] text-white border border-white/[0.2] font-medium"
                       : "bg-white/[0.02] text-zinc-400 border border-white/[0.06] hover:text-zinc-200"
                   )}
                 >
+                  {isMediaCategory(cat.id) && (
+                    <span
+                      aria-hidden="true"
+                      className="h-1 w-1 rounded-full shrink-0"
+                      style={{
+                        backgroundColor: MEDIA_TOKENS[cat.id].hue,
+                        opacity: isAct ? 1 : 0.65,
+                      }}
+                    />
+                  )}
                   {cat.label}
                 </button>
               );

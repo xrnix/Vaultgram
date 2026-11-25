@@ -20,6 +20,7 @@ import { useDriveStore } from "@/lib/stores/drive-store";
 import { useTransferStore } from "@/lib/stores/transfer-store";
 import { Button } from "@/components/ui/button";
 import { formatBytes, formatDate } from "@/lib/utils";
+import { MEDIA_TOKENS } from "@/lib/media-tokens";
 import { toast } from "sonner";
 
 interface FileDetailsModalProps {
@@ -49,6 +50,7 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
 
   const isPinned = pinnedFileIds.has(file.id);
   const isFavorite = favoriteFileIds.has(file.id);
+  const categoryToken = MEDIA_TOKENS[file.category] ?? MEDIA_TOKENS.OTHER;
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -176,9 +178,15 @@ export const FileDetailsModal: React.FC<FileDetailsModalProps> = ({
                 </span>
               </div>
 
-              <div className="p-3 rounded-[5px] border border-white/[0.08] bg-white/[0.02] space-y-1">
+              <div
+                className="p-3 rounded-[5px] border space-y-1"
+                style={{ borderColor: categoryToken.line, backgroundColor: categoryToken.wash }}
+              >
                 <span className="text-[10px] font-mono text-zinc-500 uppercase block">Category</span>
-                <span className="text-xs font-mono font-medium text-white block">
+                <span
+                  className="text-xs font-mono font-medium block"
+                  style={{ color: categoryToken.hue }}
+                >
                   {file.category}
                 </span>
                 <span className="text-[9px] font-mono text-zinc-500 block truncate">

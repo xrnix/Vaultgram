@@ -16,12 +16,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  Image,
-  Video,
-  FileText,
-  Archive,
-  Music,
-  File,
   Download,
   Eye,
   Pin,
@@ -33,6 +27,8 @@ import {
   Check,
 } from "lucide-react";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
+import { MEDIA_TOKENS } from "@/lib/media-tokens";
+import { MediaGlyph } from "./media-glyph";
 import { toast } from "sonner";
 
 interface FileTableRowProps {
@@ -59,35 +55,7 @@ export const FileTableRow = React.memo<FileTableRowProps>(
       file.category === "DOC" &&
       !!file.name.toLowerCase().match(/\.(txt|md|json|js|ts|tsx|jsx|html|css|py|rs|go|sh|yml|yaml|xml|csv|log|env)$/);
 
-    const handleClick = (e: React.MouseEvent) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
-        e.preventDefault();
-        toggleSelectFile(file.id);
-      } else {
-        if (isCodeOrText) {
-          setTextViewerFile(file);
-        } else {
-          setPreviewFile(file);
-        }
-      }
-    };
-
-    const getFileIcon = () => {
-      switch (file.category) {
-        case "IMAGE":
-          return <Image className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
-        case "VIDEO":
-          return <Video className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
-        case "DOC":
-          return <FileText className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
-        case "ARCHIVE":
-          return <Archive className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
-        case "AUDIO":
-          return <Music className="h-3.5 w-3.5 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
-        default:
-          return <File className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
-      }
-    };
+    const token = MEDIA_TOKENS[file.category] ?? MEDIA_TOKENS.OTHER;
 
     const copyTelegramReference = (e?: React.MouseEvent) => {
       e?.stopPropagation();
@@ -96,20 +64,63 @@ export const FileTableRow = React.memo<FileTableRowProps>(
       toast.success("Telegram message reference copied to clipboard");
     };
 
+    const openFile = () => {
+      if (isCodeOrText) {
+        setTextViewerFile(file);
+      } else {
+        setPreviewFile(file);
+      }
+    };
+
+    const handleClick = (e: React.MouseEvent) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
+        e.preventDefault();
+        toggleSelectFile(file.id);
+      } else {
+        openFile();
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        if (e.metaKey || e.ctrlKey || e.shiftKey) {
+          toggleSelectFile(file.id);
+        } else {
+          openFile();
+        }
+      }
+    };
+
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label={`${file.name} — ${token.label}, ${formatBytes(file.size)}`}
+            data-selected={isSelected ? "true" : undefined}
             className={cn(
-              "group flex h-full w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2.5 sm:px-3 active:bg-white/[0.05]",
+              "group relative flex h-full w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2.5 sm:px-3 active:bg-white/[0.05] outline-none focus-visible:bg-white/[0.05] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/25",
               isSelected && "bg-white/[0.06] border-white/20"
             )}
           >
+            {/* Semantic row spine — appears on hover/focus so scanning a list is instant */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-[2px] opacity-0 transition-opacity duration-150 group-hover:opacity-70 group-focus-visible:opacity-70"
+              style={{ backgroundColor: token.hue }}
+            />
+
             {/* Name & Icon (2-line stacked metadata on mobile) */}
             <div className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0 pr-2 sm:pr-4">
-              <div className="specimen-inset flex h-8 w-8 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-[4px] sm:rounded-[3px] transition-colors">
-                {getFileIcon()}
+              <div
+                className="specimen-inset flex h-8 w-8 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-[4px] sm:rounded-[3px] transition-colors"
+                style={{ backgroundColor: token.wash, borderColor: token.line }}
+              >
+                <MediaGlyph category={file.category} className="h-3.5 w-3.5" />
               </div>
               {isSelected && (
                 <span className="flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded-[2px] bg-white text-black shrink-0">
@@ -142,9 +153,12 @@ export const FileTableRow = React.memo<FileTableRowProps>(
               {file.channelTitle}
             </div>
 
-            {/* Category Badge (hidden on mobile/tablet) */}
-            <div className="w-20 sm:w-24 shrink-0 font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-zinc-400 px-2 hidden md:block">
-              <span className="rounded-[3px] bg-white/[0.03] border border-white/[0.08] px-1.5 py-0.5">
+            {/* Category Stamp (hidden on mobile/tablet) */}
+            <div className="w-20 sm:w-24 shrink-0 font-mono text-[9px] font-semibold tracking-[0.14em] uppercase px-2 hidden md:block">
+              <span
+                className="rounded-[3px] border px-1.5 py-0.5"
+                style={{ color: token.hue, backgroundColor: token.wash, borderColor: token.line }}
+              >
                 {file.category}
               </span>
             </div>
