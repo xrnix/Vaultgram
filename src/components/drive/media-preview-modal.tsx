@@ -400,7 +400,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
               transition={{ type: "spring", stiffness: 450, damping: 30 }}
               className="w-full flex items-center justify-center pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 px-3 z-30 shrink-0"
             >
-              <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[6px] sm:rounded-full bg-[#121215]/92 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[6px] sm:rounded-full bg-[#121215]/95 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
                 {/* Zoom Out */}
                 <button
                   type="button"

@@ -25,96 +25,107 @@ export const FloatingAudioBar: React.FC = () => {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 450, damping: 32 }}
-        className="specimen-card hairline-sheen fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4 left-2.5 right-2.5 md:left-auto md:right-4 z-40 flex items-center gap-2.5 sm:gap-3 p-2 pr-2.5 sm:pr-3 rounded-[6px] text-zinc-200 md:max-w-md select-none"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-2.5 right-2.5 z-40 flex select-none items-center gap-2.5 rounded-[6px] border border-white/[0.08] bg-[#111114] p-2 pr-2.5 text-zinc-200 shadow-[0_18px_50px_-14px_rgba(0,0,0,0.95)] md:bottom-4 md:left-auto md:right-4 md:max-w-md"
       >
-        {/* Progress Bar Top Sheen */}
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-white/[0.08] overflow-hidden rounded-t-[6px]">
+        {/* Progress hairline */}
+        <div className="absolute inset-x-0 bottom-0 h-[2px] overflow-hidden rounded-b-[6px] bg-white/[0.06]">
           <div
-            className="h-full bg-gradient-to-r from-[#c49b56] via-amber-200 to-white transition-all duration-150 shadow-[0_0_8px_rgba(196,155,86,0.5)]"
+            className="h-full bg-[#e8d5b5]/85 transition-[width] duration-150"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
 
-        {/* Spinning Disc Avatar */}
-        <motion.button
-          whileTap={{ scale: 0.94 }}
+        <button
+          type="button"
           onClick={openModal}
-          className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.06] border border-white/[0.12] text-zinc-300 hover:text-white transition-colors"
-          title="Open Audio Studio"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] border border-white/[0.06] bg-[#0d0d10] text-[#c5a059] transition-colors hover:text-[#e8d5b5]"
+          title="Open audio player"
+          aria-label="Open audio player"
         >
           <Disc3
-            className={`h-5 w-5 stroke-[1.5px] text-[#c49b56] ${isPlaying ? "animate-[spin_6s_linear_infinite]" : ""}`}
+            className={`h-[18px] w-[18px] stroke-[1.5px] ${isPlaying ? "animate-[spin_6s_linear_infinite]" : ""}`}
           />
-        </motion.button>
+        </button>
 
-        {/* Track Info */}
         <div
           onClick={openModal}
-          className="min-w-0 flex-1 cursor-pointer hover:opacity-90 transition-opacity"
+          className="min-w-0 flex-1 cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openModal();
+            }
+          }}
+          aria-label={`Open player — ${currentTrack.name}`}
         >
-          <div className="text-xs font-medium text-white truncate font-sans">
+          <div className="truncate text-[12px] font-medium text-zinc-200">
             {currentTrack.name}
           </div>
-          <div className="text-[10px] font-mono text-zinc-500 truncate flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 truncate text-[10px] text-zinc-600">
             <span className="truncate">{currentTrack.channelTitle}</span>
             {isPlaying && (
-              <span className="flex items-end gap-[2px] h-3 text-[#c49b56] ml-1 shrink-0">
-                <span className="w-0.5 bg-[#c49b56] rounded-full animate-equalize-1" />
-                <span className="w-0.5 bg-[#e6cfa3] rounded-full animate-equalize-2" />
-                <span className="w-0.5 bg-[#c49b56] rounded-full animate-equalize-3" />
-                <span className="w-0.5 bg-white rounded-full animate-equalize-4" />
+              <span className="ml-0.5 flex h-2.5 shrink-0 items-end gap-[2px] text-[#c5a059]">
+                <span className="w-px rounded-full bg-[#c5a059] animate-equalize-1" />
+                <span className="w-px rounded-full bg-[#c5a059] animate-equalize-2" />
+                <span className="w-px rounded-full bg-[#c5a059] animate-equalize-3" />
+                <span className="w-px rounded-full bg-[#c5a059] animate-equalize-4" />
               </span>
             )}
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-1 shrink-0">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
             onClick={togglePlay}
-            className="h-9 w-9 sm:h-7 sm:w-7 rounded-full bg-white/[0.1] hover:bg-white/[0.2] border border-white/[0.12] text-white flex items-center justify-center transition-all shadow-sm"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-[#e8d5b5] text-[#17130b] transition-colors hover:bg-[#f0dfc4]"
             title={isPlaying ? "Pause" : "Play"}
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <Pause className="w-3.5 h-3.5 fill-current stroke-none text-[#c49b56]" />
+              <Pause className="h-3.5 w-3.5 fill-current stroke-none" />
             ) : (
-              <Play className="w-3.5 h-3.5 fill-current stroke-none ml-0.5 text-white" />
+              <Play className="ml-0.5 h-3.5 w-3.5 fill-current stroke-none" />
             )}
-          </motion.button>
+          </button>
 
           {playlist.length > 1 && (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
+            <button
+              type="button"
               onClick={nextTrack}
-              className="h-9 w-9 sm:h-7 sm:w-7 rounded-[4px] sm:rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
-              title="Next Track"
+              className="flex h-8 w-8 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+              title="Next track"
+              aria-label="Next track"
             >
-              <SkipForward className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-            </motion.button>
+              <SkipForward className="h-4 w-4" />
+            </button>
           )}
 
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          <button
+            type="button"
             onClick={openModal}
-            className="hidden sm:flex h-7 w-7 rounded-[3px] text-zinc-400 hover:text-white hover:bg-white/[0.06] items-center justify-center transition-colors"
-            title="Expand Full Player"
+            className="hidden h-8 w-8 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-white sm:flex"
+            title="Expand player"
+            aria-label="Expand player"
           >
-            <Maximize2 className="w-3 h-3 stroke-[1.5px]" />
-          </motion.button>
+            <Maximize2 className="h-3 w-3 stroke-[1.6px]" />
+          </button>
 
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          <button
+            type="button"
             onClick={stop}
-            className="h-9 w-9 sm:h-7 sm:w-7 rounded-[4px] sm:rounded-[3px] text-zinc-500 hover:text-white hover:bg-white/[0.06] flex items-center justify-center transition-colors"
-            title="Stop & Close"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] text-zinc-600 transition-colors hover:bg-white/[0.06] hover:text-white"
+            title="Stop and close"
+            aria-label="Stop and close"
           >
-            <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-          </motion.button>
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       </motion.div>
     </AnimatePresence>

@@ -5,6 +5,7 @@
 **Active Focus:**
 - Exploring File System Access API (`showSaveFilePicker` + `WritableStream`) for direct zero-RAM multi-gigabyte disk writes.
 - Semantic media spectrum shipped: a single `src/lib/media-tokens.ts` register now drives card wells, extension stamps, list-row spines, sidebar indices, breadcrumbs, and mobile category dots (emerald images, sapphire video, amber audio, slate-ice docs, tangerine archives).
+- Restraint pass shipped: one type scale (`type-display` / `type-title` / `type-body` / `type-meta`), surface steps instead of outlines, a single champagne accent, and the removal of fabricated telemetry copy and the cursor-tracking spotlight.
 - Continuous Cloudflare Pages static edge verification.
 
 ---
@@ -22,7 +23,7 @@
 | **Cross-DC Auto-Healing** | Verified | Automatic cross-DC authorization transfer (`auth.exportAuthorization` / `auth.importAuthorization`) when media is hosted on non-primary DCs. Automatic `FILE_REFERENCE_EXPIRED` recovery querying parent message locations without interrupting playback (`media-refresher.ts`, `telegram-range-reader.ts`). |
 | **Multi-Worker Transfer Engine** | Verified | 4-worker chunked uploader with sliding 500ms speed/ETA telemetry and cancellation; 4-worker parallel chunk downloader with in-order Blob construction and auto-revoking memory URLs (`uploader.ts`, `downloader.ts`, `transfer-dock.tsx`). |
 | **Zero-Backend Cloud Sync** | Verified | Auto-discovery/creation of private Telegram config channel (`"Vaultgram Vault (Do Not Delete)"` tagged `[VAULTGRAM_CONFIG_V1]`), singleton promise mutex, 3-step idempotent resolution, 3s debounced optimistic write (`syncStore.ts`). |
-| **Physical Craftsmanship Design** | Verified | Dark anodized brushed obsidian gradients (`.specimen-card`), 1px micro-milled top bevel highlights, deep recessed insets (`.specimen-inset`), precision optical hardware status indicators (1.5px emerald LED pin-dots), high-contrast Auric Champagne primary upload CTA. |
+| **Physical Craftsmanship Design** | Verified | Tonal surface stack (`#08080a` → `#111114`), hairline borders (`--line-1/2/3`), recessed insets, a four-step type scale, and a single Auric Champagne accent reserved for primary actions. Outline-on-everything, fabricated telemetry copy, and decorative spotlight layers were removed. |
 | **Media Inspection Suite** | Verified | In-browser PDF reader (`pdfjs-dist`), in-memory ZIP archive explorer (`jszip`), high-DPI image lightbox with prefetching, syntax-highlighted code/text previewer (`pdf-viewer-modal.tsx`, `archive-viewer-modal.tsx`, `text-viewer-modal.tsx`). |
 | **Universal Command Center** | Verified | Keyboard-first spotlight palette (`Cmd+K` / `Ctrl+K`), instant search (`/`), quick shortcuts sheet (`?`), real-time DC latency and socket telemetry (`command-palette.tsx`, `network-monitor-modal.tsx`). |
 | **Licensing & Documentation** | Verified | Official GNU Affero General Public License v3.0 ([`LICENSE`](file:///home/hussain/Vaultgram/LICENSE)) and comprehensive systems architecture documentation ([`README.md`](file:///home/hussain/Vaultgram/README.md)). |
@@ -49,7 +50,7 @@
 ## 4. Current Verification State
 
 - **TypeScript Typecheck (`npx tsc --noEmit`):** Clean (0 errors, exit code 0).
-- **Production Build (`npm run build`):** Clean (Built in ~10.8s, output in `dist/`).
+- **Production Build (`npm run build`):** Clean (Built in ~9.0s, output in `dist/`).
 - **Remote Sync:** Main branch synchronized with `origin/main` on GitHub (`https://github.com/xrnix/Vaultgram.git`).
 - **Deployment Target:** Cloudflare Pages (Static SPA) connected to `main`.
 - **Local Dev Server:** Runs on `http://localhost:5173/`.
@@ -62,3 +63,4 @@
 3. **Physical Materiality UI:** Eliminated AI-style neon/pill badges in favor of precision optical LED hardware indicators, dark anodized brushed obsidian gradients with micro-milled bevel highlights, and high-contrast auric champagne action anchors.
 4. **Comprehensive Documentation & AGPLv3 Licensing:** Pushed full GNU AGPLv3 license and comprehensive architectural `README.md`.
 5. **Semantic Media Spectrum & Keyboard Access:** Introduced the media-token register, tinted category wells/stamps/spines across grid, list, sidebar, breadcrumbs and mobile strip; cards and rows became keyboard-focusable with composed accessible names, and the Upload CTA was restored to its documented auric primary anchor.
+6. **Restraint Pass (Anti-Slop UI):** Replaced outline-on-everything chrome with a four-step surface stack and one hairline weight; introduced a four-step type scale; deleted costume labels (`DIRECTORY_STATUS :: 00`, `TRANSFER_MODE :: ASSET_INGESTION`, `Archival Volume`), the fake `files.length / 150` storage gauge, and the per-`pointermove` cursor spotlight; rebuilt the command palette, auth portal, toolbar, sidebar, batch bar, transfer dock, audio bar and dropzone on the new material; fixed silently-dropped `/92` and `/98` opacity utilities.

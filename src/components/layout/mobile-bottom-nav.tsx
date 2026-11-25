@@ -36,7 +36,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-white/[0.08] bg-[#121215]/95 backdrop-blur-xl select-none pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-30 select-none border-t border-white/[0.06] bg-[#0b0b0e]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <div className="grid grid-cols-5 h-14 items-center px-1">
         {/* Drive */}
@@ -59,7 +59,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               isDriveActive && "text-white"
             )}
           />
-          <span className="text-[10px] font-mono tracking-tight">Drive</span>
+          <span className="text-[10px] tracking-tight">Drive</span>
         </button>
 
         {/* Search */}
@@ -72,7 +72,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           className="flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] rounded-[4px] text-zinc-500 hover:text-zinc-200 transition-colors active:scale-95"
         >
           <Search className="h-4 w-4 stroke-[1.6px]" />
-          <span className="text-[10px] font-mono tracking-tight">Search</span>
+          <span className="text-[10px] tracking-tight">Search</span>
         </button>
 
         {/* Upload CTA — primary auric anchor */}
@@ -109,7 +109,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               </span>
             )}
           </div>
-          <span className="text-[10px] font-mono tracking-tight">Queue</span>
+          <span className="text-[10px] tracking-tight">Queue</span>
         </button>
 
         {/* Vaults / Sidebar Drawer */}
@@ -124,7 +124,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
         >
           <Layers className="h-4 w-4 stroke-[1.6px]" />
-          <span className="text-[10px] font-mono tracking-tight">Vaults</span>
+          <span className="text-[10px] tracking-tight">Vaults</span>
         </button>
       </div>
     </nav>

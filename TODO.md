@@ -12,6 +12,7 @@
 - [x] **Open Source Architecture & AGPLv3**: Full `README.md` and GNU AGPLv3 `LICENSE`.
 - [x] **Semantic Media Spectrum**: Centralised `src/lib/media-tokens.ts` token register (hue + 10% wash + 26% hairline per media class) driving card icon wells, archival extension stamps, list-row spines, sidebar indices, breadcrumb glyphs, and mobile category dots. Replaced the monochromatic stamp system.
 - [x] **Keyboard-Accessible Drive Rows**: File cards and list rows are focusable (`role`/`tabIndex`/Enter/Space), expose composed accessible names, and render semantic focus rings.
+- [x] **Restraint Pass (Anti-Slop UI)**: Replaced per-component outlines with a four-step surface stack and one hairline weight; added a four-step type scale; removed costume telemetry copy, the fabricated storage gauge, and the per-`pointermove` spotlight; rebuilt toolbar, sidebar, canvas, command palette, auth portal, batch bar, transfer dock, audio bar and dropzone on the new material.
 
 ---
 

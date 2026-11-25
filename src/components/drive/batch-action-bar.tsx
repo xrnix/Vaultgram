@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Download, Pin, Star, X, Copy } from "lucide-react";
 import { useDriveStore } from "@/lib/stores/drive-store";
 import { useTransferStore } from "@/lib/stores/transfer-store";
-import { Button } from "@/components/ui/button";
 import { formatBytes } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -54,75 +53,74 @@ export const BatchActionBar: React.FC = () => {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 30, scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 450, damping: 32 }}
-        className="specimen-card hairline-sheen fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 p-2 px-3 rounded-[6px] text-zinc-200 select-none max-w-[95vw] overflow-x-auto no-scrollbar"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[95vw] -translate-x-1/2 select-none items-center gap-1 overflow-x-auto rounded-[6px] border border-white/[0.09] bg-[#141418]/95 p-1 pl-3 text-zinc-200 shadow-[0_16px_44px_-14px_rgba(0,0,0,0.95)] backdrop-blur-xl no-scrollbar md:bottom-6"
       >
-        {/* Selected Counter Pill */}
-        <div className="flex items-center gap-2 pr-2 border-r border-white/[0.1] text-xs font-mono shrink-0">
-          <div className="flex h-5 w-5 items-center justify-center rounded-[3px] bg-white text-black font-semibold text-[10px]">
+        {/* Count — the only number that matters */}
+        <div className="flex shrink-0 items-baseline gap-1.5 pr-2.5">
+          <span className="num font-mono text-[12px] font-medium text-[#e8d5b5]">
             {selectedFileIds.size}
-          </div>
-          <span className="text-zinc-300 font-medium hidden sm:inline">Selected</span>
-          <span className="text-zinc-500 text-[11px]">({formatBytes(totalBytes)})</span>
+          </span>
+          <span className="hidden text-[11.5px] text-zinc-400 sm:inline">selected</span>
+          <span className="num font-mono text-[10.5px] text-zinc-600">{formatBytes(totalBytes)}</span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <motion.div whileTap={{ scale: 0.95 }}>
-            <Button
-              size="sm"
-              onClick={handleBatchDownload}
-              className="h-9 sm:h-7 px-3 sm:px-2.5 text-xs rounded-[4px] bg-white text-black hover:bg-zinc-200 font-medium gap-1.5 transition-all shadow-sm"
-            >
-              <Download className="w-3.5 h-3.5 stroke-[2px]" />
-              <span>Download</span>
-            </Button>
-          </motion.div>
+        <div className="h-4 w-px shrink-0 bg-white/[0.08]" />
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+        <div className="flex shrink-0 items-center gap-0.5 pl-1">
+          <button
+            type="button"
+            onClick={handleBatchDownload}
+            className="flex h-8 items-center gap-1.5 rounded-[4px] bg-[#e8d5b5] px-2.5 text-[11.5px] font-semibold text-[#17130b] transition-colors hover:bg-[#f0dfc4]"
+          >
+            <Download className="h-3.5 w-3.5 stroke-[2px]" />
+            <span>Download</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleBatchPin}
-            className="h-9 sm:h-7 px-2.5 sm:px-2 rounded-[4px] text-xs font-mono text-zinc-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.1] flex items-center gap-1 transition-colors"
-            title="Batch Pin"
+            className="flex h-8 items-center gap-1.5 rounded-[4px] px-2 text-[11.5px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            title="Pin selection"
           >
-            <Pin className="w-3.5 h-3.5 sm:w-3 sm:h-3 stroke-[1.5px]" />
+            <Pin className="h-3.5 w-3.5 stroke-[1.6px]" />
             <span className="hidden sm:inline">Pin</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+          <button
+            type="button"
             onClick={() => setCopyToVaultFiles(selectedFiles)}
-            className="h-9 sm:h-7 px-2.5 sm:px-2 rounded-[4px] text-xs font-mono text-[#e6cfa3] hover:text-white hover:bg-white/[0.08] border border-white/[0.1] flex items-center gap-1 transition-colors"
-            title="Instant server-side clone to another vault"
+            className="flex h-8 items-center gap-1.5 rounded-[4px] px-2 text-[11.5px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            title="Clone to another vault, server-side"
           >
-            <Copy className="w-3.5 h-3.5 sm:w-3 sm:h-3 stroke-[1.5px] text-[#c49b56]" />
+            <Copy className="h-3.5 w-3.5 stroke-[1.6px]" />
             <span className="hidden sm:inline">Clone</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+          <button
+            type="button"
             onClick={handleBatchFavorite}
-            className="h-9 sm:h-7 px-2.5 sm:px-2 rounded-[4px] text-xs font-mono text-amber-400/90 hover:text-amber-300 hover:bg-white/[0.08] border border-white/[0.1] flex items-center gap-1 transition-colors"
-            title="Batch Favorite"
+            className="flex h-8 items-center gap-1.5 rounded-[4px] px-2 text-[11.5px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            title="Favorite selection"
           >
-            <Star className="w-3.5 h-3.5 sm:w-3 sm:h-3 stroke-[1.5px] fill-amber-400/30" />
+            <Star className="h-3.5 w-3.5 stroke-[1.6px]" />
             <span className="hidden sm:inline">Star</span>
-          </motion.button>
+          </button>
 
-          <div className="h-4 w-px bg-white/[0.1] mx-0.5" />
+          <div className="mx-0.5 h-4 w-px shrink-0 bg-white/[0.08]" />
 
-          {/* Clear Selection */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          <button
+            type="button"
             onClick={clearSelection}
-            className="h-9 w-9 sm:h-7 sm:w-7 rounded-[4px] text-zinc-400 hover:text-white hover:bg-white/[0.08] flex items-center justify-center transition-colors"
-            title="Clear Selection"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+            title="Clear selection"
+            aria-label="Clear selection"
           >
-            <X className="w-4 h-4 sm:w-3.5 sm:h-3.5 stroke-[1.5px]" />
-          </motion.button>
+            <X className="h-3.5 w-3.5 stroke-[1.8px]" />
+          </button>
         </div>
       </motion.div>
     </AnimatePresence>

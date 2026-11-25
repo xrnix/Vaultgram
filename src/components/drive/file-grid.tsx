@@ -10,13 +10,13 @@ interface FileGridProps {
 
 function getInitialConfig() {
   if (typeof window === "undefined") {
-    return { columns: 4, gap: 12, isMobile: false };
+    return { columns: 4, gap: 14, isMobile: false };
   }
   const w = window.innerWidth;
   const isMobile = w < 768;
   const effectiveWidth = isMobile ? w - 20 : w - 288;
-  const currentGap = w < 640 ? 8 : 12;
-  const minCardWidth = w < 640 ? 148 : 185;
+  const currentGap = w < 640 ? 10 : 14;
+  const minCardWidth = w < 640 ? 152 : 200;
   const computed = Math.max(2, Math.floor((effectiveWidth + currentGap) / (minCardWidth + currentGap)));
   return { columns: computed, gap: currentGap, isMobile };
 }
@@ -34,8 +34,8 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     const width = parentRef.current.clientWidth;
     if (width <= 0) return;
     const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : width < 640;
-    const currentGap = width < 500 ? 8 : 12;
-    const minCardWidth = width < 500 ? 148 : 185;
+    const currentGap = width < 500 ? 10 : 14;
+    const minCardWidth = width < 500 ? 152 : 200;
     const computed = Math.max(width < 340 ? 1 : 2, Math.floor((width + currentGap) / (minCardWidth + currentGap)));
     setColumns(computed);
     setGap(currentGap);
@@ -69,7 +69,7 @@ export const FileGrid: React.FC<FileGridProps> = ({ files, onDownload }) => {
     return result;
   }, [files, columns]);
 
-  const rowHeight = gap === 8 ? 138 + 8 : 142 + 12;
+  const rowHeight = 124 + gap;
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,

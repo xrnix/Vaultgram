@@ -230,9 +230,10 @@ export const DriveCanvas: React.FC = () => {
       !!previewFile.name.toLowerCase().match(/\.(zip|rar|7z|tar|gz|bz2|cbz|jar|apk)$/));
 
   const isVideo = previewFile && previewFile.category === "VIDEO";
+  const isFiltering = sizeFilter !== "ALL" || !!searchQuery.trim();
 
   return (
-    <main className="relative flex flex-1 flex-col h-[100dvh] w-full min-w-0 overflow-hidden bg-zinc-950 text-zinc-100">
+    <main className="relative flex h-[100dvh] w-full min-w-0 flex-1 flex-col overflow-hidden bg-[#08080a] text-zinc-100">
       {/* Hidden File Input for Button Triggers */}
       <input
         ref={hiddenFileInputRef}
@@ -272,8 +273,8 @@ export const DriveCanvas: React.FC = () => {
 
       {/* Mobile Quick Category Strip (1-tap filtering without opening drawer) */}
       {activeFilter !== "TRANSFERS" && (
-        <div className="md:hidden shrink-0 border-b border-white/[0.06] bg-[#0e0e11]/90 px-2.5 py-1.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-pan-x">
+        <div className="shrink-0 border-b border-white/[0.05] px-2 py-1.5 md:hidden">
+          <div className="no-scrollbar flex touch-pan-x items-center gap-0.5 overflow-x-auto">
             {(
               [
                 { id: "ALL", label: "All" },
@@ -293,19 +294,19 @@ export const DriveCanvas: React.FC = () => {
                   type="button"
                   onClick={() => setActiveFilter(cat.id)}
                   className={cn(
-                    "shrink-0 h-8 px-3 rounded-[4px] text-[11px] font-mono transition-colors active:scale-95 flex items-center gap-1.5",
+                    "flex h-8 shrink-0 items-center gap-1.5 rounded-[3px] px-2.5 text-[11.5px] transition-colors",
                     isAct
-                      ? "bg-white/[0.12] text-white border border-white/[0.2] font-medium"
-                      : "bg-white/[0.02] text-zinc-400 border border-white/[0.06] hover:text-zinc-200"
+                      ? "bg-white/[0.07] font-medium text-white"
+                      : "text-zinc-500 hover:text-zinc-200"
                   )}
                 >
                   {isMediaCategory(cat.id) && (
                     <span
                       aria-hidden="true"
-                      className="h-1 w-1 rounded-full shrink-0"
+                      className="h-1 w-1 shrink-0 rounded-full"
                       style={{
                         backgroundColor: MEDIA_TOKENS[cat.id].hue,
-                        opacity: isAct ? 1 : 0.65,
+                        opacity: isAct ? 1 : 0.45,
                       }}
                     />
                   )}
@@ -322,17 +323,19 @@ export const DriveCanvas: React.FC = () => {
         <TransfersView />
       ) : (
         /* Main Virtualized Content Area */
-        <div className="flex-1 overflow-hidden px-2.5 pt-2.5 pb-0 sm:p-3 md:p-5 flex flex-col">
-          {/* Telemetry & Size Filter Chips Bar (Persistent whenever files exist in this view) */}
+        <div className="flex flex-1 flex-col overflow-hidden px-3 pb-0 pt-3 sm:px-4 md:px-5 md:pt-4">
+          {/* Status line + size filters — quiet, one row, no outlined pills */}
           {files.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 px-0.5 border-b border-white/[0.06] mb-2.5 sm:mb-3 text-xs shrink-0 select-none gap-2">
-              <div className="flex items-center gap-2 overflow-hidden text-[11px] font-mono text-zinc-400">
-                <span>
-                  <strong className="text-white font-medium">{filteredFiles.length}</strong>
-                  {sizeFilter !== "ALL" || searchQuery ? ` of ${files.length}` : ""} items
+            <div className="mb-3 flex shrink-0 select-none flex-col gap-2 pb-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-baseline gap-2.5">
+                <span className="num font-mono text-[11px] text-zinc-500">
+                  <span className="text-zinc-200">{filteredFiles.length.toLocaleString()}</span>
+                  {sizeFilter !== "ALL" || searchQuery ? (
+                    <span className="text-zinc-600"> of {files.length.toLocaleString()}</span>
+                  ) : null}
                 </span>
-                <span className="text-zinc-600">•</span>
-                <span className="text-zinc-500 tabular-nums">
+                <span className="h-2.5 w-px bg-white/[0.09]" />
+                <span className="num font-mono text-[11px] text-zinc-600">
                   {formatBytes(filteredFiles.reduce((acc, f) => acc + (f.size || 0), 0))}
                 </span>
                 {(sizeFilter !== "ALL" || searchQuery) && (
@@ -342,46 +345,37 @@ export const DriveCanvas: React.FC = () => {
                       setSizeFilter("ALL");
                       setSearchQuery("");
                     }}
-                    className="ml-1 text-[10px] text-[#e6cfa3] hover:underline transition-all flex items-center gap-1"
+                    className="text-[11px] text-[#e8d5b5]/75 transition-colors hover:text-[#e8d5b5]"
                   >
-                    Clear Filter
+                    Clear
                   </button>
                 )}
               </div>
 
-              {/* Filter Chips: horizontal scroll on mobile */}
-              <div className="flex items-center gap-1.5 sm:gap-1 overflow-x-auto no-scrollbar py-0.5 touch-pan-x">
+              <div className="no-scrollbar flex touch-pan-x items-center gap-0.5 overflow-x-auto">
                 {(
                   [
-                    { id: "ALL", label: "All Sizes" },
-                    { id: "SMALL", label: "< 10MB" },
-                    { id: "MEDIUM", label: "10-100MB" },
-                    { id: "LARGE", label: "> 100MB" },
+                    { id: "ALL", label: "All sizes" },
+                    { id: "SMALL", label: "< 10 MB" },
+                    { id: "MEDIUM", label: "10–100 MB" },
+                    { id: "LARGE", label: "> 100 MB" },
                   ] as const
                 ).map((chip) => {
                   const isAct = sizeFilter === chip.id;
                   return (
-                    <motion.button
+                    <button
                       key={chip.id}
                       type="button"
-                      whileTap={{ scale: 0.96 }}
                       onClick={() => setSizeFilter(chip.id)}
                       className={cn(
-                        "relative px-2.5 py-1 sm:py-0.5 rounded-[4px] text-[10px] font-mono transition-colors whitespace-nowrap",
+                        "shrink-0 whitespace-nowrap rounded-[3px] px-2 py-1 text-[11px] transition-colors",
                         isAct
-                          ? "text-white font-medium"
-                          : "text-zinc-500 hover:text-zinc-300 bg-white/[0.02] border border-white/[0.05]"
+                          ? "bg-white/[0.07] text-zinc-100"
+                          : "text-zinc-600 hover:bg-white/[0.03] hover:text-zinc-300"
                       )}
                     >
-                      {isAct && (
-                        <motion.span
-                          layoutId="activeSizeFilterPill"
-                          transition={{ type: "spring", stiffness: 480, damping: 35 }}
-                          className="absolute inset-0 rounded-[4px] bg-white/[0.12] border border-white/[0.2] shadow-sm -z-0"
-                        />
-                      )}
-                      <span className="relative z-10">{chip.label}</span>
-                    </motion.button>
+                      {chip.label}
+                    </button>
                   );
                 })}
               </div>
@@ -393,104 +387,85 @@ export const DriveCanvas: React.FC = () => {
             {files.length === 0 && syncStatus.isSyncing ? (
               <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-1">
                 {viewMode === "grid" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
                       <div
                         key={i}
-                        className="flex flex-col justify-between rounded-[5px] border border-white/[0.06] bg-white/[0.02] p-3 h-[142px] animate-pulse"
+                        className="flex h-[124px] animate-pulse flex-col rounded-[5px] border border-white/[0.05] bg-[#0f0f12] p-3.5"
                       >
-                        <div className="h-8 w-8 rounded-[4px] bg-white/[0.05]" />
-                        <div className="space-y-1.5">
-                          <div className="h-3 w-3/4 rounded-[2px] bg-white/[0.06]" />
-                          <div className="h-2 w-1/2 rounded-[2px] bg-white/[0.04]" />
+                        <div className="flex items-center justify-between">
+                          <div className="h-[15px] w-[15px] rounded-[2px] bg-white/[0.06]" />
+                          <div className="h-2 w-6 rounded-[2px] bg-white/[0.04]" />
                         </div>
-                        <div className="h-2 w-full rounded-[2px] bg-white/[0.03]" />
+                        <div className="mt-auto space-y-1.5">
+                          <div className="h-2.5 w-3/4 rounded-[2px] bg-white/[0.06]" />
+                          <div className="h-2 w-1/3 rounded-[2px] bg-white/[0.035]" />
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-px">
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <div
-                        key={i}
-                        className="h-10 w-full rounded-[4px] bg-white/[0.02] border border-white/[0.05] animate-pulse"
-                      />
+                      <div key={i} className="h-10 w-full animate-pulse rounded-[3px] bg-white/[0.02]" />
                     ))}
                   </div>
                 )}
               </div>
             ) : filteredFiles.length === 0 ? (
-              <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex items-center justify-center p-4">
+              <div className="no-scrollbar flex flex-1 items-center justify-center overflow-y-auto p-6">
                 <motion.div
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex h-[380px] flex-col items-center justify-center gap-4 text-center px-4"
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex max-w-[330px] flex-col items-center text-center"
                 >
-                  {/* Precision Architectural Crosshair Reticle */}
-                  <div className="relative p-6 border border-dashed border-white/[0.08] rounded-[6px] bg-[#0c0c0e]">
-                    {/* Industrial Corner Crosshairs */}
-                    <span className="absolute -top-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                    <span className="absolute -top-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                    <span className="absolute -bottom-1.5 -left-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-                    <span className="absolute -bottom-1.5 -right-1.5 font-mono text-[9px] text-zinc-600 leading-none select-none">+</span>
-
-                    <div className="flex h-11 w-11 items-center justify-center rounded-[4px] bg-[#121215] border border-white/[0.1] text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-                      {sizeFilter !== "ALL" || searchQuery ? (
-                        <FilterX className="h-5 w-5 stroke-[1.4px] text-zinc-400" />
-                      ) : (
-                        <Inbox className="h-5 w-5 stroke-[1.4px] text-zinc-300" />
-                      )}
-                    </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[5px] border border-white/[0.06] bg-[#0d0d10] text-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    {isFiltering ? (
+                      <FilterX className="h-[18px] w-[18px] stroke-[1.4px]" />
+                    ) : (
+                      <Inbox className="h-[18px] w-[18px] stroke-[1.4px]" />
+                    )}
                   </div>
 
-                  <div className="space-y-1 max-w-sm">
-                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600 font-medium">
-                      {sizeFilter !== "ALL" || searchQuery ? "FILTER_RETURN :: NULL" : "DIRECTORY_STATUS :: 00"}
-                    </div>
-                    <h3 className="text-sm font-medium text-zinc-100 font-sans tracking-tight">
-                      {sizeFilter !== "ALL" || searchQuery ? "No matching records found" : "Directory Index Empty"}
-                    </h3>
-                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                      {sizeFilter !== "ALL"
-                        ? `No records match the "${sizeFilter === "SMALL" ? "< 10MB" : sizeFilter === "MEDIUM" ? "10-100MB" : "> 100MB"}" criteria.`
-                        : searchQuery
-                        ? "No records matched your search query. Try searching for a different keyword."
-                        : "Upload files below to store them directly on your Telegram channel vault."}
-                    </p>
-                  </div>
+                  <h3 className="type-title mt-4 text-[13.5px]">
+                    {isFiltering ? "Nothing matches those filters" : "This vault is empty"}
+                  </h3>
+                  <p className="type-body mt-1.5 text-[12px] text-zinc-500">
+                    {isFiltering
+                      ? "Try widening the size range or clearing your search."
+                      : "Drop files anywhere, or upload to store them on your Telegram channel."}
+                  </p>
 
-                  {sizeFilter !== "ALL" || searchQuery ? (
-                    <motion.div whileTap={{ scale: 0.97 }}>
+                  {isFiltering ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSizeFilter("ALL");
+                        setSearchQuery("");
+                      }}
+                      className="mt-4 flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 text-[11.5px] text-zinc-400 transition-colors hover:bg-white/[0.04] hover:text-white"
+                    >
+                      <FilterX className="h-3 w-3 stroke-[1.6px]" />
+                      <span>Clear filters</span>
+                    </button>
+                  ) : (
+                    <div className="mt-4 flex flex-col items-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => {
-                          setSizeFilter("ALL");
-                          setSearchQuery("");
-                        }}
-                        className="specimen-card hairline-sheen h-10 sm:h-8 px-4 sm:px-3.5 text-xs text-zinc-300 hover:text-white rounded-[4px] font-mono flex items-center gap-1.5 transition-colors"
+                        onClick={handleTriggerUpload}
+                        className="tactile-keycap flex h-8 items-center gap-1.5 rounded-[4px] px-3 text-[11.5px] font-medium text-zinc-100 transition-colors hover:text-white"
                       >
-                        <FilterX className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[1.5px]" />
-                        <span>RESET ACTIVE FILTERS</span>
+                        <Upload className="h-3 w-3 stroke-[1.8px] text-[#e8d5b5]" />
+                        <span>Upload a file</span>
                       </button>
-                    </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <motion.div whileTap={{ scale: 0.97 }}>
-                        <button
-                          type="button"
-                          onClick={handleTriggerUpload}
-                          className="specimen-card hairline-sheen h-10 sm:h-8 px-4 text-xs text-zinc-100 hover:text-white rounded-[4px] font-medium flex items-center gap-2 transition-all hover:border-white/[0.25]"
-                        >
-                          <Upload className="h-3.5 w-3.5 stroke-[1.6px]" />
-                          <span>Upload File</span>
-                        </button>
-                      </motion.div>
-                      <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-zinc-600 tracking-tight">
-                        <span>PRESS</span>
-                        <kbd className="tactile-keycap px-1.5 py-0.5 rounded text-[9px] text-zinc-400">U</kbd>
-                        <span>TO INGEST • DRAG & DROP BUFFER</span>
-                      </div>
+                      <p className="type-meta hidden items-center gap-1.5 text-[10.5px] text-zinc-600 sm:flex">
+                        or press
+                        <kbd className="tactile-keycap rounded-[2px] px-1 py-0.5 font-mono text-[9.5px] text-zinc-400">
+                          U
+                        </kbd>
+                        to upload
+                      </p>
                     </div>
                   )}
                 </motion.div>
