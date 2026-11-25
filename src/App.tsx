@@ -53,8 +53,34 @@ export const App: React.FC = () => {
     }
   }, [isConnected, isWizardCompleted, initDrive]);
 
+  const [mousePos, setMousePos] = React.useState({ x: 50, y: 50 });
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const x = Math.round((e.clientX / window.innerWidth) * 100);
+      const y = Math.round((e.clientY / window.innerHeight) * 100);
+      setMousePos({ x, y });
+    };
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
+
   return (
-    <div className="min-h-[100dvh] bg-[#08080a] text-zinc-100 selection:bg-[#e8d5b5]/20 selection:text-white overflow-x-hidden font-sans">
+    <div className="min-h-[100dvh] bg-[#09090b] text-zinc-100 selection:bg-white/10 selection:text-white relative overflow-x-hidden font-sans">
+      {/* Restrained Top-Ambient Radial Glow */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_-10%,rgba(255,255,255,0.04),transparent_70%)]" />
+
+      {/* Architectural Dot-Matrix Atmosphere */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-dot-matrix [mask-image:radial-gradient(ellipse_75%_65%_at_50%_40%,#000_20%,transparent_100%)] opacity-30" />
+
+      {/* Interactive Cursor Spotlight Glow (Desktop only) */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 hidden md:block transition-opacity duration-700 opacity-60"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, rgba(255, 255, 255, 0.025), transparent 80%)`,
+        }}
+      />
 
       <Toaster
         position="top-center"
@@ -66,13 +92,15 @@ export const App: React.FC = () => {
       />
 
       {bootStatus === "BOOTING" ? (
-        <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#08080a] px-4">
-          <div className="flex flex-col items-center gap-5">
-            <VaultgramLogo className="h-7 w-7 opacity-80" />
+        <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#09090b] relative z-10 px-4">
+          <div className="relative flex flex-col items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[5px] bg-white/[0.04] border border-white/[0.08] p-1.5 shadow-sm animate-pulse">
+              <VaultgramLogo className="h-6 w-6" />
+            </div>
             <div className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-[#e8d5b5] animate-pulse" />
-              <span className="text-[11px] font-mono tracking-tight text-zinc-500">
-                Restoring session
+              <div className="h-2 w-2 rounded-full bg-white/80 animate-ping" />
+              <span className="text-xs font-mono tracking-tight text-zinc-400">
+                Restoring MTProto session...
               </span>
             </div>
           </div>

@@ -27,7 +27,6 @@ import {
   FolderPlus,
   Activity,
   Keyboard,
-  type LucideIcon,
 } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
@@ -87,7 +86,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Computed matching items
   const matchedCategories = useMemo(() => {
-    const categories: { id: NavFilter; label: string; icon: LucideIcon; count: number }[] = [
+    const categories: { id: NavFilter; label: string; icon: React.FC<any>; count: number }[] = [
       { id: "ALL", label: "All Files", icon: Files, count: files.length },
       { id: "IMAGE", label: "Images", icon: Image, count: files.filter((f) => f.category === "IMAGE").length },
       { id: "VIDEO", label: "Videos", icon: Video, count: files.filter((f) => f.category === "VIDEO").length },
@@ -150,307 +149,309 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex select-none items-start justify-center p-2.5 pt-4 sm:p-3 sm:pt-[12vh]">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-20 p-2.5 sm:p-3 select-none">
+          {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 bg-[#040405]/80 backdrop-blur-[3px]"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
+          {/* Floating Command Box */}
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 flex w-full max-w-[620px] flex-col overflow-hidden rounded-[8px] border border-white/[0.09] bg-[#0e0e11] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_40px_100px_-30px_rgba(0,0,0,0.98)]"
+            initial={{ opacity: 0, scale: 0.96, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -10 }}
+            transition={{ type: "spring", stiffness: 450, damping: 32 }}
+            className="relative z-10 w-full max-w-2xl rounded-[6px] border border-white/[0.1] bg-[#121215]/98 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] backdrop-blur-2xl overflow-hidden flex flex-col"
           >
-            {/* Query */}
-            <div className="flex h-12 items-center gap-3 border-b border-white/[0.06] px-4">
-              <Search className="h-4 w-4 shrink-0 stroke-[1.6px] text-zinc-600" />
+            {/* Top Hairline Sheen */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+            {/* Input Bar */}
+            <div className="flex items-center px-3.5 sm:px-5 py-3 border-b border-white/[0.08] gap-2.5">
+              <Search className="h-4 w-4 text-zinc-400 stroke-[1.75px] shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search files, vaults, actions…"
+                placeholder="Search files, vaults, actions..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-transparent font-sans text-[13.5px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none"
+                className="w-full bg-transparent text-base sm:text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-sans"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label="Clear search"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white rounded-[4px] shrink-0"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close search"
-                className="flex h-7 shrink-0 items-center rounded-[3px] px-2 text-[11px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-white sm:hidden"
+                className="sm:hidden flex h-9 px-2.5 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.04] text-[11px] font-mono text-zinc-300 shrink-0"
               >
                 Done
               </button>
-              <kbd className="tactile-keycap hidden shrink-0 rounded-[3px] px-1.5 py-0.5 font-mono text-[9.5px] text-zinc-600 sm:inline-flex">
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded-[4px] border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-zinc-400">
                 ESC
               </kbd>
             </div>
 
-            {/* Results */}
-            <div className="no-scrollbar max-h-[64dvh] space-y-4 overflow-y-auto p-2.5 sm:max-h-[58vh]">
+            {/* Scrollable Results List */}
+            <div className="max-h-[68dvh] sm:max-h-[60vh] overflow-y-auto p-2 sm:p-3 space-y-3 divide-y divide-white/[0.04]">
+              {/* Quick Actions */}
               {!query && (
-                <section>
-                  <div className="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[0.13em] text-zinc-600">
-                    Quick actions
+                <div className="space-y-1">
+                  <div className="px-2 pt-1 pb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                    Quick Actions
                   </div>
-
+                  {/* Create Storage Vault */}
                   <button
-                    type="button"
                     onClick={() => {
                       onClose();
                       setCreateVaultOpen(true);
                     }}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <FolderPlus className="h-3.5 w-3.5 text-[#c5a059]" />
-                      <span>Create storage vault</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">Vault</span>
+                    <div className="flex items-center gap-2.5">
+                      <FolderPlus className="h-4 w-4 text-[#e6cfa3]" />
+                      <span>Create New Storage Vault</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Vault</span>
                   </button>
 
+                  {/* Network Diagnostics */}
                   <button
-                    type="button"
-                    onClick={handleUploadClick}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Upload className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Upload a file</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">U</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleToggleView}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      {viewMode === "grid" ? (
-                        <List className="h-3.5 w-3.5 text-zinc-500" />
-                      ) : (
-                        <LayoutGrid className="h-3.5 w-3.5 text-zinc-500" />
-                      )}
-                      <span>Switch to {viewMode === "grid" ? "list" : "grid"} view</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">View</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleRefreshClick}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <RefreshCw className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Sync channel index</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">Sync</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      setAnalyticsOpen(true);
-                    }}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <PieChart className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Storage analytics</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">Insights</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      useAudioPlayerStore.getState().openModal();
-                    }}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Disc3 className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Audio player</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">Player</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => {
                       onClose();
                       setNetworkMonitorOpen(true);
                     }}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Activity className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Network diagnostics</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">Telemetry</span>
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="h-4 w-4 text-zinc-400" />
+                      <span>Network &amp; DC Diagnostics</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Telemetry</span>
                   </button>
 
+                  {/* Keyboard Shortcuts */}
                   <button
-                    type="button"
                     onClick={() => {
                       onClose();
                       setShortcutsOpen(true);
                     }}
-                    className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Keyboard className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>Keyboard shortcuts</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-600">?</span>
+                    <div className="flex items-center gap-2.5">
+                      <Keyboard className="h-4 w-4 text-zinc-400" />
+                      <span>Keyboard Shortcuts</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">?</span>
+                  </button>
+
+                  <button
+                    onClick={handleUploadClick}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Upload className="h-4 w-4 text-zinc-400" />
+                      <span>Upload File to Telegram</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Action</span>
+                  </button>
+
+                  <button
+                    onClick={handleToggleView}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {viewMode === "grid" ? (
+                        <List className="h-4 w-4 text-zinc-400" />
+                      ) : (
+                        <LayoutGrid className="h-4 w-4 text-zinc-400" />
+                      )}
+                      <span>Switch to {viewMode === "grid" ? "List" : "Grid"} View</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">View</span>
+                  </button>
+
+                  <button
+                    onClick={handleRefreshClick}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <RefreshCw className="h-4 w-4 text-zinc-400" />
+                      <span>Sync & Refresh Channel Index</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Sync</span>
+                  </button>
+
+                  {/* Storage Analytics */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setAnalyticsOpen(true);
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <PieChart className="h-4 w-4 text-[#e6cfa3]" />
+                      <span>Storage &amp; Drive Intelligence</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Analytics</span>
+                  </button>
+
+                  {/* Audio Player Studio */}
+                  <button
+                    onClick={() => {
+                      onClose();
+                      useAudioPlayerStore.getState().openModal();
+                    }}
+                    className="flex h-9 w-full items-center justify-between px-3 rounded-[5px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Disc3 className="h-3.5 w-3.5 text-zinc-400" />
+                      <span>Audio Player Studio</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-zinc-500">Player</span>
                   </button>
 
                   {onOpenExport && (
                     <button
-                      type="button"
                       onClick={() => {
                         onClose();
                         onOpenExport();
                       }}
-                      className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
+                      className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                     >
-                      <span className="flex items-center gap-2.5">
-                        <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
-                        <span>Export session string</span>
-                      </span>
-                      <span className="text-[10px] text-zinc-600">Session</span>
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-3.5 w-3.5 text-zinc-300" />
+                        <span>Export Session String (GramJS)</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-500">Session</span>
                     </button>
                   )}
 
                   {onOpenAccountSwitcher && (
                     <button
-                      type="button"
                       onClick={() => {
                         onClose();
                         onOpenAccountSwitcher();
                       }}
-                      className="flex h-9 w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white"
+                      className="flex h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                     >
-                      <span className="flex items-center gap-2.5">
-                        <Users className="h-3.5 w-3.5 text-zinc-500" />
-                        <span>Switch account</span>
-                      </span>
-                      <span className="text-[10px] text-zinc-600">Profile</span>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Switch Telegram Account</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-500">Profile</span>
                     </button>
                   )}
-                </section>
+                </div>
               )}
 
+              {/* Matched Files */}
               {matchedFiles.length > 0 && (
-                <section>
-                  <div className="flex items-center justify-between px-2 pb-1">
-                    <span className="text-[10px] uppercase tracking-[0.13em] text-zinc-600">Files</span>
-                    <span className="num font-mono text-[10px] text-zinc-700">{matchedFiles.length}</span>
+                <div className="space-y-1 pt-2">
+                  <div className="px-2 pb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500 flex items-center justify-between">
+                    <span>Files ({matchedFiles.length})</span>
+                    <span className="text-zinc-600">Telegram Index</span>
                   </div>
                   {matchedFiles.map((file) => (
-                    <button
+                    <div
                       key={file.id}
-                      type="button"
                       onClick={() => handleSelectFile(file)}
-                      className="group flex min-h-[42px] w-full items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:bg-white/[0.045]"
+                      className="group flex min-h-[44px] sm:h-9 w-full items-center justify-between px-2.5 py-1.5 rounded-[4px] text-xs hover:bg-white/[0.06] active:bg-white/[0.08] cursor-pointer transition-colors"
                     >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <Files className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
-                        <span className="truncate text-[12.5px] text-zinc-300 group-hover:text-white">
+                      <div className="flex items-center gap-2 overflow-hidden mr-2">
+                        <Files className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                        <span className="truncate text-zinc-200 group-hover:text-white font-medium">
                           {file.name}
                         </span>
-                      </span>
-                      <span className="num flex shrink-0 items-center gap-2 font-mono text-[10px] text-zinc-600">
-                        <span className="hidden max-w-[120px] truncate sm:inline">{file.channelTitle}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 font-mono text-[10px] text-zinc-500">
+                        <span className="hidden sm:inline text-zinc-400">{file.channelTitle}</span>
+                        <span className="hidden sm:inline">•</span>
                         <span>{formatBytes(file.size)}</span>
-                      </span>
-                    </button>
+                      </div>
+                    </div>
                   ))}
-                </section>
+                </div>
               )}
 
+              {/* Matched Categories */}
               {matchedCategories.length > 0 && (
-                <section>
-                  <div className="px-2 pb-1 text-[10px] uppercase tracking-[0.13em] text-zinc-600">
+                <div className="space-y-1 pt-2">
+                  <div className="px-2 pb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     Categories
                   </div>
-                  {matchedCategories.map((cat) => {
+                  {matchedCategories.map((cat, idx) => {
                     const Icon = cat.icon;
                     return (
                       <button
                         key={cat.id}
-                        type="button"
                         onClick={() => handleSelectCategory(cat.id)}
-                        className="flex min-h-[40px] w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white sm:h-8"
+                        className="flex min-h-[42px] sm:h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                       >
-                        <span className="flex items-center gap-2.5">
-                          <Icon className="h-3.5 w-3.5 text-zinc-600" />
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] text-zinc-500">
+                            {String(idx + 1).padStart(2, "0")} ·
+                          </span>
+                          <Icon className="h-3.5 w-3.5 text-zinc-400" />
                           <span>{cat.label}</span>
-                        </span>
-                        <span className="num font-mono text-[10px] text-zinc-600">{cat.count}</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-zinc-500">{cat.count}</span>
                       </button>
                     );
                   })}
-                </section>
+                </div>
               )}
 
+              {/* Matched Channels */}
               {matchedChannels.length > 0 && (
-                <section>
-                  <div className="px-2 pb-1 text-[10px] uppercase tracking-[0.13em] text-zinc-600">
+                <div className="space-y-1 pt-2">
+                  <div className="px-2 pb-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     Channels
                   </div>
                   {matchedChannels.map((ch) => (
                     <button
                       key={ch.id}
-                      type="button"
                       onClick={() => handleSelectChannel(ch.id)}
-                      className="flex min-h-[40px] w-full items-center justify-between rounded-[4px] px-2 text-[12.5px] text-zinc-300 transition-colors hover:bg-white/[0.045] hover:text-white sm:h-8"
+                      className="flex min-h-[42px] sm:h-8 w-full items-center justify-between px-2.5 rounded-[4px] text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                     >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <Layers className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Layers className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                         <span className="truncate">{ch.title}</span>
-                      </span>
-                      <span className="ml-2 shrink-0 text-[10px] text-zinc-600">
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-500 shrink-0 ml-2">
                         {ch.isSelf ? "Saved" : "Vault"}
                       </span>
                     </button>
                   ))}
-                </section>
+                </div>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="hidden items-center justify-between border-t border-white/[0.06] px-4 py-2 text-[10px] text-zinc-600 sm:flex">
-              <div className="flex items-center gap-3 font-mono">
+            {/* Footer Telemetry Bar (Desktop only) */}
+            <div className="hidden sm:flex items-center justify-between px-3.5 py-2 border-t border-white/[0.08] bg-white/[0.01] font-mono text-[10px] text-zinc-500">
+              <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <kbd className="tactile-keycap rounded-[2px] px-1 py-0.5 text-zinc-500">↵</kbd>
-                  select
+                  <kbd className="px-1 py-0.5 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">↵</kbd> Select
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="tactile-keycap rounded-[2px] px-1 py-0.5 text-zinc-500">esc</kbd>
-                  close
+                  <kbd className="px-1 py-0.5 rounded-[2px] bg-white/[0.06] border border-white/[0.1] text-zinc-400">ESC</kbd> Close
                 </span>
               </div>
-              <span className="tracking-[0.08em]">Vaultgram</span>
+              <span>Vaultgram Command Center</span>
             </div>
           </motion.div>
         </div>

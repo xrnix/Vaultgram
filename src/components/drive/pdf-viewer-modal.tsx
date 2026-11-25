@@ -755,7 +755,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
 
           {/* Mobile Dedicated Bottom PDF Control Bar */}
           {numPages > 0 && !isLoading && (
-            <div className="flex md:hidden items-center justify-between gap-2 px-3 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-white/[0.08] bg-[#141418]/95 backdrop-blur-xl shrink-0 z-20">
+            <div className="flex md:hidden items-center justify-between gap-2 px-3 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-white/[0.08] bg-[#141418]/98 backdrop-blur-xl shrink-0 z-20">
               {/* Page Jump */}
               <form onSubmit={handlePageSubmit} className="flex items-center gap-1.5 text-xs font-mono shrink-0">
                 <input

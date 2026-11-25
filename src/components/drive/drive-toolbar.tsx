@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useDriveStore } from "@/lib/stores/drive-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,6 @@ import { CommandPalette } from "./command-palette";
 import { AccountSwitcherDialog } from "./account-switcher-dialog";
 import { SessionExportModal } from "./session-export-modal";
 import { SettingsModal } from "./settings-modal";
-import { MediaGlyph } from "./media-glyph";
-import { isMediaCategory } from "@/lib/media-tokens";
 import { cn } from "@/lib/utils";
 
 interface DriveToolbarProps {
@@ -108,80 +107,78 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
     }
   };
 
-  const activeCategoryToken = isMediaCategory(activeFilter) ? activeFilter : null;
-
   return (
     <>
       {!hideHeader && (
-        <header className="relative z-20 flex h-[calc(3rem+env(safe-area-inset-top))] shrink-0 select-none items-center gap-2 border-b border-white/[0.05] bg-[#0b0b0e]/85 px-2 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:px-4">
-          {/* Left: menu + breadcrumb */}
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:flex-initial sm:gap-2">
-            <div className="shrink-0 md:hidden">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#121215]/90 px-2 sm:px-4 backdrop-blur-xl select-none gap-2 z-20 pt-[env(safe-area-inset-top)]">
+          {/* Left: Spring Morph Hamburger + Channel Breadcrumb */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 flex-1 sm:flex-initial">
+            {/* Animated Spring Morph Hamburger Icon on Mobile */}
+            <div className="md:hidden shrink-0">
               <SpringHamburger
                 isOpen={isMobileSidebarOpen}
                 onClick={() => setMobileSidebarOpen(!isMobileSidebarOpen)}
               />
             </div>
 
-            <div className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-center sm:gap-1.5">
+            {/* Archival Breadcrumb — stacked 2-line title/category on mobile, inline on sm+ */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5 min-w-0 leading-tight">
               <span
-                className="max-w-[170px] truncate text-[12.5px] font-medium tracking-[-0.005em] text-zinc-100 sm:max-w-[160px]"
+                className="font-medium text-xs text-white truncate max-w-[170px] sm:max-w-[160px]"
                 title={getChannelTitle()}
               >
                 {getChannelTitle()}
               </span>
-              <ChevronRight className="hidden h-3 w-3 shrink-0 text-zinc-700 sm:inline-block" />
+              <ChevronRight className="h-3 w-3 text-zinc-600 stroke-[1.5px] shrink-0 hidden sm:inline-block" />
               <span
-                className="flex min-w-0 items-center gap-1 truncate font-mono text-[10px] text-zinc-500 sm:text-[11.5px]"
+                className="font-mono sm:font-sans font-normal text-[10px] sm:text-xs text-zinc-400 truncate max-w-[140px] sm:max-w-[110px]"
                 title={getCategoryLabel()}
               >
-                {activeCategoryToken && (
-                  <MediaGlyph category={activeCategoryToken} className="h-3 w-3" strokeWidth={1.6} />
-                )}
-                <span className="truncate">{getCategoryLabel()}</span>
+                {getCategoryLabel()}
               </span>
             </div>
 
-            {/* Sync state — a whisper, not a pill */}
+            {/* Live Background Sync Status Pill */}
             {syncStatus.isSyncing && (
-              <div className="ml-1 flex shrink-0 items-center gap-1.5 text-[10px] text-zinc-500">
-                <RefreshCw className="h-2.5 w-2.5 animate-spin" />
-                <span className="hidden max-w-[140px] truncate lg:inline">{syncStatus.statusText}</span>
+              <div className="ml-1 flex items-center gap-1.5 rounded-[3px] bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 shrink-0">
+                <RefreshCw className="h-2.5 w-2.5 animate-spin text-zinc-300" />
+                <span className="hidden lg:inline truncate max-w-[140px]">{syncStatus.statusText}</span>
               </div>
             )}
           </div>
 
-          {/* Center: search — reads as a recessed field, not a button */}
-          <div className="mx-2 hidden min-w-[120px] max-w-xs flex-1 sm:flex md:max-w-md">
+          {/* Center: Search Capsule (sm+ screens; mobile uses dedicated thumb-bar Search) */}
+          <div className="hidden sm:flex flex-1 min-w-[120px] max-w-xs md:max-w-md mx-2">
             <div
               onClick={() => setCommandPaletteOpen(true)}
-              className="group relative flex w-full cursor-pointer items-center"
+              className="group relative flex items-center cursor-pointer w-full"
             >
-              <Search className="pointer-events-none absolute left-2.5 top-[9px] h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.5px] pointer-events-none transition-colors" />
               <Input
                 type="text"
                 readOnly
-                placeholder="Search files or press ⌘K"
+                placeholder="Search or press ⌘K..."
                 value={searchQuery}
-                className="h-8 w-full cursor-pointer rounded-[4px] border-0 bg-white/[0.035] pl-8 pr-16 text-[11.5px] text-zinc-300 transition-colors placeholder:text-zinc-600 group-hover:bg-white/[0.055] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/[0.15]"
+                className="h-8 pl-8 pr-12 text-xs bg-[#0c0c0e] group-hover:bg-[#141418] border-white/[0.08] group-hover:border-white/[0.18] rounded-[5px] placeholder:text-zinc-500 text-zinc-200 cursor-pointer transition-all w-full"
               />
-              <div className="pointer-events-none absolute right-2 flex items-center gap-1">
-                <kbd className="tactile-keycap hidden items-center gap-0.5 rounded-[3px] px-1.5 py-0.5 font-mono text-[9px] text-zinc-500 md:inline-flex">
+              <div className="absolute right-2 flex items-center gap-1 pointer-events-none">
+                <kbd className="hidden md:inline-flex items-center gap-0.5 rounded-[3px] tactile-keycap px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-400">
                   <Command className="h-2.5 w-2.5" /> K
                 </kbd>
               </div>
             </div>
           </div>
 
-          {/* Right: controls */}
-          <div className="flex shrink-0 items-center gap-1">
+          {/* Right: Controls & CTAs */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Refresh Index Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => refreshIndex()}
               disabled={syncStatus.isSyncing}
-              title="Refresh index"
-              className="hidden h-8 w-8 rounded-[4px] text-zinc-500 hover:bg-white/[0.05] hover:text-white sm:flex"
+              title="Refresh MTProto Index"
+              className="hidden sm:flex h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.06] rounded-[4px]"
             >
               <RefreshCw
                 className={cn(
@@ -191,43 +188,45 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
               />
             </Button>
 
-            {/* Sort */}
+            {/* Sort Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   title={`Sort by ${sortField} (${sortOrder.toUpperCase()})`}
-                  className="flex h-9 w-9 items-center justify-center gap-1.5 rounded-[4px] text-[11.5px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 sm:h-8 sm:w-auto sm:px-2"
+                  className="h-9 w-9 sm:h-8 sm:w-auto px-0 sm:px-2.5 gap-1.5 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.16] text-xs text-zinc-300 hover:text-white rounded-[4px] transition-colors"
                 >
-                  <ArrowUpDown className="h-4 w-4 stroke-[1.5px] sm:h-3.5 sm:w-3.5" />
-                  <span className="hidden capitalize md:inline">
-                    {sortField} <span className="text-zinc-600">{sortOrder.toUpperCase()}</span>
+                  <ArrowUpDown className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px] text-zinc-300 sm:text-zinc-400" />
+                  <span className="hidden md:inline capitalize">
+                    {sortField} ({sortOrder.toUpperCase()})
                   </span>
-                </button>
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 border-white/[0.08] bg-[#131317] text-zinc-300">
-                <DropdownMenuItem onClick={() => setSorting("date")} className="py-2 text-xs hover:bg-white/[0.05] hover:text-white sm:py-1.5">
+              <DropdownMenuContent align="end" className="w-44 bg-[#121215] border-white/[0.1] text-zinc-300">
+                <DropdownMenuItem onClick={() => setSorting("date")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
                   <span>Date {sortField === "date" ? `(${sortOrder.toUpperCase()})` : ""}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting("name")} className="py-2 text-xs hover:bg-white/[0.05] hover:text-white sm:py-1.5">
+                <DropdownMenuItem onClick={() => setSorting("name")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
                   <span>Name {sortField === "name" ? `(${sortOrder.toUpperCase()})` : ""}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting("size")} className="py-2 text-xs hover:bg-white/[0.05] hover:text-white sm:py-1.5">
+                <DropdownMenuItem onClick={() => setSorting("size")} className="py-2 sm:py-1.5 hover:bg-white/[0.06] hover:text-white text-xs">
                   <span>Size {sortField === "size" ? `(${sortOrder.toUpperCase()})` : ""}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => refreshIndex()} className="mt-1 border-t border-white/[0.06] py-2 pt-2 text-xs hover:bg-white/[0.05] hover:text-white sm:hidden">
-                  <RefreshCw className="mr-2 h-3.5 w-3.5 text-zinc-500" />
-                  <span>Sync index</span>
+                <DropdownMenuItem onClick={() => refreshIndex()} className="sm:hidden py-2 hover:bg-white/[0.06] hover:text-white text-xs border-t border-white/[0.06] mt-1 pt-2">
+                  <RefreshCw className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                  <span>Sync Channel Index</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* View toggle — mobile */}
+            {/* View Toggle (Grid <-> List) */}
+            {/* On Mobile: 1-Tap Toggle Icon Button */}
             <button
               type="button"
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              title={`Switch to ${viewMode === "grid" ? "list" : "grid"} view`}
-              className="flex h-9 w-9 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-white active:scale-95 sm:hidden"
+              title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
+              className="sm:hidden flex h-9 w-9 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] active:scale-95 transition-all"
             >
               {viewMode === "grid" ? (
                 <List className="h-4 w-4 stroke-[1.5px]" />
@@ -236,55 +235,67 @@ export const DriveToolbar: React.FC<DriveToolbarProps> = ({
               )}
             </button>
 
-            {/* View toggle — desktop segmented */}
-            <div className="hidden items-center gap-0.5 rounded-[4px] bg-white/[0.04] p-0.5 sm:flex">
+            {/* On Desktop: Segmented Pill (Grid / List) */}
+            <div className="hidden sm:flex items-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] p-0.5">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                title="Grid view"
-                aria-pressed={viewMode === "grid"}
+                title="Grid View"
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
+                  "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
                   viewMode === "grid"
-                    ? "bg-white/[0.08] text-white"
-                    : "text-zinc-600 hover:text-zinc-300"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
                 )}
               >
-                <LayoutGrid className="h-3.5 w-3.5 stroke-[1.5px]" />
+                {viewMode === "grid" && (
+                  <motion.span
+                    layoutId="viewModePill"
+                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
+                  />
+                )}
+                <LayoutGrid className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                title="List view"
-                aria-pressed={viewMode === "list"}
+                title="List View"
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
+                  "relative flex h-7 w-7 items-center justify-center rounded-[3px] transition-colors",
                   viewMode === "list"
-                    ? "bg-white/[0.08] text-white"
-                    : "text-zinc-600 hover:text-zinc-300"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
                 )}
               >
-                <List className="h-3.5 w-3.5 stroke-[1.5px]" />
+                {viewMode === "list" && (
+                  <motion.span
+                    layoutId="viewModePill"
+                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    className="absolute inset-0 rounded-[3px] bg-white/[0.1] border border-white/[0.14] shadow-sm -z-0"
+                  />
+                )}
+                <List className="relative z-10 h-3.5 w-3.5 stroke-[1.5px]" />
               </button>
             </div>
 
-            {/* Upload — the one primary action on screen */}
+            {/* Desktop Upload Button (mobile uses MobileBottomNav primary Upload CTA) */}
             <Button
               onClick={onTriggerUpload}
               size="sm"
-              className="ml-0.5 hidden h-8 gap-1.5 rounded-[4px] border border-[#e8d5b5]/35 bg-[linear-gradient(180deg,#e9d3a4_0%,#c9a25c_100%)] px-3 text-[11.5px] font-semibold text-[#17130b] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_1px_2px_rgba(0,0,0,0.6)] transition-all hover:brightness-[1.06] active:translate-y-px md:flex"
-              title="Upload a file"
+              className="hidden md:flex h-8 px-3 gap-1.5 bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/[0.18] hover:border-white/30 font-medium text-xs rounded-[4px] shadow-[0_0_15px_rgba(255,255,255,0.03)] active:scale-[0.97] transition-all"
+              title="Upload File to Telegram"
             >
-              <Upload className="h-3.5 w-3.5 stroke-[2px]" />
+              <Upload className="h-3.5 w-3.5 stroke-[1.75px]" />
               <span>Upload</span>
             </Button>
 
+            {/* Unified Settings Menu Button */}
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
-              className="ml-0.5 flex h-9 w-9 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-white sm:h-8 sm:w-8"
-              title="Settings"
-              aria-label="Settings"
+              className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-300 sm:text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] active:scale-95 transition-all"
+              title="Settings & Preferences"
             >
               <Settings className="h-4 w-4 stroke-[1.5px]" />
             </button>

@@ -44,15 +44,15 @@ export const FileTable: React.FC<FileTableProps> = ({ files, onDownload }) => {
   }, [files, isMobile, isTabletOrMobile]);
 
   return (
-    <div className="flex h-full select-none flex-col overflow-hidden rounded-[5px] border border-white/[0.05] bg-[#0d0d10]/60">
+    <div className="flex flex-col h-full rounded-[4px] border border-white/[0.08] bg-[#121215]/60 backdrop-blur-md overflow-hidden select-none">
       {/* Sticky Table Header */}
-      <div className="flex h-9 w-full shrink-0 items-center border-b border-white/[0.05] bg-[#0b0b0e] px-2.5 text-[11px] font-medium text-zinc-500 sm:px-3">
-        <div className="min-w-0 flex-1 pr-2 sm:pr-4">Name</div>
-        <div className="hidden w-28 shrink-0 px-2 sm:block sm:w-36">Channel</div>
-        <div className="hidden w-20 shrink-0 px-2 md:block sm:w-24">Type</div>
-        <div className="hidden w-24 shrink-0 px-2 sm:block">Size</div>
-        <div className="hidden w-20 shrink-0 px-2 sm:block sm:w-28">Date</div>
-        <div className="w-10 shrink-0 sm:w-12" />
+      <div className="flex h-9 w-full items-center border-b border-white/[0.07] bg-white/[0.02] font-mono text-[10px] text-zinc-400 uppercase tracking-wider px-2.5 sm:px-3 shrink-0">
+        <div className="flex-1 min-w-0 pr-2 sm:pr-4">File</div>
+        <div className="w-28 sm:w-36 shrink-0 px-2 hidden sm:block">Channel Source</div>
+        <div className="w-20 sm:w-24 shrink-0 px-2 hidden md:block">Category</div>
+        <div className="w-24 shrink-0 px-2 hidden sm:block">Size</div>
+        <div className="w-20 sm:w-28 shrink-0 px-2 hidden sm:block">Date</div>
+        <div className="w-10 sm:w-12 shrink-0 text-right">Menu</div>
       </div>
 
       {/* Virtualized Scrollable Body */}

@@ -16,6 +16,12 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
+  Image,
+  Video,
+  FileText,
+  Archive,
+  Music,
+  File,
   Download,
   Eye,
   Pin,
@@ -27,8 +33,6 @@ import {
   Check,
 } from "lucide-react";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
-import { MEDIA_TOKENS } from "@/lib/media-tokens";
-import { MediaGlyph } from "./media-glyph";
 import { toast } from "sonner";
 
 interface FileTableRowProps {
@@ -55,7 +59,35 @@ export const FileTableRow = React.memo<FileTableRowProps>(
       file.category === "DOC" &&
       !!file.name.toLowerCase().match(/\.(txt|md|json|js|ts|tsx|jsx|html|css|py|rs|go|sh|yml|yaml|xml|csv|log|env)$/);
 
-    const token = MEDIA_TOKENS[file.category] ?? MEDIA_TOKENS.OTHER;
+    const handleClick = (e: React.MouseEvent) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
+        e.preventDefault();
+        toggleSelectFile(file.id);
+      } else {
+        if (isCodeOrText) {
+          setTextViewerFile(file);
+        } else {
+          setPreviewFile(file);
+        }
+      }
+    };
+
+    const getFileIcon = () => {
+      switch (file.category) {
+        case "IMAGE":
+          return <Image className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
+        case "VIDEO":
+          return <Video className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
+        case "DOC":
+          return <FileText className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
+        case "ARCHIVE":
+          return <Archive className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
+        case "AUDIO":
+          return <Music className="h-3.5 w-3.5 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
+        default:
+          return <File className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-200 stroke-[1.4px] transition-colors" />;
+      }
+    };
 
     const copyTelegramReference = (e?: React.MouseEvent) => {
       e?.stopPropagation();
@@ -64,102 +96,66 @@ export const FileTableRow = React.memo<FileTableRowProps>(
       toast.success("Telegram message reference copied to clipboard");
     };
 
-    const openFile = () => {
-      if (isCodeOrText) {
-        setTextViewerFile(file);
-      } else {
-        setPreviewFile(file);
-      }
-    };
-
-    const handleClick = (e: React.MouseEvent) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
-        e.preventDefault();
-        toggleSelectFile(file.id);
-      } else {
-        openFile();
-      }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-        e.preventDefault();
-        if (e.metaKey || e.ctrlKey || e.shiftKey) {
-          toggleSelectFile(file.id);
-        } else {
-          openFile();
-        }
-      }
-    };
-
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            aria-label={`${file.name} — ${token.label}, ${formatBytes(file.size)}`}
-            data-selected={isSelected ? "true" : undefined}
             className={cn(
-              "group relative flex h-full w-full cursor-pointer select-none items-center border-b border-white/[0.035] px-2.5 text-xs transition-colors hover:bg-white/[0.025] active:bg-white/[0.04] sm:px-3",
-              isSelected && "bg-[#e8d5b5]/[0.045] hover:bg-[#e8d5b5]/[0.06]"
+              "group flex h-full w-full items-center border-b border-white/[0.04] hover:bg-white/[0.03] text-xs transition-colors cursor-pointer select-none px-2.5 sm:px-3 active:bg-white/[0.05]",
+              isSelected && "bg-white/[0.06] border-white/20"
             )}
           >
-            {isSelected && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 left-0 w-[1.5px] bg-[#e8d5b5]/70"
-              />
-            )}
-
             {/* Name & Icon (2-line stacked metadata on mobile) */}
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden pr-2 sm:pr-4">
-              <MediaGlyph category={file.category} className="h-[15px] w-[15px]" strokeWidth={1.5} />
+            <div className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0 pr-2 sm:pr-4">
+              <div className="specimen-inset flex h-8 w-8 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-[4px] sm:rounded-[3px] transition-colors">
+                {getFileIcon()}
+              </div>
               {isSelected && (
-                <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[2px] bg-[#e8d5b5] text-[#17130b]">
-                  <Check className="h-2 w-2 stroke-[3px]" />
+                <span className="flex h-4 w-4 sm:h-3.5 sm:w-3.5 items-center justify-center rounded-[2px] bg-white text-black shrink-0">
+                  <Check className="h-2.5 w-2.5 stroke-[3px]" />
                 </span>
               )}
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <span
-                    className="truncate text-[12.5px] font-medium tracking-[-0.005em] text-zinc-300 transition-colors group-hover:text-white"
+                    className="truncate font-medium text-zinc-200 group-hover:text-white font-sans tracking-tight"
                     title={file.name}
                   >
                     {file.name}
                   </span>
-                  {isPinned && <Pin className="h-2.5 w-2.5 shrink-0 fill-zinc-500 text-zinc-500" />}
-                  {isFavorite && <Star className="h-2.5 w-2.5 shrink-0 fill-[#c5a059] text-[#c5a059]" />}
+                  {isPinned && <Pin className="h-2.5 w-2.5 text-zinc-300 fill-zinc-300 shrink-0" />}
+                  {isFavorite && <Star className="h-2.5 w-2.5 text-[#c49b56] fill-[#c49b56] shrink-0" />}
                 </div>
-                <div className="num mt-0.5 flex items-center gap-1.5 truncate font-mono text-[10px] text-zinc-500 sm:hidden">
-                  <span>{formatBytes(file.size)}</span>
-                  <span className="text-zinc-700">/</span>
+                <div className="sm:hidden flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 truncate mt-0.5 tabular-nums">
+                  <span className="text-zinc-400">{formatBytes(file.size)}</span>
+                  <span>·</span>
                   <span>{formatDate(file.date)}</span>
-                  <span className="text-zinc-700">/</span>
+                  <span>·</span>
                   <span className="truncate">{file.channelTitle}</span>
                 </div>
               </div>
             </div>
 
             {/* Channel Source (hidden on mobile) */}
-            <div className="hidden w-28 shrink-0 truncate px-2 font-mono text-[11px] text-zinc-500 sm:block sm:w-36">
+            <div className="w-28 sm:w-36 shrink-0 text-zinc-500 truncate px-2 hidden sm:block font-mono text-[11px]">
               {file.channelTitle}
             </div>
 
-            {/* Category (hidden on mobile/tablet) */}
-            <div className="hidden w-20 shrink-0 px-2 font-mono text-[9px] font-medium uppercase tracking-[0.14em] md:block sm:w-24">
-              <span style={{ color: token.hue }}>{file.category}</span>
+            {/* Category Badge (hidden on mobile/tablet) */}
+            <div className="w-20 sm:w-24 shrink-0 font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-zinc-400 px-2 hidden md:block">
+              <span className="rounded-[3px] bg-white/[0.03] border border-white/[0.08] px-1.5 py-0.5">
+                {file.category}
+              </span>
             </div>
 
             {/* Size (desktop column; mobile shows size inline under filename) */}
-            <div className="num hidden w-24 shrink-0 px-2 font-mono text-[11px] text-zinc-400 sm:block">
+            <div className="w-24 shrink-0 font-mono text-[11px] text-zinc-300 px-2 hidden sm:block tabular-nums">
               {formatBytes(file.size)}
             </div>
 
             {/* Date (hidden on mobile) */}
-            <div className="num hidden w-20 shrink-0 px-2 font-mono text-[11px] text-zinc-500 sm:block sm:w-28">
+            <div className="w-20 sm:w-28 shrink-0 font-mono text-[11px] text-zinc-500 px-2 hidden sm:block tabular-nums">
               {formatDate(file.date)}
             </div>
 

@@ -75,28 +75,39 @@ export const DropzoneOverlay: React.FC<DropzoneOverlayProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-6 select-none pointer-events-none"
         >
           <motion.div
-            initial={{ scale: 0.985, y: 6 }}
+            initial={{ scale: 0.96, y: 8 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.985, y: 6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative flex h-full max-h-[340px] w-full max-w-lg flex-col items-center justify-center gap-4 overflow-hidden rounded-[8px] border border-dashed border-[#e8d5b5]/25 bg-[#0d0d10]/95 p-8 text-center shadow-[0_40px_100px_-40px_rgba(0,0,0,1)]"
+            exit={{ scale: 0.96, y: 8 }}
+            transition={{ type: "spring", stiffness: 450, damping: 32 }}
+            className="specimen-card hairline-sheen relative flex h-full w-full max-w-xl max-h-[360px] flex-col items-center justify-center gap-4 rounded-[6px] border border-white/[0.18] p-8 text-center overflow-hidden"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-[6px] border border-white/[0.06] bg-[#0a0a0c] text-[#e8d5b5] shadow-[inset_0_1px_2px_rgba(0,0,0,0.7)]">
-              <Upload className="h-5 w-5 stroke-[1.6px]" />
+            {/* Technical Corner Crosshairs */}
+            <span className="absolute top-2 left-3 font-mono text-[10px] text-zinc-600 select-none">┌ [INGEST_BAY]</span>
+            <span className="absolute top-2 right-3 font-mono text-[10px] text-zinc-600 select-none">┐</span>
+            <span className="absolute bottom-2 left-3 font-mono text-[10px] text-zinc-600 select-none">└</span>
+            <span className="absolute bottom-2 right-3 font-mono text-[10px] text-zinc-600 select-none">[MTPROTO_V2] ┘</span>
+
+            <div className="specimen-inset flex h-14 w-14 items-center justify-center rounded-[5px] text-zinc-200">
+              <Upload className="h-6 w-6 stroke-[1.5px]" />
             </div>
 
-            <div className="space-y-1.5">
-              <h2 className="text-[15px] font-medium tracking-[-0.01em] text-zinc-100">
-                Drop to upload
+            <div className="space-y-1 z-10 max-w-sm">
+              <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-medium">
+                TRANSFER_MODE :: ASSET_INGESTION
+              </div>
+              <h2 className="text-sm sm:text-base font-medium text-white font-sans tracking-tight">
+                Release pointer to stream files directly to Telegram
               </h2>
-              <p className="text-[12px] text-zinc-500">
-                Streaming to <span className="text-zinc-300">{activeChannelTitle}</span>
+              <p className="text-xs text-zinc-400 font-mono pt-0.5">
+                Target Vault: <span className="text-zinc-200 font-semibold bg-white/[0.04] px-2 py-0.5 rounded-[3px] border border-white/[0.08]">{activeChannelTitle}</span>
               </p>
             </div>
 
-            <p className="text-[10.5px] text-zinc-600">
-              Straight to Telegram in 512 KB chunks · 2 GB per file
-            </p>
+            <div className="flex items-center gap-2 rounded-[3px] bg-white/[0.02] border border-white/[0.06] px-3 py-1 font-mono text-[10px] text-zinc-500 tracking-tight">
+              <span>MTProto Chunked Pipeline</span>
+              <span>•</span>
+              <span>Max 2,000 MB / Asset</span>
+            </div>
           </motion.div>
         </motion.div>
       )}

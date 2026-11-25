@@ -26,7 +26,6 @@ import { registerActiveStreamFile, unregisterActiveStreamFile } from "@/lib/stre
 import { useImagePreview } from "@/hooks/use-image-preview";
 import { Button } from "@/components/ui/button";
 import { formatBytes, formatDate } from "@/lib/utils";
-import { MEDIA_TOKENS } from "@/lib/media-tokens";
 import { toast } from "sonner";
 
 interface MediaPreviewModalProps {
@@ -46,7 +45,6 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
 }) => {
   const isOpen = !!file;
   const isImage = file?.category === "IMAGE";
-  const categoryToken = MEDIA_TOKENS[file?.category ?? "OTHER"] ?? MEDIA_TOKENS.OTHER;
 
   // Visual transformation states
   const [zoom, setZoom] = useState(1);
@@ -219,15 +217,8 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
           <div className="w-full flex items-center justify-between px-3 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-gradient-to-b from-black/85 via-black/45 to-transparent z-30 shrink-0 gap-2">
             {/* Left: Metadata info */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <span
-                className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-[3px] shrink-0 border"
-                style={{
-                  color: categoryToken.hue,
-                  backgroundColor: categoryToken.wash,
-                  borderColor: categoryToken.line,
-                }}
-              >
-                {file?.category}
+              <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-wider text-[#e6cfa3] bg-[#c49b56]/20 border border-[#c49b56]/40 px-2 py-0.5 rounded-[3px] shrink-0">
+                {file.category}
               </span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-xs sm:text-sm font-medium text-white truncate">
@@ -400,7 +391,7 @@ export const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
               transition={{ type: "spring", stiffness: 450, damping: 30 }}
               className="w-full flex items-center justify-center pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 px-3 z-30 shrink-0"
             >
-              <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[6px] sm:rounded-full bg-[#121215]/95 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-[6px] sm:rounded-full bg-[#121215]/92 border border-white/[0.16] shadow-[0_15px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
                 {/* Zoom Out */}
                 <button
                   type="button"

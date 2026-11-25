@@ -26,18 +26,18 @@ import {
   Plus,
   Folder,
   Trash2,
+  HardDrive,
   Bookmark,
   ArrowUpDown,
   X,
   Users,
+  Activity,
   Settings,
-  type LucideIcon,
 } from "lucide-react";
 import { VaultgramLogo } from "@/components/ui/vaultgram-logo";
 import { AccountSwitcherDialog } from "@/components/drive/account-switcher-dialog";
 import { SessionExportModal } from "@/components/drive/session-export-modal";
 import { cn, formatBytes } from "@/lib/utils";
-import { ACCENT_TOKENS, MEDIA_TOKENS } from "@/lib/media-tokens";
 
 export const Sidebar: React.FC = () => {
   const {
@@ -59,7 +59,7 @@ export const Sidebar: React.FC = () => {
     setSettingsOpen,
   } = useDriveStore();
 
-  const { user, isConnected } = useAuthStore();
+  const { user } = useAuthStore();
   const { tasks } = useTransferStore();
 
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
@@ -122,297 +122,444 @@ export const Sidebar: React.FC = () => {
     return title.slice(0, 2).toUpperCase();
   };
 
-  const navItems: { id: NavFilter; label: string; icon: LucideIcon; count: number; hue: string }[] = [
-    { id: "ALL", label: "All files", icon: Files, count: counts.ALL, hue: ACCENT_TOKENS.ALL },
-    { id: "IMAGE", label: "Images", icon: Image, count: counts.IMAGE, hue: MEDIA_TOKENS.IMAGE.hue },
-    { id: "VIDEO", label: "Videos", icon: Video, count: counts.VIDEO, hue: MEDIA_TOKENS.VIDEO.hue },
-    { id: "DOC", label: "Documents", icon: FileText, count: counts.DOC, hue: MEDIA_TOKENS.DOC.hue },
-    { id: "AUDIO", label: "Audio", icon: Music, count: counts.AUDIO, hue: MEDIA_TOKENS.AUDIO.hue },
-    { id: "ARCHIVE", label: "Archives", icon: Archive, count: counts.ARCHIVE, hue: MEDIA_TOKENS.ARCHIVE.hue },
+  const navItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count: number; colorClass: string }[] = [
+    { id: "ALL", indexStr: "01", label: "All Files", icon: Files, count: counts.ALL, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "IMAGE", indexStr: "02", label: "Images", icon: Image, count: counts.IMAGE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "VIDEO", indexStr: "03", label: "Videos", icon: Video, count: counts.VIDEO, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "DOC", indexStr: "04", label: "Documents", icon: FileText, count: counts.DOC, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "ARCHIVE", indexStr: "05", label: "Archives", icon: Archive, count: counts.ARCHIVE, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "AUDIO", indexStr: "06", label: "Audio", icon: Music, count: counts.AUDIO, colorClass: "text-[#e6cfa3] group-hover:text-white" },
   ];
 
-  const quickAccessItems: { id: NavFilter; label: string; icon: LucideIcon; count: number; hue: string }[] = [
-    { id: "PINNED", label: "Pinned", icon: Pin, count: counts.PINNED, hue: ACCENT_TOKENS.PINNED },
-    { id: "FAVORITES", label: "Favorites", icon: Star, count: counts.FAVORITES, hue: ACCENT_TOKENS.FAVORITES },
-    { id: "TRANSFERS", label: "Transfers", icon: ArrowUpDown, count: activeTransfersCount, hue: ACCENT_TOKENS.TRANSFERS },
+  const quickAccessItems: { id: NavFilter; indexStr: string; label: string; icon: React.FC<any>; count?: number; isBadge?: boolean; colorClass?: string }[] = [
+    { id: "PINNED", indexStr: "07", label: "Pinned Items", icon: Pin, count: counts.PINNED, colorClass: "text-zinc-400 group-hover:text-zinc-100" },
+    { id: "FAVORITES", indexStr: "08", label: "Favorites", icon: Star, count: counts.FAVORITES, colorClass: "text-[#c49b56]" },
+    {
+      id: "TRANSFERS",
+      indexStr: "09",
+      label: "Transfer Manager",
+      icon: ArrowUpDown,
+      count: activeTransfersCount > 0 ? activeTransfersCount : undefined,
+      isBadge: activeTransfersCount > 0,
+      colorClass: "text-zinc-400 group-hover:text-zinc-100",
+    },
   ];
 
   const renderContent = (isMobile: boolean) => (
-    <div className="flex h-full select-none flex-col bg-[#0b0b0e] text-zinc-300">
-      {/* Brand header — one mark, one wordmark, no telemetry badges */}
-      <div className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-white/[0.05] px-4 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-2.5">
-          <VaultgramLogo className="h-[18px] w-[18px]" />
-          <span className="text-[13px] font-semibold tracking-[-0.015em] text-white">Vaultgram</span>
-        </div>
-        {isMobile ? (
+    <div className="flex h-full flex-col bg-[#121215] select-none text-zinc-300">
+      {/* Mobile Drawer Header */}
+      {isMobile && (
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.08] px-4 bg-[#121215]/95 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-white/[0.04] border border-white/[0.08] p-1 shadow-sm">
+              <VaultgramLogo className="h-4 w-4" />
+            </div>
+            <span className="font-semibold text-xs tracking-tight text-white font-sans">
+              Vaultgram
+            </span>
+            <span className="font-mono text-[9px] text-zinc-500 uppercase px-1.5 py-0.5 rounded-[2px] bg-white/[0.04] border border-white/[0.06]">
+              MTProto
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-white active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-[4px] text-zinc-400 hover:text-white hover:bg-white/[0.08] active:scale-95 transition-all"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4 stroke-[1.5px]" />
           </button>
-        ) : (
-          <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-700">v1.0</span>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Channels */}
-      <div className="shrink-0 px-3 pb-3 pt-4">
-        <div className="mb-2 flex items-center justify-between px-1">
-          <span className="type-meta">Channels</span>
-          <button
-            type="button"
-            onClick={() => {
-              if (isMobile) setMobileSidebarOpen(false);
-              setCreateVaultOpen(true);
-            }}
-            className="flex h-5 w-5 items-center justify-center rounded-[3px] text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-[#e8d5b5]"
-            title="Create a private storage channel"
-            aria-label="Create channel"
-          >
-            <Plus className="h-3 w-3 stroke-[2px]" />
-          </button>
+      {/* ZONE A: TOP CHANNEL CAROUSEL */}
+      <div className="border-b border-white/[0.07] p-3 pb-2.5 bg-[#121215]/60">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] uppercase text-zinc-400 tracking-wider font-medium">
+              Telegram Channels
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] text-zinc-500">
+              {channels.length} synced
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (isMobile) setMobileSidebarOpen(false);
+                setCreateVaultOpen(true);
+              }}
+              className={cn(
+                "flex items-center justify-center rounded-[3px] bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors",
+                isMobile ? "h-8 w-8" : "p-1"
+              )}
+              title="Create new private storage vault"
+            >
+              <Plus className="h-3.5 w-3.5 sm:h-3 sm:w-3 text-[#c49b56]" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar touch-pan-x">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveChannel("UNIFIED");
-              if (isMobile) setMobileSidebarOpen(false);
-            }}
-            className={cn(
-              "flex h-8 shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-[11.5px] transition-colors",
-              activeChannelId === "UNIFIED"
-                ? "bg-white/[0.07] text-white"
-                : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-200"
-            )}
-          >
-            <Layers className="h-3.5 w-3.5 shrink-0 stroke-[1.5px]" />
-            <span>All</span>
-          </button>
+        {/* Gradient edge-fade carousel */}
+        <div className="relative [mask-image:linear-gradient(to_right,transparent,black_8px,black_calc(100%-8px),transparent)]">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 px-1 touch-pan-x">
+            {/* Create New Storage Vault Tile */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (isMobile) setMobileSidebarOpen(false);
+                setCreateVaultOpen(true);
+              }}
+              title="Create new private storage vault"
+              className={cn(
+                "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs bg-white/[0.02] text-zinc-400 border border-dashed border-white/[0.12] hover:text-white hover:border-white/[0.25] hover:bg-white/[0.05] transition-all",
+                isMobile ? "h-9" : "py-1.5"
+              )}
+            >
+              <Plus className="h-3 w-3 stroke-[2px] text-[#c49b56]" />
+              <span className="font-sans text-[11px]">New</span>
+            </motion.button>
 
-          {channels.map((ch) => {
-            const isAct = activeChannelId === ch.id;
-            return (
-              <button
-                key={ch.id}
-                type="button"
-                onClick={() => {
-                  setActiveChannel(ch.id);
-                  if (isMobile) setMobileSidebarOpen(false);
-                }}
-                title={ch.title}
-                className={cn(
-                  "flex h-8 shrink-0 items-center gap-1.5 rounded-[4px] px-2 text-[11.5px] transition-colors",
-                  isAct
-                    ? "bg-white/[0.07] text-white"
-                    : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-200"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] font-mono text-[9px]",
-                    isAct ? "bg-white/[0.12] text-white" : "bg-white/[0.04] text-zinc-500"
-                  )}
-                >
-                  {ch.isSelf ? <Bookmark className="h-2.5 w-2.5" /> : getInitials(ch.title)}
-                </span>
-                <span className="max-w-[96px] truncate">{ch.title}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Library */}
-      <ScrollArea className="flex-1 px-3 pb-3">
-        <div className="px-1 pb-1.5 pt-2">
-          <span className="type-meta">Library</span>
-        </div>
-        <nav className="space-y-px" aria-label="Library">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isAct = activeFilter === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setActiveFilter(item.id);
-                  if (isMobile) setMobileSidebarOpen(false);
-                }}
-                aria-current={isAct ? "page" : undefined}
-                className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-[4px] px-2 text-[12.5px] transition-colors duration-100",
-                  isMobile && "h-10",
-                  isAct
-                    ? "bg-white/[0.055] text-white"
-                    : "text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200"
-                )}
-              >
-                <Icon
-                  className="h-[15px] w-[15px] shrink-0 stroke-[1.5px]"
-                  style={{ color: isAct ? item.hue : undefined }}
+            {/* Unified View Tile */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                setActiveChannel("UNIFIED");
+                if (isMobile) setMobileSidebarOpen(false);
+              }}
+              className={cn(
+                "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs transition-colors",
+                isMobile ? "h-9" : "py-1.5",
+                activeChannelId === "UNIFIED"
+                  ? "text-white font-medium"
+                  : "bg-white/[0.03] text-zinc-400 border border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.06]"
+              )}
+            >
+              {activeChannelId === "UNIFIED" && (
+                <motion.span
+                  layoutId={isMobile ? "mobileActiveChannel" : "desktopActiveChannel"}
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                  className="absolute inset-0 rounded-[4px] bg-white/[0.09] border border-white/[0.18] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
                 />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                <span className="num font-mono text-[10px] text-zinc-500">{item.count}</span>
-              </button>
-            );
-          })}
+              )}
+              <Layers className="relative z-10 h-3.5 w-3.5 shrink-0 stroke-[1.5px]" />
+              <span className="relative z-10 truncate max-w-[85px]">All Channels</span>
+            </motion.button>
 
-          <div className="mx-2 my-2 h-px bg-white/[0.05]" />
-
-          {quickAccessItems.map((item) => {
-            const Icon = item.icon;
-            const isAct = activeFilter === item.id;
-            const showCount = item.count > 0;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setActiveFilter(item.id);
-                  if (isMobile) setMobileSidebarOpen(false);
-                }}
-                aria-current={isAct ? "page" : undefined}
-                className={cn(
-                  "flex h-8 w-full items-center gap-2.5 rounded-[4px] px-2 text-[12.5px] transition-colors duration-100",
-                  isMobile && "h-10",
-                  isAct
-                    ? "bg-white/[0.055] text-white"
-                    : "text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200"
-                )}
-              >
-                <Icon className="h-[15px] w-[15px] shrink-0 stroke-[1.5px]" style={{ color: item.hue }} />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                {showCount && (
-                  <span className="num font-mono text-[10px] text-zinc-500">{item.count}</span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Folders */}
-        <div className="mt-6 flex items-center justify-between px-1 pb-1.5">
-          <span className="type-meta">Folders</span>
-          <button
-            type="button"
-            onClick={() => setIsNewFolderOpen(true)}
-            className="flex items-center gap-1 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300"
-          >
-            <Plus className="h-3 w-3 stroke-[1.75px]" />
-            New
-          </button>
-        </div>
-
-        <div className="space-y-px">
-          {Object.values(customFolders).length === 0 ? (
-            <p className="px-2 py-1 font-mono text-[10px] text-zinc-700">No folders yet</p>
-          ) : (
-            Object.values(customFolders).map((folder) => {
-              const isAct = activeFilter === folder.id;
+            {/* Individual Channel Tiles */}
+            {channels.map((ch) => {
+              const isAct = activeChannelId === ch.id;
               return (
-                <div
-                  key={folder.id}
+                <motion.button
+                  key={ch.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setActiveChannel(ch.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
+                  title={ch.title}
                   className={cn(
-                    "group relative flex h-8 w-full items-center rounded-[4px] text-[12.5px] transition-colors",
-                    isMobile && "h-10",
-                    isAct ? "bg-white/[0.055] text-white" : "text-zinc-400 hover:bg-white/[0.03]"
+                    "relative flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 text-xs transition-colors",
+                    isMobile ? "h-9" : "py-1.5",
+                    isAct
+                      ? "text-white font-medium"
+                      : "bg-white/[0.03] text-zinc-400 border border-white/[0.06] hover:text-zinc-200 hover:border-white/[0.12] hover:bg-white/[0.06]"
                   )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveFilter(folder.id);
-                      if (isMobile) setMobileSidebarOpen(false);
-                    }}
-                    className="flex h-full flex-1 items-center gap-2.5 truncate px-2 text-left"
+                  {isAct && (
+                    <motion.span
+                      layoutId={isMobile ? "mobileActiveChannel" : "desktopActiveChannel"}
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                      className="absolute inset-0 rounded-[4px] bg-white/[0.09] border border-white/[0.18] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
+                    />
+                  )}
+                  <div
+                    className={cn(
+                      "relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] text-[9px] font-mono",
+                      isAct
+                        ? "bg-white/[0.15] text-white"
+                        : "bg-white/[0.05] text-zinc-400"
+                    )}
                   >
-                    <Folder className="h-[15px] w-[15px] shrink-0 stroke-[1.5px] text-zinc-500" />
-                    <span className="truncate">{folder.name}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteCustomFolder(folder.id);
-                    }}
-                    className="mr-1 p-1.5 text-zinc-700 opacity-70 transition-all hover:text-rose-400 md:opacity-0 md:group-hover:opacity-100"
-                    aria-label={`Delete folder ${folder.name}`}
-                  >
-                    <Trash2 className="h-3 w-3 stroke-[1.5px]" />
-                  </button>
-                </div>
+                    {ch.isSelf ? <Bookmark className="h-2.5 w-2.5" /> : getInitials(ch.title)}
+                  </div>
+                  <span className="relative z-10 truncate max-w-[85px]">{ch.title}</span>
+                </motion.button>
               );
-            })
-          )}
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ZONE B: NAVIGATION CATEGORIES & FOLDERS */}
+      <ScrollArea className="flex-1 px-3 py-3">
+        {/* Media Categories with Archival Index Pattern */}
+        <div className="space-y-1">
+          <span className="px-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
+            Directory Indices
+          </span>
+          <div className="space-y-0.5 pt-1">
+            {navItems.map((item, idx) => {
+              const Icon = item.icon;
+              const isAct = activeFilter === item.id;
+              return (
+                <motion.button
+                  key={item.id}
+                  initial={isMobile ? { opacity: 0, x: -12, filter: "blur(4px)" } : false}
+                  animate={isMobile ? { opacity: 1, x: 0, filter: "blur(0px)" } : false}
+                  transition={isMobile ? { duration: 0.25, delay: 0.03 + idx * 0.025 } : undefined}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setActiveFilter(item.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    isMobile ? "h-10" : "h-8",
+                    isAct
+                      ? "text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
+                  )}
+                >
+                  {isAct && (
+                    <motion.span
+                      layoutId={isMobile ? "mobileActiveCategory" : "desktopActiveCategory"}
+                      transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                      className="absolute inset-0 rounded-[4px] bg-white/[0.08] border border-white/[0.14] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
+                    />
+                  )}
+                  <div className="relative z-10 flex items-center gap-2">
+                    <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
+                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
+                    <span className="font-sans">{item.label}</span>
+                  </div>
+                  <span className="relative z-10 font-mono text-[10px] text-zinc-500 tabular-nums">
+                    {item.count}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Access */}
+        <div className="mt-5 space-y-1">
+          <span className="px-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
+            System Faculties
+          </span>
+          <div className="space-y-0.5 pt-1">
+            {quickAccessItems.map((item, idx) => {
+              const Icon = item.icon;
+              const isAct = activeFilter === item.id;
+              return (
+                <motion.button
+                  key={item.id}
+                  initial={isMobile ? { opacity: 0, x: -12, filter: "blur(4px)" } : false}
+                  animate={isMobile ? { opacity: 1, x: 0, filter: "blur(0px)" } : false}
+                  transition={isMobile ? { duration: 0.25, delay: 0.18 + idx * 0.025 } : undefined}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setActiveFilter(item.id);
+                    if (isMobile) setMobileSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                    isMobile ? "h-10" : "h-8",
+                    isAct
+                      ? "text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
+                  )}
+                >
+                  {isAct && (
+                    <motion.span
+                      layoutId={isMobile ? "mobileActiveQuickAccess" : "desktopActiveQuickAccess"}
+                      transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                      className="absolute inset-0 rounded-[4px] bg-white/[0.08] border border-white/[0.14] shadow-[0_0_12px_rgba(255,255,255,0.03)] -z-0"
+                    />
+                  )}
+                  <div className="relative z-10 flex items-center gap-2">
+                    <span className="font-mono text-[10px] text-zinc-500">{item.indexStr} ·</span>
+                    <Icon className={cn("h-3.5 w-3.5 stroke-[1.5px] transition-colors", item.colorClass)} />
+                    <span className="font-sans">{item.label}</span>
+                  </div>
+                  {item.count !== undefined && (
+                    <span
+                      className={cn(
+                        "relative z-10 font-mono text-[10px] tabular-nums",
+                        item.isBadge
+                          ? "px-1.5 py-0.5 rounded-[3px] bg-white/[0.08] text-white border border-white/[0.16]"
+                          : "text-zinc-500"
+                      )}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Custom Virtual Folders */}
+        <div className="mt-5 space-y-1">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
+              Virtual Dossiers
+            </span>
+            <button
+              onClick={() => setIsNewFolderOpen(true)}
+              className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors"
+            >
+              <Plus className="h-3 w-3 stroke-[1.75px]" />
+              <span>New</span>
+            </button>
+          </div>
+
+          <div className="space-y-0.5 pt-1">
+            {Object.values(customFolders).length === 0 ? (
+              <div className="px-2.5 py-1 text-[11px] text-zinc-600 font-mono">
+                No custom dossiers
+              </div>
+            ) : (
+              Object.values(customFolders).map((folder) => {
+                const isAct = activeFilter === folder.id;
+                return (
+                  <div
+                    key={folder.id}
+                    className={cn(
+                      "group relative flex w-full items-center justify-between px-2.5 rounded-[4px] text-xs transition-colors",
+                      isMobile ? "h-10" : "h-8",
+                      isAct
+                        ? "text-white font-medium"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                    )}
+                  >
+                    {isAct && (
+                      <div className="absolute inset-0 rounded-[4px] bg-white/[0.08] border border-white/[0.14] -z-0" />
+                    )}
+                    <button
+                      onClick={() => {
+                        setActiveFilter(folder.id);
+                        if (isMobile) setMobileSidebarOpen(false);
+                      }}
+                      className="relative z-10 flex flex-1 items-center gap-2 text-left truncate h-full"
+                    >
+                      <Folder className="h-3.5 w-3.5 shrink-0 stroke-[1.5px] text-zinc-400" />
+                      <span className="truncate">{folder.name}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCustomFolder(folder.id);
+                      }}
+                      className="relative z-10 opacity-75 md:opacity-0 md:group-hover:opacity-100 hover:text-rose-400 transition-opacity p-1.5"
+                      aria-label={`Delete folder ${folder.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[1.5px]" />
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </ScrollArea>
 
-      {/* Footer — honest numbers only */}
-      <div className="shrink-0 border-t border-white/[0.05] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-        <div className="num flex items-baseline justify-between font-mono text-[10px] text-zinc-500">
-          <span>{files.length.toLocaleString()} files</span>
-          <span>{formatBytes(totalIndexedBytes)}</span>
-        </div>
-
-        <button
-          type="button"
+      {/* ZONE C: HARDWARE TELEMETRY FOOTER */}
+      <div className="border-t border-white/[0.07] p-3 bg-[#121215]/95 space-y-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Active Account Deck */}
+        <div
           onClick={() => {
             if (isMobile) setMobileSidebarOpen(false);
             setIsAccountSwitcherOpen(true);
           }}
-          className="group mt-3 flex w-full items-center gap-2.5 rounded-[4px] py-1 text-left transition-colors"
-          title="Switch account"
+          className="group flex items-center justify-between p-2.5 sm:p-2 rounded-[4px] border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/[0.14] transition-all cursor-pointer"
+          title="Switch Account / Manage Profiles"
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.07] font-mono text-[10px] font-medium text-zinc-200">
-            {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12px] font-medium leading-tight text-zinc-200 group-hover:text-white">
-              {user?.firstName || "Telegram user"}
-              {user?.lastName ? ` ${user.lastName}` : ""}
-            </span>
-            <span className="block truncate font-mono text-[10px] leading-tight text-zinc-500">
-              {user?.username ? `@${user.username}` : `id ${user?.id || "—"}`}
-            </span>
-          </span>
-          <Users className="h-3.5 w-3.5 shrink-0 text-zinc-700 transition-colors group-hover:text-zinc-400" />
-        </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.15] text-white text-[10px] font-mono font-medium">
+              {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-white truncate flex items-center gap-1">
+                <span>{user?.firstName || "Telegram User"}</span>
+                {user?.lastName && <span className="text-zinc-400">{user.lastName}</span>}
+              </div>
+              <div className="text-[10px] text-zinc-500 font-mono truncate">
+                {user?.username ? `@${user.username}` : `ID: ${user?.id || "MTProto"}`}
+              </div>
+            </div>
+          </div>
 
-        <div className="mt-2 flex items-center justify-between">
+          <div className="flex items-center gap-1 shrink-0 text-zinc-500 group-hover:text-zinc-300 transition-colors">
+            <Users className="h-3.5 w-3.5 stroke-[1.5px]" />
+          </div>
+        </div>
+
+        {/* Milled Hardware Telemetry Deck */}
+        <div className="specimen-card hairline-sheen space-y-2 rounded-[5px] p-2.5">
+          <div className="flex items-center justify-between text-[11px] font-mono">
+            <span className="text-zinc-400 flex items-center gap-1.5 font-medium tracking-tight">
+              <HardDrive className="h-3 w-3 text-zinc-500 stroke-[1.5px]" />
+              Archival Volume
+            </span>
+            <span className="text-zinc-200 font-semibold tabular-nums tracking-tight">
+              {formatBytes(totalIndexedBytes)}
+            </span>
+          </div>
+
+          {/* Precision Machined Gauge */}
+          <div className="h-1.5 w-full bg-[#0c0c0e] border border-white/[0.05] rounded-none overflow-hidden relative">
+            <div
+              className="h-full bg-gradient-to-r from-zinc-500 via-[#c49b56] to-[#e6cfa3] transition-all duration-300"
+              style={{
+                width: `${Math.min(100, Math.max(3, (files.length / 150) * 100))}%`,
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono tracking-tight">
+            <span className="tabular-nums">{files.length} indexed records</span>
+            <span className="text-zinc-600 uppercase tracking-wider text-[9px]">MTProto Buffer</span>
+          </div>
+        </div>
+
+        {/* Connection Status & Control Deck */}
+        <div className="flex items-center justify-between pt-0.5">
           <button
             type="button"
             onClick={() => {
               if (isMobile) setMobileSidebarOpen(false);
               setNetworkMonitorOpen(true);
             }}
-            className="flex items-center gap-1.5 py-1 text-[10px] font-mono text-zinc-500 transition-colors hover:text-zinc-300"
-            title="Network diagnostics"
+            className="flex items-center gap-1.5 min-h-[36px] text-xs text-zinc-300 font-medium hover:text-white transition-colors group cursor-pointer"
+            title="View MTProto Network & DC Latency Telemetry"
           >
-            <span className={cn("h-1.5 w-1.5 rounded-full", isConnected ? "bg-emerald-400" : "bg-zinc-600")} />
-            {isConnected ? "Connected" : "Offline"}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white/90"></span>
+            </span>
+            <VaultgramLogo className="h-3.5 w-3.5" />
+            <span className="text-[11px] font-mono tracking-tight text-zinc-400 group-hover:text-white">Vaultgram</span>
+            <Activity className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
           </button>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                if (isMobile) setMobileSidebarOpen(false);
-                setSettingsOpen(true);
-              }}
-              className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-600 transition-colors hover:bg-white/[0.05] hover:text-white"
-              title="Settings"
-              aria-label="Settings"
-            >
-              <Settings className="h-3.5 w-3.5 stroke-[1.5px]" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) setMobileSidebarOpen(false);
+              setSettingsOpen(true);
+            }}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 rounded-[4px] border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.18] transition-colors text-xs font-mono",
+              isMobile ? "h-9" : "py-1"
+            )}
+            title="Settings & Preferences"
+          >
+            <Settings className="h-3.5 w-3.5 stroke-[1.5px]" />
+            <span>Settings</span>
+          </button>
         </div>
       </div>
     </div>
@@ -421,7 +568,7 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="z-30 hidden h-[100dvh] w-[272px] shrink-0 select-none flex-col border-r border-white/[0.05] bg-[#0b0b0e] md:flex">
+      <aside className="hidden md:flex h-[100dvh] w-72 flex-col border-r border-white/[0.07] bg-[#121215] select-none shrink-0 z-30">
         {renderContent(false)}
       </aside>
 
@@ -444,8 +591,8 @@ export const Sidebar: React.FC = () => {
               initial={{ x: "-100%" }}
               animate={{ x: "0%" }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 380 }}
-              className="relative z-10 flex h-full w-[84vw] max-w-[300px] flex-col overflow-hidden border-r border-white/[0.06] bg-[#0b0b0e] shadow-[0_0_60px_rgba(0,0,0,0.85)]"
+              transition={{ type: "spring", damping: 30, stiffness: 350 }}
+              className="relative z-10 flex h-full w-[84vw] max-w-[310px] flex-col border-r border-white/[0.08] bg-[#121215] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden"
             >
               {renderContent(true)}
             </motion.aside>

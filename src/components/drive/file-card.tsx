@@ -17,6 +17,12 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
+  Image,
+  Video,
+  FileText,
+  Archive,
+  Music,
+  File,
   Download,
   Eye,
   Pin,
@@ -28,8 +34,6 @@ import {
   Check,
 } from "lucide-react";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
-import { MEDIA_TOKENS } from "@/lib/media-tokens";
-import { MediaGlyph } from "./media-glyph";
 import { toast } from "sonner";
 
 interface FileCardProps {
@@ -56,14 +60,29 @@ export const FileCard = React.memo<FileCardProps>(
       file.category === "DOC" &&
       !!file.name.toLowerCase().match(/\.(txt|md|json|js|ts|tsx|jsx|html|css|py|rs|go|sh|yml|yaml|xml|csv|log|env)$/);
 
-    const token = MEDIA_TOKENS[file.category] ?? MEDIA_TOKENS.OTHER;
-
     const getFileExtension = () => {
       const parts = file.name.split(".");
       if (parts.length > 1) {
         return parts.pop()?.toUpperCase().slice(0, 4) || file.category;
       }
       return file.category;
+    };
+
+    const getFileIcon = () => {
+      switch (file.category) {
+        case "IMAGE":
+          return <Image className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+        case "VIDEO":
+          return <Video className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+        case "DOC":
+          return <FileText className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+        case "ARCHIVE":
+          return <Archive className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+        case "AUDIO":
+          return <Music className="h-4 w-4 text-[#e6cfa3] group-hover:text-white stroke-[1.4px] transition-colors" />;
+        default:
+          return <File className="h-4 w-4 text-zinc-300 group-hover:text-zinc-100 stroke-[1.4px] transition-colors" />;
+      }
     };
 
     const copyTelegramReference = (e?: React.MouseEvent) => {
@@ -73,30 +92,15 @@ export const FileCard = React.memo<FileCardProps>(
       toast.success("Telegram message reference copied to clipboard");
     };
 
-    const openFile = () => {
-      if (isCodeOrText) {
-        setTextViewerFile(file);
-      } else {
-        setPreviewFile(file);
-      }
-    };
-
     const handleClick = (e: React.MouseEvent) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || hasSelection) {
         e.preventDefault();
         toggleSelectFile(file.id);
       } else {
-        openFile();
-      }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-        e.preventDefault();
-        if (e.metaKey || e.ctrlKey || e.shiftKey) {
-          toggleSelectFile(file.id);
+        if (isCodeOrText) {
+          setTextViewerFile(file);
         } else {
-          openFile();
+          setPreviewFile(file);
         }
       }
     };
@@ -105,56 +109,51 @@ export const FileCard = React.memo<FileCardProps>(
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <motion.div
-            whileHover={{ y: -1 }}
-            transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+            whileHover={{ y: -2, transition: { type: "spring", stiffness: 450, damping: 28 } }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            aria-label={`${file.name} — ${token.label}, ${formatBytes(file.size)}`}
-            data-selected={isSelected ? "true" : undefined}
             className={cn(
-              "group relative flex h-[124px] cursor-pointer select-none flex-col overflow-hidden rounded-[5px] border p-3.5",
-              "transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.995]",
-              isSelected
-                ? "border-[#e8d5b5]/40 bg-[#16140f] hover:border-[#e8d5b5]/55 hover:bg-[#191610]"
-                : "border-white/[0.055] bg-[#0f0f12] hover:border-white/[0.13] hover:bg-[#141418]"
+              "specimen-card hairline-sheen group relative flex flex-col justify-between rounded-[5px] p-3 transition-all duration-200 cursor-pointer select-none h-[140px] overflow-hidden",
+              isPinned && "border-white/[0.2] bg-[#141418]",
+              isSelected && "border-white/50 bg-[#17171e] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_24px_rgba(255,255,255,0.05)]"
             )}
           >
-            {/* Top: media class + extension, then quiet actions */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <MediaGlyph category={file.category} className="h-[17px] w-[17px]" strokeWidth={1.5} />
-                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 transition-colors group-hover:text-zinc-500 truncate">
-                  {getFileExtension()}
-                </span>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1">
+            {/* Top: Machined Pocket + Specimen Extension Stamp + Options */}
+            <div className="flex items-start justify-between gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="specimen-inset flex h-8 w-8 items-center justify-center rounded-[4px] shrink-0">
+                  {getFileIcon()}
+                </div>
                 {isSelected && (
                   <motion.span
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                    className="flex h-4 w-4 items-center justify-center rounded-[2px] bg-[#e8d5b5] text-[#17130b]"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="flex h-4 w-4 items-center justify-center rounded-[2px] bg-white text-black shadow-sm"
                   >
                     <Check className="h-2.5 w-2.5 stroke-[3px]" />
                   </motion.span>
                 )}
+              </div>
 
-                {isPinned && <Pin className="h-3 w-3 shrink-0 fill-zinc-500 text-zinc-500" />}
-                {isFavorite && <Star className="h-3 w-3 shrink-0 fill-[#c5a059] text-[#c5a059]" />}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {/* Precision Archival Extension Stamp */}
+                <span className="font-mono text-[9px] font-semibold tracking-[0.16em] uppercase text-zinc-400 bg-white/[0.03] border border-white/[0.08] px-1.5 py-0.5 rounded-[3px] group-hover:border-white/[0.14] group-hover:text-zinc-200 transition-colors">
+                  {getFileExtension()}
+                </span>
 
-                {/* Desktop 1-click download */}
+                {isPinned && <Pin className="h-3 w-3 text-zinc-300 fill-zinc-300 shrink-0" />}
+                {isFavorite && <Star className="h-3 w-3 text-[#c49b56] fill-[#c49b56] shrink-0" />}
+
+                {/* Desktop 1-Click Download Quick Action */}
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDownload(file);
                   }}
-                  tabIndex={-1}
-                  className="hidden sm:flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-600 opacity-0 transition-colors hover:bg-white/[0.06] hover:text-white group-hover:opacity-100"
-                  title="Download file"
+                  className="hidden sm:flex h-6 w-6 items-center justify-center rounded-[3px] tactile-keycap text-zinc-400 hover:text-white transition-all duration-150 opacity-0 group-hover:opacity-100"
+                  title="Download File"
                 >
                   <Download className="h-3 w-3 stroke-[1.6px]" />
                 </button>
@@ -165,7 +164,7 @@ export const FileCard = React.memo<FileCardProps>(
                     <button
                       type="button"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex h-9 w-9 -mr-2 -mt-1.5 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-white sm:m-0 sm:h-6 sm:w-6 sm:rounded-[3px] sm:opacity-0 group-hover:sm:opacity-100"
+                      className="flex h-9 w-9 -mr-2 -mt-1.5 sm:h-6 sm:w-6 sm:m-0 items-center justify-center rounded-[4px] sm:rounded-[3px] text-zinc-400 sm:text-zinc-500 hover:text-white hover:bg-white/[0.08] sm:opacity-60 group-hover:opacity-100 transition-opacity"
                       aria-label="File options"
                     >
                       <MoreVertical className="h-4 w-4 sm:h-3.5 sm:w-3.5 stroke-[1.5px]" />
@@ -274,20 +273,20 @@ export const FileCard = React.memo<FileCardProps>(
               </div>
             </div>
 
-            {/* Name — the only thing that gets two lines */}
-            <div className="mt-4 flex-1">
+            {/* Middle: File Name */}
+            <div className="my-auto py-1">
               <span
-                className="line-clamp-2 break-words text-[12.5px] font-medium leading-[1.4] tracking-[-0.005em] text-zinc-300 transition-colors group-hover:text-white"
+                className="line-clamp-2 text-xs font-medium leading-snug text-zinc-200 group-hover:text-white break-words font-sans"
                 title={file.name}
               >
                 {file.name}
               </span>
             </div>
 
-            {/* Meta — mono, tabular, deliberately quiet */}
-            <div className="num mt-2 flex items-baseline justify-between gap-2 font-mono text-[10px] text-zinc-500">
-              <span className="truncate">{formatBytes(file.size)}</span>
-              <span className="shrink-0">{formatDate(file.date)}</span>
+            {/* Bottom: Meta Bar with Tabular Numerals */}
+            <div className="flex items-center justify-between border-t border-white/[0.06] pt-1.5 sm:pt-2 font-mono text-[10px] text-zinc-500 tabular-nums">
+              <span>{formatBytes(file.size)}</span>
+              <span className="truncate ml-1">{formatDate(file.date)}</span>
             </div>
           </motion.div>
         </ContextMenuTrigger>
