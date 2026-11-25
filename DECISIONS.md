@@ -57,3 +57,30 @@ This log records significant, durable architectural and engineering decisions ma
 - **Context:** A temporary local Node.js Express daemon (`http://localhost:4000`) was tested as a fallback proxy for video streaming. However, this violated Vaultgram's core architectural principle of zero backend and prevented deploying as a static SPA on Cloudflare Pages.
 - **Decision:** Permanently replace the daemon with a pure-browser streaming architecture: (1) `TelegramRangeReader` directly requesting MTProto byte chunks over WebSockets via GramJS `upload.GetFile`, (2) `Mp4DemuxSegmenter` performing browser-side ISO-BMFF box parsing with fast-start `moov` probing and on-the-fly sample segmentation into `moof`+`mdat` chunks, (3) `MseStreamController` feeding native `MediaSource` and `SourceBuffer` with serialized queueing, backpressure control, and random keyframe seeking.
 - **Consequences:** Enables zero-backend video playback in static SPA environments with bounded memory usage, eliminating the need for any local proxy service or intermediary server.
+
+
+---
+
+## ADR-009: Migration from Archived GramJS to Teleproto
+- **Context:** The original `telegram` (GramJS) npm package was archived and unmaintained by its upstream maintainer, resulting in stale dependencies, build quirks, and lack of active maintenance for modern browser MTProto WebSocket transports.
+- **Decision:** Migrate to `teleproto` (`^1.233.0`), an actively maintained fork designed for modern ES module bundlers and browser WebSocket MTProto communication with identical API contracts.
+- **Consequences:** Provides active maintenance, cleaner bundle resolution in Vite, and robust multi-DC connection pooling with zero breaking changes to existing client logic.
+
+---
+
+## ADR-010: Physical Craftsmanship Design Language & Monochrome Stealth Delta Identity
+- **Context:** Generic AI-generated styling tropes (flat gray surfaces, neon candy-colored pill badges, artificial telemetry ticker bars) diluted product identity and violated human-grade engineering standards.
+- **Decision:** Implement a physical craftsmanship design system:
+  1. Anodized brushed obsidian card surfaces (`linear-gradient(180deg, #131317 0%, #0d0d10 100%)`) with a 1px micro-milled top bevel highlight (`inset 0 1px 0 rgba(255, 255, 255, 0.12)`).
+  2. Deep recessed instrument wells (`#08080a`, `inset 0 1.5px 3px rgba(0, 0, 0, 0.9)`).
+  3. Precision optical hardware status indicators (inset dark badges with 1.5px luminous emerald/carmine pin-LEDs and tracked uppercase mono).
+  4. High-contrast 24K Auric Champagne (`#e8d5b5` / `#c5a059`) primary action anchors (Upload CTA) and archival extension stamps.
+  5. The official monochrome stealth origami delta brand mark across all viewports, boot loaders, and web favicons.
+- **Consequences:** Eliminates AI visual clichés and gives Vaultgram a distinctive, tactile, industrial-grade software identity.
+
+---
+
+## ADR-011: Adoption of GNU Affero General Public License v3.0 (AGPLv3)
+- **Context:** As a 100% serverless, browser-native personal cloud tool accessing private Telegram data, Vaultgram must guarantee permanent user privacy, transparency, and freedom from proprietary commercial enclosures.
+- **Decision:** License the entire project under the GNU Affero General Public License v3.0 (AGPLv3).
+- **Consequences:** Guarantees that any modified versions or hosted deployments remain open-source copyleft for the community.
